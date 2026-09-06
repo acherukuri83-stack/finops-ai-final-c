@@ -18,6 +18,16 @@ def test_all_scenarios_validate_and_have_no_leaks() -> None:
 def test_scenario_1_shape() -> None:
     sc = Scenario.load(SCENARIOS / "001_counterparty_ssi_stale.yaml")
     ssi = sc.plant["accounts.ssi"]
-    assert [v["dtc"] for v in ssi] == ["5678", "1234"]
+    assert [v["dtc"] for v in ssi] == ["9012", "5678", "1234"]
     assert sc.plant["affirmations"][0]["cpty_dtc"] == "5678"
     assert sc.expect["rejected_alternatives_must_include"] == ["update_ssi"]
+
+
+def test_scenario_ids_have_no_duplicate_baseline_range_trades() -> None:
+    """Baseline uses the T200xxx id range; scenario files must never collide with it."""
+    for f in sorted(SCENARIOS.glob("*.yaml")):
+        sc = Scenario.load(f)
+        for t in sc.plant.get("trades", []):
+            assert not t["id"].startswith("T200"), (
+                f"{f.name}: {t['id']} collides with baseline range"
+            )
