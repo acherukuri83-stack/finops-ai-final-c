@@ -1,0 +1,54 @@
+"""The Finding contract. Every agent, every phase, returns this shape."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+from pydantic import BaseModel, Field
+
+
+class Outcome(StrEnum):
+    RESOLVED_CAUSE = "RESOLVED_CAUSE"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+    TOOL_DEGRADED = "TOOL_DEGRADED"
+    OUT_OF_SCOPE = "OUT_OF_SCOPE"
+    SKELETON = "SKELETON"  # W1 walking skeleton only
+
+
+class SubjectRef(BaseModel):
+    type: str  # trade | account | wire | job | pr
+    id: str
+
+
+class EvidenceRef(BaseModel):
+    kind: str  # tool | knowledge | incident | log
+    ref: str  # tool result id, or "doc §section", or incident id
+    cited: bool = True
+
+
+class ProposedAction(BaseModel):
+    action_type: str
+    params: dict[str, str] = Field(default_factory=dict)
+    rationale: str
+    impact: list[SubjectRef] = Field(default_factory=list)
+    reversible: bool = True
+
+
+class RejectedAlternative(BaseModel):
+    action_type: str
+    reason: str
+    evidence: list[str] = Field(default_factory=list)
+
+
+class Finding(BaseModel):
+    subject: SubjectRef
+    outcome: Outcome
+    root_cause: str | None = None
+    evidence: list[EvidenceRef] = Field(default_factory=list)
+    proposed_actions: list[ProposedAction] = Field(default_factory=list)
+    rejected_alternatives: list[RejectedAlternative] = Field(default_factory=list)
+    open_questions: list[str] = Field(default_factory=list)
+    checked: list[str] = Field(default_factory=list)  # for INSUFFICIENT_EVIDENCE
+    degraded_tools: list[str] = Field(default_factory=list)  # for TOOL_DEGRADED
+    confidence_basis: str = ""
+    trace_id: str = ""

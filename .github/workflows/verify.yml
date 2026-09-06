@@ -1,0 +1,22 @@
+name: verify
+on: [pull_request, push]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_USER: finops, POSTGRES_PASSWORD: finops, POSTGRES_DB: finops }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U finops" --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm, cache-dependency-path: portal/package-lock.json }
+      - run: cd ai-platform && uv sync
+      - run: cd simulator && uv sync
+      - run: cd portal && npm ci
+      - run: ./scripts/verify.sh

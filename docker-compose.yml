@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: finops
+      POSTGRES_PASSWORD: finops
+      POSTGRES_DB: finops
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finops"]
+      interval: 5s
+      retries: 10
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    ports: ["16686:16686", "4318:4318"]
+
+  enterprise:
+    build: ./enterprise
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finops
+      SPRING_DATASOURCE_USERNAME: finops
+      SPRING_DATASOURCE_PASSWORD: finops
+      JAVA_TOOL_OPTIONS: "-Xmx512m"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+      FAULT_INJECT: ${FAULT_INJECT:-}
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  ai-platform:
+    build: ./ai-platform
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://finops:finops@postgres:5432/finops
+      ENTERPRISE_BASE_URL: http://enterprise:8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    ports: ["8000:8000"]
+    depends_on: [postgres, enterprise]
+
+  portal:
+    build: ./portal
+    ports: ["5173:5173"]
+    environment:
+      VITE_API_BASE: http://localhost:8000
+    depends_on: [ai-platform]
+
+volumes:
+  pgdata:

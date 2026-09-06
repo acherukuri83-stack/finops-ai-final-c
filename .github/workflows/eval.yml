@@ -1,0 +1,21 @@
+name: eval
+# Costs real money. Runs only when agent behaviour inputs change.
+on:
+  pull_request:
+    paths:
+      - "ai-platform/agent_core/prompts/**"
+      - "ai-platform/agent_core/policy/**"
+      - "ai-platform/knowledge/**"
+      - "simulator/**"
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: cd ai-platform && uv sync
+      - name: eval suite
+        env: { ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}" }
+        run: |
+          echo "Eval harness arrives in Weekend 3 (final-plan.md). Until then this job is a placeholder."
+          # make eval

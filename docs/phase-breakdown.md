@@ -1,0 +1,153 @@
+# FinOps AI — Phase Breakdown (A → G)
+
+Every phase in the same shape: what it proves, what's in scope, which agents exist, which tools, data, corpus, screens, governance, scenarios, and what you can demo at the end. Cumulative — each phase adds to the previous one.
+
+## At a glance
+
+| Phase | Theme | Agents (cumulative) | MCP servers (cumulative) | Scenarios | Concepts showcased | Effort |
+|---|---|---|---|---|---|---|
+| **A** | One trade use case, end to end | Investigator | trade, client, counterparty, position, reference, market, compliance (r), ops, case | 1–6, 8–10, 12 | LLM · RAG · MCP · Agentic (single) · Platform · Governance · Evals · Trace | 5 weekends |
+| **B** | Wires | + wire mode | + wire, compliance (w) | 7, 13–16 | Maker–checker · hard rules · second vertical on same substrate | 1–2 weekends |
+| **C** | Supervisor & specialists | Supervisor, Settlement, Wire, Risk/Client, Knowledge | — | 11 | Delegation · correlation · policy per agent | 1–2 weekends |
+| **D** | Event-driven | + event entry | — (EventBus) | event scenarios | Platform reacts unprompted · dedup | 1 weekend |
+| **E** | Developer Agent | + Developer (incident, verify, review, author) | + platform, repo, ci | 17–25 | Engineering agents · closed loop · self-review | 2–3 weekends |
+| **F** | Prime finance | + StockLoan, Margin, CorpActions, Cash | + stockloan, margin, corpactions, cash | 26–30 | Domain depth from your background | 1 weekend/domain |
+| **G** | Hardening | — | — | — | Replay/diff · AWS path · model swaps | as needed |
+
+---
+
+## Phase A — "Why didn't this trade settle?"
+
+**Proves:** all five concepts plus governance, evaluation, and observability — on one use case, publicly hosted.
+
+| | |
+|---|---|
+| **Scope in** | Trade settlement failure investigation, approval-gated remediation, evidence with citations, trace, audit, eval scorecard, Railway demo |
+| **Scope out** | Wires, multi-agent, events, engineering agents, prime-finance domains, replay/diff, AWS |
+| **Agent** | **Investigator** — trade mode. Plan → tool loop (budget 12) → `Finding` with rejected alternatives → policy → propose. Outcomes: `RESOLVED_CAUSE`, `INSUFFICIENT_EVIDENCE`, `TOOL_DEGRADED`. Allowlist: `resubmit_settlement`, `cancel_trade`, `update_ssi`, `open_compliance_referral`, `escalate` |
+| **MCP servers / tools** | `trade`: get_trade, get_settlement_status, find_trades, resubmit_settlement (w), cancel_trade (w) · `client`: get_client, get_account, get_ssi, get_ssi_history, update_ssi (w) · `counterparty`: get_counterparty, get_counterparty_ssi, get_affirmation · `position`: get_position, get_borrow_availability · `reference`: get_security, get_market_calendar · `market`: get_price · `compliance`: get_restrictions, get_screening_result · `ops`: search_logs, search_knowledge, find_incidents · `case`: create_case, update_case, propose_action, get_approval, log_audit |
+| **Simulated data** | ~50 clients, ~80 accounts, SSIs with history, ~200 securities, 30 days prices, ~500 trades (95% clean, several failed for *other* reasons), affirmations, positions, borrow availability, ~20 counterparties, ~20k log lines; per-scenario plants with 3–8 corroborating logs |
+| **Corpus** | ~12 SOPs (settlement failure handbook, SSI policy, trade exception procedure, reference data procedure, delivery/position procedure, incident management, account restrictions, custodian notices), `INC-1001…1008`, 2–3 distractor sections |
+| **Portal** | Cases · Trades · Settlements · Knowledge · Connections · Traces · Audit; chat + investigation panel + evidence; Approve/Reject; role `OPS_ANALYST` |
+| **Governance** | Approval enforced at the write tool via `approval_id`; policy allowlist; audit per case; input classification guardrail; output schema validation |
+| **Observability** | Spans: agent, tool, retrieval, policy, guardrail, approval; Agent Trace screen with retrieved-vs-cited and rejected alternatives; cross-links |
+| **Evals** | 10 scenarios × 3 runs; scorecard; CI gate on `prompts/`, `policy/`, `knowledge/`, `simulator/` |
+| **Scenarios** | 1 counterparty SSI stale · 2 our SSI stale (KB flips) · 3 reference error · 4 restricted account · 5 short position · 6 expired instruction · 8 duplicate · 9 remediated · 10 no evidence · 12 tool outage |
+| **Demo** | Investigate T100245 → evidence §8.4 + INC-1001 → `update_ssi` rejected → approve → audit · Sc. 4 restraint · Sc. 2 flip · trace · scorecard |
+| **Deliverables** | Public repo, hosted demo, 4-minute video, scorecard in README, ADRs |
+
+---
+
+## Phase B — Wires
+
+**Proves:** the substrate supports a second vertical with different controls — maker–checker, standing instructions, cutoffs, screening — without touching Phase A code.
+
+| | |
+|---|---|
+| **Scope in** | Outgoing wire holds and rejections; reviewer routing; standing wire instructions; cutoff handling; screening hits; exception reporting |
+| **Agent** | Investigator gains **wire mode** (subject classification selects plan template + tool scope). Hard rules in code: cutoff computation, screening hit ⇒ freeze, new beneficiary ⇒ reviewer. Allowlist (wire): `route_to_reviewer`, `add_standing_instruction`, `reschedule_value_date`, `open_compliance_referral`. **`release_wire` is not an agent tool** |
+| **MCP servers / tools** | `wire`: get_wire, get_wire_audit_trail, get_standing_instructions, get_approval_queue, get_cutoff, route_to_reviewer (w), add_standing_instruction (w), reschedule_value_date (w) · `compliance` adds open_compliance_referral (w) · `cash`-lite: get_available_balance (for Sc. 16) |
+| **Simulated data** | Wires (in/out), holds with reasons, reviewer queue, standing wire instructions per client, Fedwire cutoffs, screening results incl. one hit, available balances |
+| **Corpus** | Wire processing guide (§5.2 new beneficiary, §9.1 cutoff), sanctions procedure, `INC-2001…2005` |
+| **Portal** | Wires tab; reviewer queue; review packet view; `WIRE_REVIEWER` role and release action; daily wire exception report |
+| **Governance** | Agent is maker, never checker; release is a human-only action; screening hit blocks all remediation |
+| **Scenarios** | 7 beneficiary mismatch · 13 new beneficiary before cutoff · 14 cutoff missed · 15 screening hit · 16 insufficient balance |
+| **Demo** | "Why is W300917 stuck?" → held for new-beneficiary control, cutoff in 22 min → review packet → reviewer releases → audit message; Sc. 15 freeze |
+| **Effort** | 1–2 weekends |
+
+---
+
+## Phase C — Supervisor and specialists
+
+**Proves:** delegation, correlation, and per-agent policy — multiple agents, each structurally unable to do the others' jobs.
+
+| | |
+|---|---|
+| **Scope in** | Split the Investigator; add a Supervisor that decomposes, dispatches in parallel, correlates findings by shared cause, and synthesizes |
+| **Agents** | **Supervisor** (classify → decompose → correlate → synthesize; allowlist: `create_case`, `update_case` only) · **Settlement** (trade mode; scope trade/counterparty/position) · **Wire** (wire mode; scope wire/reference) · **Risk/Client** (new: restrictions, screening, SSI current-vs-history; **owns the only path to `update_ssi`**) · **Knowledge** (retrieval + citation packaging; read-only) |
+| **Contracts** | `SubTask{agent, subject_ids, question, deadline, budget}`; `Finding` unchanged; known-actions registry so synthesis can't drop a proposal |
+| **Simulated data** | Sc. 11: HF101 with three fails sharing one counterparty cause + one held wire |
+| **Portal** | Client-level investigation view; grouped actions; delegation shown in trace |
+| **Governance** | Allowlists per agent in `allowlists.yaml`; Settlement Agent cannot propose `update_ssi` (policy rejection in trace) |
+| **Scenarios** | 11 multi-issue client; regression on all Phase A/B scenarios after the split |
+| **Demo** | "Investigate all problems affecting HF101 today" → fan-out → two root causes → three trades under one action, wire separate → any `INSUFFICIENT_EVIDENCE` surfaced verbatim |
+| **Effort** | 1–2 weekends |
+
+---
+
+## Phase D — Event-driven investigations
+
+**Proves:** the platform is a platform, not a chat box — it reacts to the estate without a user.
+
+| | |
+|---|---|
+| **Scope in** | `EventBus` with Kafka (local, Redpanda) and Postgres-outbox (hosted) implementations; simulator publishes FAILED / HELD events; consumer opens a case and starts an investigation; dedup |
+| **Agent** | Supervisor gains an event entry point (classifies from payload); urgency from event (e.g. cutoff < 60 min) raises priority |
+| **Portal** | Cases show `source = event`; live case appearance |
+| **Scenarios** | FAILED event → case; duplicate event → same case; HELD wire near cutoff → prioritized |
+| **Demo** | Publish one event → case, finding, proposal appear unprompted; trace root span is the event |
+| **Effort** | 1 weekend |
+
+---
+
+## Phase E — Developer Agent
+
+**Proves:** software-engineering agents on the same substrate — incident diagnosis, verification, PR review, and eval authoring — with the same propose-then-human-approves gate.
+
+| | |
+|---|---|
+| **Scope in** | Four Developer Agent modes; platform-fault simulation; standards corpus; CI integration |
+| **Agent** | **Developer Agent** · *incident*: health → jobs → deployments → config diff → topic lag → logs → source → blast radius; `fix_strategy: revert \| fix_forward` · *verification*: expectation → re-check → delta → hand residual to business agent → write incident back · *review*: diff classification → targeted standards retrieval → static/security/coverage/tests/eval-rerun as tools → structured `Review` → `post_review` · *eval authoring*: SOP section → planted chain + `expect:` + fixtures → baseline run → draft PR. Allowlist: `open_change_ticket`, `rerun_job`, `replay_message`, `open_pull_request` (draft), `post_review`. **No deploy, merge, approve, or config-write tools exist** |
+| **MCP servers / tools** | `platform`: get_service_health, get_job_runs, get_deployments, diff_config, get_topic_lag, rerun_job (w), replay_message (w), open_change_ticket (w) · `repo`: get_pull_request, get_diff, get_linked_issue, get_source, open_pull_request (w), post_review (w) · `ci`: run_static_analysis, run_security_scan, get_test_coverage, run_tests, run_eval |
+| **Simulated data** | Job runs, deployments, config versions, topic lag, stack traces, a 47-trade backlog (Sc. 17); intentional change + release note (Sc. 18); seeded PR fixtures (19–21) |
+| **Corpus** | `docs/standards/` (coding, security, tool-contract conventions, observability), ADRs, release notes — indexed with diff-surface filtering; `INC-3xxx` written back by verification |
+| **Portal** | Engineering tab: incidents, verifications, reviews; `CHANGE_APPROVER` role |
+| **Governance** | Change tickets approval-gated; PRs reviewed by the same workflow including the agent's own; agent-authored scenarios need a human reviewer |
+| **Scenarios** | 17 failed job + config diff · 18 fix-forward · 19 write tool missing `approval_id` → BLOCKER · 20 eval fixture changed → re-run · 21 clean PR · 22 verified 47/47 · 23 46/47 + hand-off · 24 fix didn't work · 25 agent-authored scenario |
+| **Demo** | Business agents find nothing → Developer Agent finds the job, diff, backlog → revert + rerun + PR → applied → verified 46/47 → residual to Settlement Agent → INC-3012 retrievable · PR #142 review with BLOCKER |
+| **Effort** | 2–3 weekends |
+
+---
+
+## Phase F — Prime finance domains
+
+**Proves:** domain depth — the scenarios that only someone with a securities lending and asset servicing background would build.
+
+| | |
+|---|---|
+| **Scope in** | One domain at a time: stock loan → margin & collateral → corporate actions → cash |
+| **Agents** | **StockLoan** (loans, recalls, returns, rerates, availability) · **Margin** (calls, eligibility, haircuts, shortfall) · **CorpActions** (events, entitlements, elections, claims on loaned positions) · **Cash** (balances, projections, funding ladders). Each: own scope, allowlist, corpus slice; hard rules in code (recall deadlines, call windows, record-date logic); proposals only |
+| **MCP servers** | `stockloan`, `margin`, `corpactions`, `cash` — each read + 1–2 approval-gated writes |
+| **Simulated data** | Loans and recalls against positions; price moves driving margin; corporate-action calendar; cash ladders |
+| **Corpus** | Stock loan operations, margin & collateral policy, corporate actions guide (already listed in the doc set), funding procedure; `INC-4xxx` |
+| **Supervisor** | `classify` extended with new subject types; correlation on loan id / event id |
+| **Scenarios** | 26 recall vs loaned position · 27 margin call after price move · 28 dividend claim on stock lent over record date · 29 collateral ineligible after downgrade · 30 HF101 mixed: settlement fail + held wire + recall |
+| **Demo** | Sc. 30 — one client, three domains, one synthesized answer |
+| **Effort** | ~1 weekend per domain |
+
+---
+
+## Phase G — Hardening (as needed)
+
+| | |
+|---|---|
+| **Trace replay & diff** | Re-run a request against current data; diff two traces (model swap, prompt change) — the principled answer to "which model?" |
+| **Model swap** | Bedrock `ModelClient`; per-step routing shown in the diff |
+| **AWS path** | `docs/deploy-aws.md` (ECS Fargate, RDS, MSK) — documented because it's on the resume |
+| **Memory loop** | Closed-case → incident indexing across all domains |
+| **Guardrail depth** | PII scrubbing on logs before model calls, with counts in the guardrail span |
+
+---
+
+## Concept coverage by phase
+
+| Concept | A | B | C | D | E | F |
+|---|---|---|---|---|---|---|
+| LLM — reason, decide, explain | plan, root cause, rejected alternatives | wire reasoning around hard rules | decomposition, synthesis | classify from event | diff classification, review synthesis | domain reasoning |
+| R2D2 / RAG — evidence | SOP + incident citations; Sc. 2 flip | wire guide, sanctions | Knowledge Agent | — | standards corpus, release notes, write-back | domain corpora |
+| MCP — connections | 9 servers, read/write tiers | + wire, compliance writes | scoped per agent | — | + platform, repo, ci | + 4 domains |
+| Agentic AI — worker | single agent, restraint (4, 10, 12) | maker not checker | delegation, correlation | unprompted | engineering modes, self-review | specialists |
+| Platform — shell | cases, approvals, audit, trace, evals, UI | reviewer role, reports | client-level view | event source | engineering tab, change control | mixed-domain synthesis |
+| Governance | approval at tool, allowlists | hard rules, human-only release | per-agent policy | dedup | no deploy/merge tools | proposals only |
+| Evaluation | 10 scenarios, CI gate | 16 | regression on split | event tests | 25 + agent-authored | 30 |
+| Observability | Trace screen | — | delegation spans | event root span | review/verification traces | — |

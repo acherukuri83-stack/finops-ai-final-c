@@ -1,0 +1,7 @@
+# Per-agent action allowlists. Enforced in code (W3), never in prompts.
+investigator:
+  - resubmit_settlement
+  - cancel_trade
+  - update_ssi
+  - open_compliance_referral
+  - escalate

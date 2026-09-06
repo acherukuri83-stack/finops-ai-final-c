@@ -1,0 +1,18 @@
+spring:
+  application.name: enterprise
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/finops}
+    username: ${SPRING_DATASOURCE_USERNAME:finops}
+    password: ${SPRING_DATASOURCE_PASSWORD:finops}
+  jpa:
+    hibernate.ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+management:
+  tracing:
+    sampling.probability: 1.0
+  otlp:
+    tracing.endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318}/v1/traces
+server:
+  port: 8080
