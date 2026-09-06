@@ -1,4 +1,4 @@
-.PHONY: up down seed run portal test eval verify
+.PHONY: up down migrate seed run portal test eval verify
 
 up:
 	docker compose up -d --build
@@ -6,7 +6,10 @@ up:
 down:
 	docker compose down
 
-seed:
+migrate:
+	./scripts/migrate.sh
+
+seed: migrate
 	cd simulator && uv run python -m simulator.cli seed --scenario $(or $(SCENARIO),all)
 
 run:
@@ -15,7 +18,7 @@ run:
 portal:
 	cd portal && npm run dev
 
-test:
+test: migrate
 	cd ai-platform && uv run pytest -m "not eval" -q
 	cd simulator && uv run pytest -q
 	cd enterprise && mvn -q test

@@ -3,6 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+echo "== schema: migrate (for simulator's DB-backed tests)"
+./scripts/migrate.sh
+
 echo "== python: ruff"
 (cd ai-platform && uv run ruff format --check . && uv run ruff check .)
 (cd simulator && uv run ruff format --check . && uv run ruff check .)
