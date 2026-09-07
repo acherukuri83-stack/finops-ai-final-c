@@ -1,7 +1,7 @@
 """In-process stand-in for the enterprise tier.
 
 Serves the Scenario 1 planted values (docs/eval-scenarios.md) so the swap test and the
-walking-skeleton test run with no JVM. ``fail_with`` forces an HTTP status for the error
+agent-loop unit tests run with no JVM. ``fail_with`` forces an HTTP status for the error
 tests. This is deliberately small — the real contract coverage runs against the live
 enterprise in CI (``-m contract``).
 """

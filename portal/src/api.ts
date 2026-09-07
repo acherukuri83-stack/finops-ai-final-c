@@ -6,6 +6,7 @@ export type Health = { status: string; service: string };
 export type TradeRow = components["schemas"]["TradeRow"];
 export type ConnectionsResponse = components["schemas"]["ConnectionsResponse"];
 export type Finding = components["schemas"]["Finding"];
+export type KnowledgeHit = components["schemas"]["KnowledgeHit"];
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${API}${path}`);
@@ -29,4 +30,5 @@ export const api = {
   trade: (id: string) => getJSON<TradeRow>(`/trades/${encodeURIComponent(id)}`),
   connections: () => getJSON<ConnectionsResponse>("/connections"),
   investigate: (tradeId: string) => postJSON<Finding>("/investigate", { trade_id: tradeId }),
+  knowledge: (q: string) => getJSON<KnowledgeHit[]>(`/knowledge?q=${encodeURIComponent(q)}`),
 };

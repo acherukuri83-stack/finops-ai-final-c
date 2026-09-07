@@ -38,7 +38,7 @@ class ModelClient(Protocol):
     ) -> ModelResponse: ...
 
 
-async def complete_structured[T: BaseModel](
+async def complete_structured_traced[T: BaseModel](
     client: ModelClient,
     *,
     model: str,
@@ -46,8 +46,10 @@ async def complete_structured[T: BaseModel](
     messages: list[dict[str, Any]],
     schema: type[T],
     max_tokens: int = 2048,
-) -> T:
-    """Ask for JSON matching `schema`; validate; retry once on failure; then raise."""
+) -> tuple[T, ModelResponse]:
+    """As `complete_structured`, but also return the `ModelResponse` (usage, model) of the
+    call that produced the valid object — for span attributes.
+    """
     instruction = (
         f"{system}\n\nRespond ONLY with a JSON object matching this schema, no prose:\n"
         f"{json.dumps(schema.model_json_schema())}"
@@ -59,7 +61,7 @@ async def complete_structured[T: BaseModel](
         )
         raw = resp.text.strip().removeprefix("```json").removesuffix("```").strip()
         try:
-            return schema.model_validate_json(raw)
+            return schema.model_validate_json(raw), resp
         except Exception as e:  # noqa: BLE001
             last_err = e
             messages = [
@@ -68,6 +70,22 @@ async def complete_structured[T: BaseModel](
                 {"role": "user", "content": f"Invalid: {e}. Return only valid JSON."},
             ]
     raise ValueError(f"structured output failed validation twice: {last_err}")
+
+
+async def complete_structured[T: BaseModel](
+    client: ModelClient,
+    *,
+    model: str,
+    system: str,
+    messages: list[dict[str, Any]],
+    schema: type[T],
+    max_tokens: int = 2048,
+) -> T:
+    """Ask for JSON matching `schema`; validate; retry once on failure; then raise."""
+    parsed, _ = await complete_structured_traced(
+        client, model=model, system=system, messages=messages, schema=schema, max_tokens=max_tokens
+    )
+    return parsed
 
 
 class AnthropicModelClient:

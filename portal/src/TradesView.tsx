@@ -25,7 +25,7 @@ export default function TradesView() {
     }
   }
 
-  async function runSkeleton(id: string) {
+  async function runInvestigation(id: string) {
     setBusy(true);
     setError(null);
     try {
@@ -82,18 +82,75 @@ export default function TradesView() {
               </div>
             ))}
           </dl>
-          <button onClick={() => runSkeleton(selected.trade_id)} disabled={busy} style={{ marginTop: 12 }}>
-            {busy ? "Running…" : "Run skeleton investigation"}
+          <button
+            onClick={() => runInvestigation(selected.trade_id)}
+            disabled={busy}
+            style={{ marginTop: 12 }}
+          >
+            {busy ? "Investigating…" : "Investigate"}
           </button>
           {finding && (
-            <div style={{ marginTop: 12, padding: 10, background: "#f7f7f7", borderRadius: 6 }}>
+            <div style={{ marginTop: 12, padding: 12, background: "#f7f7f7", borderRadius: 6 }}>
               <div>
-                outcome: <b>{finding.outcome}</b>
+                outcome <b>{finding.outcome}</b>
+                {finding.root_cause ? (
+                  <>
+                    {" "}
+                    · root cause <b style={mono}>{finding.root_cause}</b>
+                  </>
+                ) : null}
               </div>
-              <div>
-                evidence: {finding.evidence?.map((e) => e.ref).join(", ") || "—"}
-              </div>
-              <div style={{ color: "#888", ...mono }}>trace {finding.trace_id || "—"}</div>
+
+              {finding.confidence_basis ? (
+                <div style={{ color: "#555", marginTop: 4 }}>{finding.confidence_basis}</div>
+              ) : null}
+
+              {finding.proposed_actions && finding.proposed_actions.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <b>Proposed</b>
+                  {finding.proposed_actions.map((a, i) => (
+                    <div key={i}>
+                      <span style={mono}>{a.action_type}</span> — {a.rationale}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {finding.rejected_alternatives && finding.rejected_alternatives.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <b>Rejected</b>
+                  {finding.rejected_alternatives.map((r, i) => (
+                    <div key={i}>
+                      <span style={mono}>{r.action_type}</span> — {r.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {finding.evidence && finding.evidence.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <b>Evidence</b>
+                  {finding.evidence.map((e, i) => (
+                    <div key={i} style={{ color: e.cited ? "#111" : "#999" }}>
+                      [{e.kind}] <span style={mono}>{e.ref}</span>
+                      {e.cited ? "" : " (retrieved, not cited)"}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {finding.checked && finding.checked.length > 0 && (
+                <div style={{ marginTop: 8, color: "#555" }}>
+                  checked: {finding.checked.join(", ")}
+                </div>
+              )}
+              {finding.degraded_tools && finding.degraded_tools.length > 0 && (
+                <div style={{ marginTop: 8, color: "#a5670f" }}>
+                  degraded: {finding.degraded_tools.join(", ")}
+                </div>
+              )}
+
+              <div style={{ color: "#888", marginTop: 8, ...mono }}>trace {finding.trace_id || "—"}</div>
             </div>
           )}
         </div>

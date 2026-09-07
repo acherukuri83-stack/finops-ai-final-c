@@ -132,12 +132,23 @@ async def test_scenario_10_no_evidence() -> None:
         assert logs == []
 
 
-async def test_w2_stubs_are_registered_but_not_yet_available() -> None:
+async def test_knowledge_tools_return_real_results_through_the_ops_server() -> None:
+    # CI ingests the corpus before `-m contract`; retrieval quality is covered in detail
+    # by tests/test_knowledge_contract.py — here we just prove the MCP path is wired.
     async with open_session() as tools:
-        for tool in ("search_knowledge", "find_incidents"):
-            result = await tools.call("ops", tool, query="settlement failure")
-            assert is_error(result)
-            assert result["code"] == "NotYetAvailable"
+        chunks = await tools.call(
+            "ops", "search_knowledge", query="counterparty SSI mismatch settlement failure"
+        )
+        assert isinstance(chunks, list) and chunks
+        assert any(c["doc"] == "Settlement Handbook" for c in chunks)
+
+        incidents = await tools.call(
+            "ops",
+            "find_incidents",
+            query="counterparty affirmed against a superseded DTC participant",
+        )
+        assert isinstance(incidents, list) and incidents
+        assert incidents[0]["incident_id"] == "INC-1001"
 
 
 async def test_missing_ids_return_not_found_envelopes() -> None:

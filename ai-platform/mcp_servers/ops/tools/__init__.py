@@ -1,15 +1,16 @@
 """ops-server read tools. Docstrings are the exposed descriptions (docs/tool-contracts.md).
 
-`search_knowledge` / `find_incidents` are registered so tool discovery is stable, but
-return `NotYetAvailable` until the W2 knowledge slice.
+`search_logs` goes through the enterprise `/logs` endpoint. `search_knowledge` /
+`find_incidents` query the pgvector corpus directly (Python-tier — the Java tier has no
+knowledge store); run `python -m knowledge.ingest` first.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from knowledge import retrieval
 from mcp_servers._common import shape_list
-from mcp_servers.errors import not_yet_available
 from mcp_servers.ops.client import get_enterprise_client, guard
 from mcp_servers.ops.models import LogEntry
 
@@ -31,11 +32,11 @@ async def search_logs(
     return shape_list(LogEntry, data)
 
 
-async def search_knowledge(query: str, k: int = 5) -> dict[str, Any]:
+async def search_knowledge(query: str, k: int = 5) -> list[dict[str, Any]]:
     """Operating procedures and policies, section-level. Returns {doc, section, title, text, score}. Cite as "doc §section". Use after the failure code is known."""
-    return not_yet_available("search_knowledge")
+    return retrieval.search_knowledge(query, k)
 
 
-async def find_incidents(query: str, k: int = 3) -> dict[str, Any]:
+async def find_incidents(query: str, k: int = 3) -> list[dict[str, Any]]:
     """Historical incidents {incident_id, summary, root_cause, resolution, similarity}."""
-    return not_yet_available("find_incidents")
+    return retrieval.find_incidents(query, k)

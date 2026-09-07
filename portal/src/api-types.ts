@@ -52,7 +52,7 @@ export interface paths {
         put?: never;
         /**
          * Post Investigate
-         * @description Walking skeleton: one MCP tool call, a minimal Finding, one trace id.
+         * @description Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id.
          */
         post: operations["post_investigate_investigate_post"];
         delete?: never;
@@ -90,6 +90,26 @@ export interface paths {
         };
         /** Get Trade */
         get: operations["get_trade_trades__trade_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Knowledge
+         * @description Search the SOP / fixture corpus — for the portal's Knowledge tab.
+         */
+        get: operations["knowledge_knowledge_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -161,6 +181,25 @@ export interface components {
         InvestigateRequest: {
             /** Trade Id */
             trade_id: string;
+        };
+        /** KnowledgeHit */
+        KnowledgeHit: {
+            /** Doc */
+            doc: string;
+            /**
+             * Section
+             * @default
+             */
+            section: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Text */
+            text: string;
+            /** Score */
+            score: number;
         };
         /**
          * Outcome
@@ -397,6 +436,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TradeRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    knowledge_knowledge_get: {
+        parameters: {
+            query: {
+                q: string;
+                k?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeHit"][];
                 };
             };
             /** @description Validation Error */

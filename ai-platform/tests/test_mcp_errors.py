@@ -5,7 +5,6 @@ Mirrors Scenario 12's TOOL_DEGRADED shape at the tool boundary.
 from __future__ import annotations
 
 import httpx
-import pytest
 
 from mcp_servers import _enterprise
 from mcp_servers._enterprise import HttpEnterpriseClient
@@ -74,11 +73,3 @@ async def test_transport_error_retries_then_unavailable() -> None:
     assert sum(hits) == 2
     assert result["code"] == "UPSTREAM_UNAVAILABLE"
     assert result["retryable"] is True
-
-
-@pytest.mark.parametrize("tool", ["search_knowledge", "find_incidents"])
-async def test_w2_stubs_report_not_yet_available(tool: str) -> None:
-    async with open_session() as tools:
-        result = await tools.call("ops", tool, query="settlement failure")
-    assert result["code"] == "NotYetAvailable"
-    assert result["retryable"] is False
