@@ -35,7 +35,7 @@ SettlementStatus { trade_id, status, failure_code?, failure_detail?, attempts: [
 | `get_account` | read | `(account_id) → Account` | Account custodian, status, restrictions[], risk_flags[]. Use to check whether an account can settle. Takes account_id, not client_id. |
 | `get_ssi` | read | `(account_id, security_type?) → SSI` | The **current** standing settlement instruction for an account (dtc_participant, agent_bic, valid_from, valid_to, updated_at, updated_by). Use for the current value only. |
 | `get_ssi_history` | read | `(account_id) → SSIVersion[]` | All SSI versions with effective ranges and who changed them. Use when the SSI may have changed recently or when comparing our instruction against a counterparty's. |
-| `update_ssi` | **write** | `(account_id, new_ssi, approval_id) → SSIVersion` | Replace the account's current SSI. Requires an APPROVED approval_id. Only appropriate when *our* instruction is confirmed wrong; a counterparty mismatch alone is not grounds. |
+| `update_ssi` | **write** | `(account_id, dtc_participant, valid_from, approval_id) → SSIVersion` | Replace the account's current SSI. Requires an APPROVED approval_id. Only appropriate when *our* instruction is confirmed wrong; a counterparty mismatch alone is not grounds. |
 
 ## counterparty-server
 

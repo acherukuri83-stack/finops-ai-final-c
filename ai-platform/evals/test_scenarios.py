@@ -98,6 +98,14 @@ async def test_scenario_3_reference_data() -> None:
     assert "resubmit_settlement" not in {a.action_type for a in f.proposed_actions}
 
 
+async def test_scenario_4_account_restricted() -> None:
+    f = await _run("4", fixtures=[], trade_id="T100261")
+    actions = {a.action_type for a in f.proposed_actions}
+    assert f.root_cause == "COMPLIANCE_RESTRICTION"
+    assert actions == {"open_compliance_referral"}
+    assert not {"resubmit_settlement", "update_ssi", "cancel_trade"} & actions
+
+
 async def test_scenario_5_insufficient_position() -> None:
     f = await _run("5", fixtures=[], trade_id="T100270")
     actions = {a.action_type for a in f.proposed_actions}

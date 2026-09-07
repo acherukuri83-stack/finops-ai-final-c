@@ -15,6 +15,7 @@ dependencies = [
   "psycopg[binary]>=3.2",
   "pgvector>=0.3",
   "fastembed>=0.3,<0.8",
+  "pyyaml>=6",
   "opentelemetry-api>=1.27",
   "opentelemetry-sdk>=1.27",
   "opentelemetry-exporter-otlp-proto-http>=1.27",
@@ -23,10 +24,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6", "mypy>=1.11", "types-requests"]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6", "mypy>=1.11", "types-requests", "types-pyyaml"]
 
 [tool.uv]
-dev-dependencies = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6", "mypy>=1.11"]
+dev-dependencies = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.6", "mypy>=1.11", "types-pyyaml"]
 
 [tool.ruff]
 line-length = 100

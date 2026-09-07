@@ -34,6 +34,8 @@ class EnterpriseError(Exception):
 
 class EnterpriseClient(Protocol):
     async def get_json(self, tool: str, path: str, params: dict[str, Any] | None = None) -> Any: ...
+    async def post_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any: ...
+    async def put_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any: ...
 
 
 class HttpEnterpriseClient:
@@ -45,11 +47,28 @@ class HttpEnterpriseClient:
         )
 
     async def get_json(self, tool: str, path: str, params: dict[str, Any] | None = None) -> Any:
+        return await self._request(tool, "GET", path, params=params)
+
+    async def post_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any:
+        return await self._request(tool, "POST", path, body=body)
+
+    async def put_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any:
+        return await self._request(tool, "PUT", path, body=body)
+
+    async def _request(
+        self,
+        tool: str,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        body: dict[str, Any] | None = None,
+    ) -> Any:
         clean = {k: v for k, v in (params or {}).items() if v is not None}
         last_exc: Exception | None = None
         for attempt in (0, 1):
             try:
-                resp = await self._client.get(path, params=clean)
+                resp = await self._client.request(method, path, params=clean, json=body)
             except _RETRYABLE_EXC as exc:
                 last_exc = exc
                 continue
@@ -57,7 +76,7 @@ class HttpEnterpriseClient:
                 continue
             if resp.status_code >= 400:
                 raise EnterpriseError(from_http(tool, resp.status_code, _snippet(resp)))
-            return resp.json()
+            return resp.json() if resp.content else None
         raise EnterpriseError(
             unavailable(
                 tool, f"{type(last_exc).__name__}: {last_exc}" if last_exc else "no response"

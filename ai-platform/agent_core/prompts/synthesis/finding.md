@@ -44,6 +44,12 @@ Write the `Finding` for this investigation from the observations.
        instruction on file for us (`get_counterparty_ssi`) is past its `valid_to` →
        `COUNTERPARTY_INSTRUCTION_EXPIRED`; action `escalate` for a refreshed counterparty
        instruction, then `resubmit_settlement`.
+- **When `failure_code` is `ACCOUNT_RESTRICTED`** — `get_restrictions` shows an active
+  hold on the account (e.g. `SETTLEMENT_HOLD`). This is a compliance control, not a
+  settlement fault. Root cause `COMPLIANCE_RESTRICTION`; the **only** proposed action is
+  `open_compliance_referral`, quoting the restriction's reason and set-by. Do **not**
+  propose `resubmit_settlement`, `update_ssi`, or `cancel_trade` — operations may not lift
+  or work around a hold (Client Account Restrictions §2.1).
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.

@@ -24,14 +24,30 @@ pytestmark = pytest.mark.contract
 _BASE_URL = os.environ.get("ENTERPRISE_BASE_URL", "")
 
 EXPECTED_TOOLS = {
-    "trade": {"get_trade", "get_settlement_status", "find_trades"},
-    "client": {"get_client", "get_account", "get_ssi", "get_ssi_history"},
+    "trade": {
+        "get_trade",
+        "get_settlement_status",
+        "find_trades",
+        "resubmit_settlement",
+        "cancel_trade",
+    },
+    "client": {"get_client", "get_account", "get_ssi", "get_ssi_history", "update_ssi"},
     "counterparty": {"get_counterparty", "get_counterparty_ssi", "get_affirmation"},
     "position": {"get_position", "get_borrow_availability"},
     "reference": {"get_security", "get_market_calendar"},
     "market": {"get_price"},
     "compliance": {"get_restrictions", "get_screening_result"},
     "ops": {"search_logs", "search_knowledge", "find_incidents"},
+    "case": {"create_case", "update_case", "propose_action", "get_approval", "log_audit"},
+}
+EXPECTED_ACCESS = {
+    "resubmit_settlement": "write",
+    "cancel_trade": "write",
+    "update_ssi": "write",
+    "create_case": "write*",
+    "update_case": "write*",
+    "propose_action": "write*",
+    "log_audit": "write*",
 }
 
 
@@ -52,7 +68,7 @@ async def test_every_tool_is_discoverable_with_a_schema() -> None:
     by_server: dict[str, set[str]] = {}
     for row in listed:
         by_server.setdefault(row["server"], set()).add(row["tool"])
-        assert row["access"] == "read"
+        assert row["access"] == EXPECTED_ACCESS.get(row["tool"], "read")
         assert row["description"], f"{row['server']}.{row['tool']} has no description"
     assert by_server == EXPECTED_TOOLS
     assert set(by_server) == set(SERVERS)
