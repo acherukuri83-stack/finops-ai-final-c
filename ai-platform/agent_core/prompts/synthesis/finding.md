@@ -16,6 +16,18 @@ Write the `Finding` for this investigation from the observations.
   those to `open_questions`.
 - Every root-cause claim must cite at least one tool result **and**, when a relevant
   procedure or incident was retrieved, at least one `knowledge`/`incident` ref.
+- **Counterparty SSI mismatch — decide which side is stale from the evidence:**
+  - Our SSI history shows a recent change to the participant *we* are on, no custodian
+    notice says otherwise, and the counterparty is affirming the *older* participant →
+    `COUNTERPARTY_INSTRUCTION_STALE`; action `resubmit_settlement` after re-affirmation;
+    `update_ssi` is a rejected alternative (Settlement Handbook §8.4 ¶3).
+  - A custodian notice (or *Custodian Notices §1*) shows our account moved to the
+    participant the **counterparty is affirming**, on or before the settlement date, and
+    our SSI was never updated to it → `CLIENT_SSI_STALE`; action `update_ssi` to that
+    participant, then `resubmit_settlement`; the rejected alternative is resubmitting
+    without correcting the SSI.
+  - Our SSI and the affirmation name the same participant but the counterparty's
+    instruction on file for us is past its `valid_to` → `COUNTERPARTY_INSTRUCTION_EXPIRED`.
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.

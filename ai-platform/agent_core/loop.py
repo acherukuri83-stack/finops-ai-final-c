@@ -96,7 +96,12 @@ async def _plan(
     step_name = "replan" if turn else "plan"
     with span(step_name, "agent", agent="investigator", step=step_name) as current:
         plan, resp = await complete_structured_traced(
-            client, model=model_for(Step.PLAN), system=system, messages=messages, schema=Plan
+            client,
+            model=model_for(Step.PLAN),
+            system=system,
+            messages=messages,
+            schema=Plan,
+            max_tokens=4096,
         )
         _record_usage(current, resp)
     return plan
@@ -144,6 +149,7 @@ async def _synthesize(
             system=system,
             messages=messages,
             schema=Finding,
+            max_tokens=8192,
         )
         _record_usage(current, resp)
     if not finding.subject.id:

@@ -25,10 +25,18 @@ from agent_core.schemas.finding import Finding, Outcome
 from mcp_servers import _enterprise
 from mcp_servers._enterprise import HttpEnterpriseClient
 
-pytestmark = pytest.mark.eval
+pytestmark = [pytest.mark.eval, pytest.mark.asyncio(loop_scope="module")]
 
 _BASE_URL = os.environ.get("ENTERPRISE_BASE_URL", "")
 _KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+_client: AnthropicModelClient | None = None
+
+
+def _model() -> AnthropicModelClient:
+    global _client
+    if _client is None:
+        _client = AnthropicModelClient(_KEY)
+    return _client
 
 
 @pytest.fixture(autouse=True)
@@ -54,7 +62,9 @@ def _seed(scenario: str, fixtures: list[str]) -> None:
 
 async def _run(scenario: str, *, fixtures: list[str], trade_id: str) -> Finding:
     _seed(scenario, fixtures)
-    return await investigate(trade_id, client=AnthropicModelClient(_KEY), scenario_id=scenario)
+    finding = await investigate(trade_id, client=_model(), scenario_id=scenario)
+    print(f"\n=== scenario {scenario} Finding ===\n{finding.model_dump_json(indent=2)}\n")
+    return finding
 
 
 def _refs(finding: Finding) -> set[str]:

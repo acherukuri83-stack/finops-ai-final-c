@@ -24,6 +24,10 @@ Ordering that works:
 4. `ops.search_logs` with the `trade_id` for corroborating log lines.
 5. **Only once the failure code is known**: `ops.search_knowledge` for the procedure that
    covers this code, and `ops.find_incidents` for similar past incidents.
+6. For a **counterparty SSI mismatch**, whichever instruction looks current, run a second
+   `ops.search_knowledge` whose query names the client id and "custodian notice" — a
+   custodian move that was never reflected in our SSI is the difference between
+   "counterparty is stale" and "our record is stale", and it only shows up on that query.
 
 Re-plan (return a new `Plan`) when an observation contradicts an assumption — e.g. the
 mismatch no longer exists (already remediated), or a required tool returned an error.
