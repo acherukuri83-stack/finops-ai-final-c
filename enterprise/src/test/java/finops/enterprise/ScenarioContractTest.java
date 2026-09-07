@@ -55,7 +55,6 @@ class ScenarioContractTest {
 
     TradeDto trade = get("/trades/T100245", TradeDto.class);
     assertThat(trade.status()).isEqualTo("FAILED");
-    assertThat(trade.failureCode()).isEqualTo("COUNTERPARTY_SSI_MISMATCH");
 
     SsiDto current = get("/accounts/ACC-88213/ssi", SsiDto.class);
     assertThat(current.dtcParticipant()).isEqualTo("1234");
@@ -89,8 +88,8 @@ class ScenarioContractTest {
     AffirmationDto aff = get("/trades/T100245/affirmation", AffirmationDto.class);
     assertThat(aff.cptyDtc()).isEqualTo("1234");
 
-    TradeDto trade = get("/trades/T100245", TradeDto.class);
-    assertThat(trade.failureCode()).isEqualTo("COUNTERPARTY_SSI_MISMATCH");
+    SettlementStatusDto settlement = get("/trades/T100245/settlement", SettlementStatusDto.class);
+    assertThat(settlement.failureCode()).isEqualTo("COUNTERPARTY_SSI_MISMATCH");
   }
 
   @Test
@@ -101,8 +100,8 @@ class ScenarioContractTest {
     assertThat(xyzq.isin()).isEqualTo("US98765XYZQ1");
     assertThat(xyzq.cusip()).isEqualTo("98765XYZ1");
 
-    TradeDto trade = get("/trades/T100250", TradeDto.class);
-    assertThat(trade.failureCode()).isEqualTo("SECURITY_ID_MISMATCH");
+    SettlementStatusDto settlement = get("/trades/T100250/settlement", SettlementStatusDto.class);
+    assertThat(settlement.failureCode()).isEqualTo("SECURITY_ID_MISMATCH");
 
     LogEntryDto[] logs = get("/logs?tradeId=T100250", LogEntryDto[].class);
     assertThat(logs).anySatisfy(l -> assertThat(l.msg()).contains("98765XYZ9"));
@@ -120,8 +119,8 @@ class ScenarioContractTest {
     BorrowAvailabilityDto borrow = get("/borrow/NVDA", BorrowAvailabilityDto.class);
     assertThat(borrow.availableQty()).isEqualTo(100000L);
 
-    TradeDto trade = get("/trades/T100270", TradeDto.class);
-    assertThat(trade.failureCode()).isEqualTo("INSUFFICIENT_POSITION");
+    SettlementStatusDto settlement = get("/trades/T100270/settlement", SettlementStatusDto.class);
+    assertThat(settlement.failureCode()).isEqualTo("INSUFFICIENT_POSITION");
   }
 
   @Test
@@ -131,8 +130,8 @@ class ScenarioContractTest {
     CptySsiDto cptySsi = get("/counterparties/CP-017/ssi", CptySsiDto.class);
     assertThat(cptySsi.validTo()).isEqualTo(LocalDate.of(2026, 8, 31));
 
-    TradeDto trade = get("/trades/T100283", TradeDto.class);
-    assertThat(trade.failureCode()).isEqualTo("COUNTERPARTY_SSI_MISMATCH");
+    SettlementStatusDto settlement = get("/trades/T100283/settlement", SettlementStatusDto.class);
+    assertThat(settlement.failureCode()).isEqualTo("COUNTERPARTY_SSI_MISMATCH");
   }
 
   @Test
@@ -144,7 +143,9 @@ class ScenarioContractTest {
 
     TradeDto t291 = get("/trades/T100291", TradeDto.class);
     assertThat(t291.status()).isEqualTo("FAILED");
-    assertThat(t291.failureCode()).isEqualTo("DUPLICATE_SUSPECT");
+    SettlementStatusDto t291Settlement =
+        get("/trades/T100291/settlement", SettlementStatusDto.class);
+    assertThat(t291Settlement.failureCode()).isEqualTo("DUPLICATE_SUSPECT");
 
     TradeDto[] related = get("/trades?account=ACC-88213&security=GOOGL", TradeDto[].class);
     assertThat(related).extracting(TradeDto::tradeId).contains("T100290", "T100291");
@@ -169,10 +170,8 @@ class ScenarioContractTest {
   void scenario10NoEvidence() {
     SimulatorSeeder.seed(postgres, "10");
 
-    TradeDto trade = get("/trades/T100299", TradeDto.class);
-    assertThat(trade.failureCode()).isEqualTo("UNKNOWN");
-
     SettlementStatusDto settlement = get("/trades/T100299/settlement", SettlementStatusDto.class);
+    assertThat(settlement.failureCode()).isEqualTo("UNKNOWN");
     assertThat(settlement.failureDetail()).isNull();
 
     // Sc. 10 plants zero corroborating log lines by design (final-plan.md: "Sc. 10: none").
