@@ -1,24 +1,54 @@
 import { useEffect, useState } from "react";
+import { api, type Health } from "./api";
+import ConnectionsView from "./ConnectionsView";
+import TradesView from "./TradesView";
 
-const API = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
-
-type Health = { status: string; service: string };
+const TABS = ["Cases", "Trades", "Settlements", "Knowledge", "Connections", "Traces", "Audit"] as const;
+type Tab = (typeof TABS)[number];
+const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Trades", "Connections"]);
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
+  const [tab, setTab] = useState<Tab>("Trades");
+
   useEffect(() => {
-    fetch(`${API}/health`).then((r) => r.json()).then(setHealth).catch(() => setHealth(null));
+    api.health().then(setHealth).catch(() => setHealth(null));
   }, []);
+
   return (
     <main style={{ fontFamily: "system-ui", padding: 24 }}>
       <h1>FinOps AI</h1>
-      <nav style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-        {["Cases", "Trades", "Settlements", "Knowledge", "Connections", "Traces", "Audit"].map((t) => (
-          <span key={t} style={{ color: "#888" }}>{t}</span>
-        ))}
+      <nav style={{ display: "flex", gap: 16, marginBottom: 20 }}>
+        {TABS.map((t) =>
+          LIVE.has(t) ? (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                padding: 0,
+                fontWeight: tab === t ? 700 : 400,
+                color: tab === t ? "#1a48c4" : "#333",
+              }}
+            >
+              {t}
+            </button>
+          ) : (
+            <span key={t} style={{ color: "#bbb" }}>
+              {t}
+            </span>
+          ),
+        )}
       </nav>
-      <p>platform-api: {health ? `${health.status} (${health.service})` : "unreachable"}</p>
-      <p style={{ color: "#888" }}>Walking skeleton — W1 PR3 replaces this with Trades and Connections.</p>
+
+      {tab === "Trades" && <TradesView />}
+      {tab === "Connections" && <ConnectionsView />}
+
+      <p style={{ color: "#888", marginTop: 32, fontSize: 12 }}>
+        platform-api: {health ? `${health.status} (${health.service})` : "unreachable"}
+      </p>
     </main>
   );
 }

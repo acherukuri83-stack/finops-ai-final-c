@@ -13,7 +13,8 @@ echo "== python: mypy"
 (cd ai-platform && uv run mypy .)
 (cd simulator && uv run mypy .)
 echo "== python: pytest (non-eval)"
-(cd ai-platform && uv run pytest -m "not eval" -q)
+# `contract` needs a running enterprise + seeded Postgres — CI runs it as its own step.
+(cd ai-platform && uv run pytest -m "not eval and not contract" -q)
 (cd simulator && uv run pytest -q)
 echo "== java: mvn test"
 (cd enterprise && mvn -q test)
