@@ -17,7 +17,7 @@ from mcp_servers.ops.models import LogEntry
 
 @guard
 async def search_logs(
-    query: str,
+    query: str = "",
     trade_id: str | None = None,
     system: str | None = None,
     from_ts: str | None = None,
@@ -27,7 +27,7 @@ async def search_logs(
     data = await get_enterprise_client().get_json(
         "search_logs",
         "/logs",
-        {"q": query, "tradeId": trade_id, "system": system, "from": from_ts, "to": to_ts},
+        {"q": query or None, "tradeId": trade_id, "system": system, "from": from_ts, "to": to_ts},
     )
     return shape_list(LogEntry, data)
 

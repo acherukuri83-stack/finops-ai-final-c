@@ -75,10 +75,17 @@ def _no_failure_code(observations: list[Observation]) -> bool:
 
 
 def _anomalous(observations: list[Observation]) -> bool:
+    """Something in the evidence that argues against 'nothing to see here'.
+
+    A tool *error* on a non-required step is not an anomaly — it usually means the agent
+    asked for a record that does not exist (a clean trade has no restriction, no borrow,
+    no position for that security). A *retryable* upstream error is different: it means a
+    signal we needed is unavailable.
+    """
     for o in observations:
         if (o.step.server, o.step.tool) in _REQUIRED:
             continue
-        if is_error(o.result):
+        if is_error(o.result) and o.result.get("retryable"):
             return True
         if o.step.tool == "search_logs" and isinstance(o.result, list) and o.result:
             return True

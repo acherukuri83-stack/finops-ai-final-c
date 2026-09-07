@@ -19,7 +19,8 @@ Write the `Finding` for this investigation from the observations.
   tool result that actually *establishes* the cause — `get_counterparty_ssi` for an
   expired counterparty instruction, `get_position` for a delivery shortfall,
   `get_ssi_history` + `get_affirmation` for an SSI mismatch — not just any tool that ran.
-- **Counterparty SSI mismatch — work these in order:**
+- **When `failure_code` is `COUNTERPARTY_SSI_MISMATCH`** — work these in order (for any
+  other failure code this whole block does not apply):
   1. **Is the mismatch still live?** Compare the `cpty_dtc` on the *latest* affirmation
      (`get_affirmation`) with the `dtc_participant` on the *current* SSI (`get_ssi`).
      - **Equal** → the mismatch is already resolved: an earlier attempt failed, the
