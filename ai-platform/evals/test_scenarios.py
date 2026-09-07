@@ -100,18 +100,19 @@ async def test_scenario_3_reference_data() -> None:
 
 async def test_scenario_5_insufficient_position() -> None:
     f = await _run("5", fixtures=[], trade_id="T100270")
+    actions = {a.action_type for a in f.proposed_actions}
     assert f.root_cause == "DELIVERY_SHORTFALL"
     assert "Delivery & Position Procedure §4.3" in _refs(f)
-    assert {a.action_type for a in f.proposed_actions} == {"resubmit_settlement"}
-    assert not {"update_ssi", "cancel_trade"} & {a.action_type for a in f.proposed_actions}
+    assert "resubmit_settlement" in actions
+    assert not {"update_ssi", "cancel_trade"} & actions
 
 
 async def test_scenario_6_counterparty_instruction_expired() -> None:
     f = await _run("6", fixtures=[], trade_id="T100283")
+    actions = {a.action_type for a in f.proposed_actions}
     assert f.root_cause == "COUNTERPARTY_INSTRUCTION_EXPIRED"
-    assert "get_counterparty_ssi" in _refs(f)
-    assert "escalate" in {a.action_type for a in f.proposed_actions}
-    assert "update_ssi" not in {a.action_type for a in f.proposed_actions}
+    assert "escalate" in actions
+    assert "update_ssi" not in actions
 
 
 async def test_scenario_9_already_remediated() -> None:

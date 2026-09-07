@@ -15,23 +15,34 @@ Write the `Finding` for this investigation from the observations.
   on; `cited: false` for retrieved-but-unused chunks, and add a one-line note for each of
   those to `open_questions`.
 - Every root-cause claim must cite at least one tool result **and**, when a relevant
-  procedure or incident was retrieved, at least one `knowledge`/`incident` ref.
-- **Counterparty SSI mismatch — decide which side is stale from the evidence:**
-  - Our SSI history shows a recent change to the participant *we* are on, no custodian
-    notice says otherwise, and the counterparty is affirming the *older* participant →
-    `COUNTERPARTY_INSTRUCTION_STALE`; action `resubmit_settlement` after re-affirmation;
-    `update_ssi` is a rejected alternative (Settlement Handbook §8.4 ¶3).
-  - A custodian notice (or *Custodian Notices §1*) shows our account moved to the
-    participant the **counterparty is affirming**, on or before the settlement date, and
-    our SSI was never updated to it → `CLIENT_SSI_STALE`; action `update_ssi` to that
-    participant, then `resubmit_settlement`; the rejected alternative is resubmitting
-    without correcting the SSI.
-  - Our SSI and the affirmation name the same participant but the counterparty's
-    instruction on file for us is past its `valid_to` → `COUNTERPARTY_INSTRUCTION_EXPIRED`;
-    action `escalate` for a refreshed counterparty instruction, then `resubmit_settlement`.
-  - The mismatch is gone — the current affirmation and our current SSI now name the same
-    participant, and there has been no settlement attempt since — → `REMEDIATED_PENDING_RESUBMIT`;
-    the only action is `resubmit_settlement` (no re-affirmation, no SSI change, no escalation).
+  procedure or incident was retrieved, at least one `knowledge`/`incident` ref. Cite the
+  tool result that actually *establishes* the cause — `get_counterparty_ssi` for an
+  expired counterparty instruction, `get_position` for a delivery shortfall,
+  `get_ssi_history` + `get_affirmation` for an SSI mismatch — not just any tool that ran.
+- **Counterparty SSI mismatch — work these in order:**
+  1. **Is the mismatch still live?** Compare the `cpty_dtc` on the *latest* affirmation
+     (`get_affirmation`) with the `dtc_participant` on the *current* SSI (`get_ssi`).
+     - **Equal** → the mismatch is already resolved: an earlier attempt failed, the
+       counterparty has since re-affirmed against our current instruction, and there is no
+       attempt after that. Root cause `REMEDIATED_PENDING_RESUBMIT`; the only action is
+       `resubmit_settlement` — no re-affirmation, no SSI change, no escalation. The
+       settlement-engine log line naming two participants describes the *earlier* attempt,
+       not the current state — do not treat it as the live picture.
+     - **Different** → the mismatch is live; go to step 2.
+  2. Which side is stale:
+     - Our SSI history shows a recent change to the participant *we* are on, no custodian
+       notice says otherwise, and the counterparty affirmed the *older* participant →
+       `COUNTERPARTY_INSTRUCTION_STALE`; action `resubmit_settlement` after re-affirmation;
+       `update_ssi` is a rejected alternative (Settlement Handbook §8.4 ¶3).
+     - A custodian notice (or *Custodian Notices §1*) shows our account moved to the
+       participant the **counterparty is affirming**, on or before the settlement date,
+       and our SSI was never updated to it → `CLIENT_SSI_STALE`; action `update_ssi` to
+       that participant, then `resubmit_settlement`; the rejected alternative is
+       resubmitting without correcting the SSI.
+     - Our SSI and the affirmation name the same participant but the counterparty's
+       instruction on file for us (`get_counterparty_ssi`) is past its `valid_to` →
+       `COUNTERPARTY_INSTRUCTION_EXPIRED`; action `escalate` for a refreshed counterparty
+       instruction, then `resubmit_settlement`.
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.

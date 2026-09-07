@@ -14,8 +14,11 @@ Ordering that works:
 2. `trade.get_settlement_status` — the `failure_code` and attempt history. Everything
    after this depends on the code.
 3. Depending on the code, gather the relevant records:
-   - SSI mismatch → `client.get_ssi`, `client.get_ssi_history`,
-     `counterparty.get_affirmation`, `counterparty.get_counterparty_ssi`.
+   - SSI mismatch → `counterparty.get_affirmation` and `client.get_ssi` **first**: if the
+     latest affirmation's `cpty_dtc` already equals the current SSI's `dtc_participant`,
+     the mismatch has been remediated and the trade just needs resubmitting — you can
+     stop there. Otherwise also pull `client.get_ssi_history` and
+     `counterparty.get_counterparty_ssi`.
    - reference-data → `reference.get_security`.
    - restricted → `client.get_account`, `compliance.get_restrictions`.
    - position → `position.get_position`, then `position.get_borrow_availability` only if
