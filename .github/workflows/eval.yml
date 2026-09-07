@@ -1,21 +1,61 @@
 name: eval
-# Costs real money. Runs only when agent behaviour inputs change.
+# Costs real money (Claude API calls). Runs only when agent-behaviour inputs change,
+# or on manual dispatch. Needs the repo secret ANTHROPIC_API_KEY — without it every
+# scenario test skips (the job stays green) rather than failing.
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "ai-platform/agent_core/prompts/**"
       - "ai-platform/agent_core/policy/**"
+      - "ai-platform/agent_core/loop.py"
+      - "ai-platform/agent_core/outcomes.py"
       - "ai-platform/knowledge/**"
+      - "ai-platform/evals/**"
       - "simulator/**"
 jobs:
   eval:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_USER: finops, POSTGRES_PASSWORD: finops, POSTGRES_DB: finops }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U finops" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://finops:finops@localhost:5432/finops
+      ENTERPRISE_BASE_URL: http://localhost:8080
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21", cache: maven }
       - run: cd ai-platform && uv sync
-      - name: eval suite
-        env: { ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}" }
+      - run: cd simulator && uv sync
+
+      - name: Migrate schema
+        run: ./scripts/migrate.sh
+      - name: Build & start enterprise
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/finops
+          SPRING_DATASOURCE_USERNAME: finops
+          SPRING_DATASOURCE_PASSWORD: finops
+          SPRING_FLYWAY_ENABLED: "false"
         run: |
-          echo "Eval harness arrives in Weekend 3 (final-plan.md). Until then this job is a placeholder."
-          # make eval
+          cd enterprise && mvn -q -DskipTests package && cd ..
+          java -jar enterprise/target/enterprise-0.1.0.jar > enterprise.log 2>&1 &
+          for _ in $(seq 1 60); do curl -sf localhost:8080/health && break; sleep 2; done
+          curl -sf localhost:8080/health
+
+      - name: Ingest knowledge corpus
+        run: cd ai-platform && uv run python -m knowledge.ingest --fixtures CN-2026-081
+
+      - name: Scenario suite (real model)
+        # Sc. 12 needs process-global FAULT_INJECT on the enterprise — the TOOL_DEGRADED
+        # code path is covered by tests/test_loop.py; skip it here.
+        run: cd ai-platform && uv run pytest -m eval -q evals/test_scenarios.py -k "not scenario_12" -rs
+
+      - name: Enterprise log (on failure)
+        if: failure()
+        run: tail -n 200 enterprise.log || true
