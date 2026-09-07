@@ -98,6 +98,31 @@ async def test_scenario_3_reference_data() -> None:
     assert "resubmit_settlement" not in {a.action_type for a in f.proposed_actions}
 
 
+async def test_scenario_5_insufficient_position() -> None:
+    f = await _run("5", fixtures=[], trade_id="T100270")
+    assert f.root_cause == "DELIVERY_SHORTFALL"
+    assert "Delivery & Position Procedure §4.3" in _refs(f)
+    assert {a.action_type for a in f.proposed_actions} == {"resubmit_settlement"}
+    assert not {"update_ssi", "cancel_trade"} & {a.action_type for a in f.proposed_actions}
+
+
+async def test_scenario_6_counterparty_instruction_expired() -> None:
+    f = await _run("6", fixtures=[], trade_id="T100283")
+    assert f.root_cause == "COUNTERPARTY_INSTRUCTION_EXPIRED"
+    assert "get_counterparty_ssi" in _refs(f)
+    assert "escalate" in {a.action_type for a in f.proposed_actions}
+    assert "update_ssi" not in {a.action_type for a in f.proposed_actions}
+
+
+async def test_scenario_9_already_remediated() -> None:
+    f = await _run("9", fixtures=[], trade_id="T100245")
+    assert f.root_cause == "REMEDIATED_PENDING_RESUBMIT"
+    assert {a.action_type for a in f.proposed_actions} == {"resubmit_settlement"}
+    assert not {"update_ssi", "cancel_trade", "escalate"} & {
+        a.action_type for a in f.proposed_actions
+    }
+
+
 async def test_scenario_10_insufficient_evidence() -> None:
     f = await _run("10", fixtures=[], trade_id="T100299")
     assert f.outcome is Outcome.INSUFFICIENT_EVIDENCE

@@ -27,7 +27,11 @@ Write the `Finding` for this investigation from the observations.
     participant, then `resubmit_settlement`; the rejected alternative is resubmitting
     without correcting the SSI.
   - Our SSI and the affirmation name the same participant but the counterparty's
-    instruction on file for us is past its `valid_to` → `COUNTERPARTY_INSTRUCTION_EXPIRED`.
+    instruction on file for us is past its `valid_to` → `COUNTERPARTY_INSTRUCTION_EXPIRED`;
+    action `escalate` for a refreshed counterparty instruction, then `resubmit_settlement`.
+  - The mismatch is gone — the current affirmation and our current SSI now name the same
+    participant, and there has been no settlement attempt since — → `REMEDIATED_PENDING_RESUBMIT`;
+    the only action is `resubmit_settlement` (no re-affirmation, no SSI change, no escalation).
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.
