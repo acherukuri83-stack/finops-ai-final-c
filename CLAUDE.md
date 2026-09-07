@@ -4,7 +4,11 @@ Agentic trade & settlement operations platform on a fully simulated broker/deale
 
 ## Current phase: A — one use case
 
-"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. Scope is `docs/phase-a-scope.md`. **Wires, supervisor, Developer Agent, events, and prime-finance domains are out of scope.** Do not build them, stub them, or "prepare" for them beyond the interfaces listed there.
+"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. Scope is `docs/final-plan.md`. **Wires, supervisor, Developer Agent, events, and prime-finance domains are out of scope.** Do not build them, stub them, or "prepare" for them beyond the interfaces listed there.
+
+## Roadmap (all phases, for orientation only)
+
+Phase A (this one) → B wires → C supervisor & specialists → D event-driven → E Developer Agent → F prime finance → G hardening. Each phase is cumulative and reuses everything before it. Full detail lives in `docs/phase-breakdown.md` (all phases at a glance) and `docs/final-plan.md` (weekend-by-weekend plan, Phase A) plus `docs/build-plan.md` / `docs/agent-plan.md` (phases B+). **Read the relevant phase's section before starting it — don't build ahead of "Current phase" above.** When a phase starts, update "Current phase" and give its new code its own nested `CLAUDE.md` (see `enterprise/CLAUDE.md` for the pattern), rather than growing this file.
 
 ## Architecture (two tiers, two languages)
 
