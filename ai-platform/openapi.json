@@ -49,7 +49,7 @@
     "/investigate": {
       "post": {
         "summary": "Post Investigate",
-        "description": "Walking skeleton: one MCP tool call, a minimal Finding, one trace id.",
+        "description": "Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id.",
         "operationId": "post_investigate_investigate_post",
         "requestBody": {
           "content": {
@@ -206,6 +206,60 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TradeRow"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/knowledge": {
+      "get": {
+        "summary": "Knowledge",
+        "description": "Search the SOP / fixture corpus \u2014 for the portal's Knowledge tab.",
+        "operationId": "knowledge_knowledge_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "k",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "title": "K"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KnowledgeHit"
+                  },
+                  "title": "Response Knowledge Knowledge Get"
                 }
               }
             }
@@ -379,6 +433,39 @@
           "trade_id"
         ],
         "title": "InvestigateRequest"
+      },
+      "KnowledgeHit": {
+        "properties": {
+          "doc": {
+            "type": "string",
+            "title": "Doc"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section",
+            "default": ""
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc",
+          "text",
+          "score"
+        ],
+        "title": "KnowledgeHit"
       },
       "Outcome": {
         "type": "string",

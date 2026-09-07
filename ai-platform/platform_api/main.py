@@ -11,11 +11,12 @@ from fastapi import FastAPI, HTTPException
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
+from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
-from agent_core.skeleton import investigate
+from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
-from platform_api.schemas import ConnectionsResponse, TradeRow
+from platform_api.schemas import ConnectionsResponse, KnowledgeHit, TradeRow
 from platform_api.settings import settings
 from platform_api.telemetry import init_tracing
 
@@ -43,7 +44,7 @@ async def connections() -> ConnectionsResponse:
 
 @app.post("/investigate")
 async def post_investigate(req: InvestigateRequest) -> Finding:
-    """Walking skeleton: one MCP tool call, a minimal Finding, one trace id."""
+    """Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id."""
     return await investigate(req.trade_id)
 
 
@@ -64,6 +65,12 @@ async def list_trades(
 @app.get("/trades/{trade_id}")
 async def get_trade(trade_id: str) -> TradeRow:
     return TradeRow.model_validate(await _enterprise_get(f"/trades/{trade_id}"))
+
+
+@app.get("/knowledge")
+async def knowledge(q: str, k: int = 5) -> list[KnowledgeHit]:
+    """Search the SOP / fixture corpus — for the portal's Knowledge tab."""
+    return [KnowledgeHit.model_validate(hit) for hit in retrieval.search_knowledge(q, k)]
 
 
 async def _enterprise_get(path: str, params: dict[str, Any] | None = None) -> Any:

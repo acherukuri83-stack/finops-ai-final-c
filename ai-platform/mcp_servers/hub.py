@@ -1,7 +1,7 @@
 """The MCP registry: the eight read servers, plus the two ways to reach them.
 
 - ``open_session()`` — an in-memory MCP client over one combined server holding every
-  tool. Used by the walking skeleton and the contract tests. No socket.
+  tool. Used by the Investigator loop and the contract tests. No socket.
 - ``mount_all(app)`` — SSE-mounts each server at ``/mcp/<name>`` on the platform-api
   ASGI app (skipped when ``AI_PLATFORM_SPLIT=1``), for MCP Inspector / external clients.
 - ``describe()`` — the payload behind ``GET /connections``.
@@ -79,7 +79,16 @@ TOOL_SERVER: dict[str, str] = {
 }
 
 # tools whose success shape is an array (docs/tool-contracts.md) — the rest return one object
-LIST_TOOLS = frozenset({"find_trades", "get_ssi_history", "get_restrictions", "search_logs"})
+LIST_TOOLS = frozenset(
+    {
+        "find_trades",
+        "get_ssi_history",
+        "get_restrictions",
+        "search_logs",
+        "search_knowledge",
+        "find_incidents",
+    }
+)
 
 
 def _combined() -> FastMCP:
@@ -105,6 +114,7 @@ class Tools:
                 "tool": tool.name,
                 "access": "read",
                 "description": tool.description or "",
+                "params": sorted((tool.inputSchema or {}).get("properties", {})),
             }
             for tool in listed.tools
         ]

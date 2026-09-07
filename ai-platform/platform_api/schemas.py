@@ -24,6 +24,14 @@ class ConnectionsResponse(BaseModel):
     servers: list[ServerInfo]
 
 
+class KnowledgeHit(BaseModel):
+    doc: str
+    section: str = ""
+    title: str = ""
+    text: str
+    score: float
+
+
 class TradeRow(BaseModel):
     trade_id: str
     client_id: str | None = None
