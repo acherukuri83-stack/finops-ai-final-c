@@ -19,9 +19,10 @@ Ideas that are out of the current phase's scope. Append; don't build.
   Python keyword — the only place a tool signature can't match `docs/tool-contracts.md`
   verbatim. `get_ssi`'s `security_type` and `get_position`'s `as_of` are accepted but not
   forwarded (the Phase A enterprise endpoints take neither).
-- W2: `settings.finops_strong_model = "claude-sonnet-4-6"` looks like a placeholder — not
-  a released model id. The Investigator's `plan`/`synthesize` calls route to it; set it to
-  a real Sonnet id before running `-m eval` for real.
+- W2: `settings.finops_strong_model = "claude-sonnet-4-6"` is a valid model id
+  (previous-generation Sonnet). `claude-sonnet-5` is the current-gen alternative if the
+  eval scorecard shows the strong model is the weak link — that's a model-choice call, not
+  a bug.
 - W2: `fastembed` pulls the `bge-small-en-v1.5` ONNX model from Hugging Face on first use.
   This fails behind the corporate TLS proxy locally (`CERTIFICATE_VERIFY_FAILED`); CI
   runners download it fine. To ingest/retrieve locally, point `SSL_CERT_FILE` at a bundle

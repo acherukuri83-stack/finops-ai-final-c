@@ -43,8 +43,9 @@ def _live() -> Iterator[None]:
 
 
 def _seed(scenario: str, fixtures: list[str]) -> None:
+    # simulator is its own uv project — run it through `uv run`, not this venv's python.
     subprocess.run(
-        [sys.executable, "-m", "simulator.cli", "seed", "--scenario", scenario],
+        ["uv", "run", "python", "-m", "simulator.cli", "seed", "--scenario", scenario],
         cwd="../simulator",
         check=True,
     )
