@@ -132,10 +132,24 @@ def _payload(result: Any) -> Any:
     structured = getattr(result, "structuredContent", None)
     if isinstance(structured, dict) and "result" in structured:
         return structured["result"]
-    blocks = [json.loads(c.text) for c in result.content if isinstance(c, TextContent)]
+
+    texts = [c.text for c in result.content if isinstance(c, TextContent)]
+    if getattr(result, "isError", False):
+        return _tool_error(" ".join(texts))
+
+    blocks: list[Any] = []
+    for text in texts:
+        try:
+            blocks.append(json.loads(text))
+        except json.JSONDecodeError:
+            return _tool_error(text)  # a tool returned non-JSON — treat as a failure, don't crash
     if len(blocks) == 1:
         return blocks[0]
     return blocks  # 0 -> [], 2+ -> the array
+
+
+def _tool_error(message: str) -> dict[str, Any]:
+    return {"code": "TOOL_ERROR", "message": message[:400], "retryable": False, "tool": "?"}
 
 
 @asynccontextmanager

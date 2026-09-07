@@ -124,6 +124,8 @@ async def _run_step(tools: Tools, step: PlanStep) -> Any:
             set_attrs(current, {"tool.ok": not is_error(result)})
             if is_error(result):
                 set_attrs(current, {"tool.retryable": bool(result.get("retryable"))})
+        if is_error(result):
+            print(f"[tool-error] {name}: {result.get('code')} — {str(result.get('message'))[:200]}")
     return result
 
 

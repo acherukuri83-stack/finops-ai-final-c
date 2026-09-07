@@ -18,7 +18,7 @@ from typing import Any, Protocol, cast
 
 import httpx
 
-from mcp_servers.errors import from_http, unavailable
+from mcp_servers.errors import ErrorEnvelope, from_http, unavailable
 from platform_api.settings import settings
 
 _RETRYABLE_EXC = (httpx.TransportError,)
@@ -104,7 +104,10 @@ type ToolFn = Callable[..., Awaitable[Any]]
 
 
 def guard(fn: ToolFn) -> ToolFn:
-    """Wrap a tool so an ``EnterpriseError`` becomes its ``ErrorEnvelope`` payload."""
+    """Wrap a tool so it never raises into the loop: an ``EnterpriseError`` becomes its
+    ``ErrorEnvelope`` payload, and anything else (a malformed upstream body, a schema
+    mismatch) becomes a non-retryable ``TOOL_FAILED`` envelope.
+    """
 
     @functools.wraps(fn)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -112,5 +115,12 @@ def guard(fn: ToolFn) -> ToolFn:
             return await fn(*args, **kwargs)
         except EnterpriseError as exc:
             return exc.envelope
+        except Exception as exc:  # noqa: BLE001 - a tool must never raise into the loop
+            return ErrorEnvelope(
+                code="TOOL_FAILED",
+                message=f"{type(exc).__name__}: {exc}"[:400],
+                retryable=False,
+                tool=getattr(fn, "__name__", "tool"),
+            ).as_dict
 
     return cast("ToolFn", wrapper)
