@@ -20,3 +20,28 @@ jobs:
       - run: cd simulator && uv sync
       - run: cd portal && npm ci
       - run: ./scripts/verify.sh
+
+      # --- MCP contract tests against the real enterprise + seeded Postgres ---
+      - name: Build enterprise jar
+        run: cd enterprise && mvn -q -DskipTests package
+      - name: Start enterprise
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/finops
+          SPRING_DATASOURCE_USERNAME: finops
+          SPRING_DATASOURCE_PASSWORD: finops
+          SPRING_FLYWAY_ENABLED: "false"   # schema already applied by scripts/migrate.sh in verify.sh
+        run: |
+          java -jar enterprise/target/enterprise-0.1.0.jar > enterprise.log 2>&1 &
+          for _ in $(seq 1 60); do curl -sf localhost:8080/health && break; sleep 2; done
+          curl -sf localhost:8080/health
+      - name: Seed all scenarios
+        env:
+          DATABASE_URL: postgresql+psycopg://finops:finops@localhost:5432/finops
+        run: cd simulator && uv run python -m simulator.cli seed --scenario all
+      - name: MCP contract tests
+        env:
+          ENTERPRISE_BASE_URL: http://localhost:8080
+        run: cd ai-platform && uv run pytest -m contract -q
+      - name: Enterprise log (on failure)
+        if: failure()
+        run: tail -n 200 enterprise.log || true
