@@ -8,7 +8,7 @@ Agentic trade & settlement operations platform on a fully simulated broker/deale
 
 ## Roadmap (all phases, for orientation only)
 
-Phase A (this one) → B wires → C supervisor & specialists → D event-driven → E Developer Agent → F prime finance → G hardening. Each phase is cumulative and reuses everything before it. Full detail lives in `docs/phase-breakdown.md` (all phases at a glance) and `docs/final-plan.md` (weekend-by-weekend plan, Phase A) plus `docs/build-plan.md` / `docs/agent-plan.md` (phases B+). **Read the relevant phase's section before starting it — don't build ahead of "Current phase" above.** When a phase starts, update "Current phase" and give its new code its own nested `CLAUDE.md` (see `enterprise/CLAUDE.md` for the pattern), rather than growing this file.
+Phase A (this one) → B wires → C supervisor & specialists → D event-driven → E Developer Agent → F prime finance → G hardening. Each phase is cumulative and reuses everything before it. **`docs/phase-breakdown.md` is the canonical full-scope reference for all phases — read it first**; it also explains which `docs/build-plan.md` / `docs/agent-plan.md` phase numbers (an older 0–13 scheme) map to which letter phase and which of those are superseded. **Read the relevant phase's section before starting it — don't build ahead of "Current phase" above.** When a phase starts, update "Current phase" and give its new code its own nested `CLAUDE.md` (see `enterprise/CLAUDE.md` for the pattern), rather than growing this file.
 
 ## Architecture (two tiers, two languages)
 

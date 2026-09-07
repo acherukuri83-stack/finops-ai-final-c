@@ -4,6 +4,8 @@ Each phase has one goal, a concrete build list, and **exit criteria** that must 
 
 Effort assumes ~8–10 focused hours/week alongside a full-time job. Adjust to your pace; the ordering matters more than the dates.
 
+> **Superseded, Phases 0–6 and 8:** absorbed into Phase A's weekend-by-weekend plan in `docs/final-plan.md` — read that instead; don't treat the sections below as open work. **Still current:** Phase 7 (Wires → `docs/phase-breakdown.md` Phase B), Phase 9 (Supervisor → Phase C), Phase 10 (Events → Phase D), Phases 11–12 (Developer Agent → Phase E), Phase 13 (Prime finance → Phase F). `docs/phase-breakdown.md` is the up-to-date at-a-glance view across all phases.
+
 **Three milestones**
 
 | Milestone | After phase | What you can show |

@@ -2,6 +2,8 @@
 
 Every phase in the same shape: what it proves, what's in scope, which agents exist, which tools, data, corpus, screens, governance, scenarios, and what you can demo at the end. Cumulative — each phase adds to the previous one.
 
+**This is the canonical full-scope reference, A through G — read this first for orientation.** For execution-level detail (weekend-by-weekend build steps, exit criteria) one phase at a time: Phase A → `docs/final-plan.md`. Phases B–F → `docs/build-plan.md` / `docs/agent-plan.md`, phases 7 (B), 9 (C), 10 (D), 11–12 (E), 13 (F) respectively — **phases 0–6 and 8 in those two files are superseded**, absorbed into Phase A by `final-plan.md`; don't treat them as open work. Phase G has no further detail written yet.
+
 ## At a glance
 
 | Phase | Theme | Agents (cumulative) | MCP servers (cumulative) | Scenarios | Concepts showcased | Effort |

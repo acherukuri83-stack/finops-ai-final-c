@@ -2,6 +2,8 @@
 
 Companion to `build-plan.md`. This document tracks only the agents: what exists at the end of each phase, what each agent can see, do, and propose, and how its behaviour is validated. Infrastructure work is in the build plan.
 
+> **Superseded, Phases 0–6 and 8:** absorbed into Phase A by `docs/final-plan.md` — the Investigator's behaviour through those phases is specified there now. **Still current:** Phase 7 (Wires → `docs/phase-breakdown.md` Phase B), Phase 9 (Supervisor → Phase C), Phase 10 (Events → Phase D), Phases 11–12 (Developer Agent → Phase E), Phase 13 (Prime finance → Phase F).
+
 ## Agent roster and when each arrives
 
 | Agent | Arrives | Evolves in | Role |

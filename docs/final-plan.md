@@ -180,4 +180,4 @@ React + TypeScript (Vite) · Python 3.12 (FastAPI, own orchestrator, MCP Python 
 | **F — Prime finance** | Stock loan, margin, corporate actions, cash; Sc. 26–29 | Supervisor, planter | 1 weekend per domain |
 | **G — Trace replay/diff, AWS path** | | | as needed |
 
-Details: `build-plan.md` (phases 9–13), `agent-plan.md`, `cost-analysis.md`.
+Details: `build-plan.md` (phases 7, 9–13 — 7 is Wires/Phase B, 9–13 are C–F), `agent-plan.md`, `cost-analysis.md`.
