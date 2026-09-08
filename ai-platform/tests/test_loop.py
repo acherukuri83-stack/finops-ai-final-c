@@ -87,3 +87,24 @@ async def test_loop_degrades_when_required_tool_errors(
     finding = await investigate("T100245", client=fake)
     assert finding.outcome is Outcome.TOOL_DEGRADED
     assert finding.degraded_tools == ["trade.get_settlement_status"]
+
+
+def test_as_int_tolerates_bad_planner_values() -> None:
+    from agent_core.loop import _as_int
+
+    assert _as_int(None, 5) == 5  # planner emitted `k: null` — must not raise
+    assert _as_int("all", 5) == 5
+    assert _as_int("3", 5) == 3
+    assert _as_int(7, 5) == 7
+
+
+def test_clip_output_is_always_json_serialisable() -> None:
+    import json as _json
+    from datetime import UTC, datetime
+
+    from agent_core.loop import _clip
+
+    clipped = _clip({"when": datetime(2026, 9, 8, tzinfo=UTC), "n": 1})
+    _json.dumps(clipped)  # no default= — must not raise
+    big = _clip({"x": "y" * 40_000})
+    assert isinstance(big, str) and big.endswith("…[clipped]")

@@ -5,6 +5,264 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/traces": {
+      "get": {
+        "tags": [
+          "traces"
+        ],
+        "summary": "List Traces",
+        "operationId": "list_traces_traces_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "scenario_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scenario Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TraceSummary"
+                  },
+                  "title": "Response List Traces Traces Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/traces/diff": {
+      "get": {
+        "tags": [
+          "traces"
+        ],
+        "summary": "Diff Traces",
+        "operationId": "diff_traces_traces_diff_get",
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "A"
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "B"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceDiff"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/traces/{trace_id}": {
+      "get": {
+        "tags": [
+          "traces"
+        ],
+        "summary": "Get Trace",
+        "operationId": "get_trace_traces__trace_id__get",
+        "parameters": [
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/traces/{trace_id}/export": {
+      "get": {
+        "tags": [
+          "traces"
+        ],
+        "summary": "Export Trace",
+        "operationId": "export_trace_traces__trace_id__export_get",
+        "parameters": [
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Export Trace Traces  Trace Id  Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/traces/{trace_id}/replay": {
+      "post": {
+        "tags": [
+          "traces"
+        ],
+        "summary": "Replay Trace",
+        "operationId": "replay_trace_traces__trace_id__replay_post",
+        "parameters": [
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TraceReplay"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -446,6 +704,24 @@
         ],
         "title": "DecideRequest"
       },
+      "EvidenceLink": {
+        "properties": {
+          "ref": {
+            "type": "string",
+            "title": "Ref"
+          },
+          "span_id": {
+            "type": "string",
+            "title": "Span Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "span_id"
+        ],
+        "title": "EvidenceLink"
+      },
       "EvidenceRef": {
         "properties": {
           "kind": {
@@ -732,6 +1008,93 @@
         ],
         "title": "ServerInfo"
       },
+      "SpanRow": {
+        "properties": {
+          "span_id": {
+            "type": "string",
+            "title": "Span Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "parent_span_id": {
+            "type": "string",
+            "title": "Parent Span Id",
+            "default": ""
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "span_type": {
+            "type": "string",
+            "title": "Span Type",
+            "default": ""
+          },
+          "agent": {
+            "type": "string",
+            "title": "Agent",
+            "default": ""
+          },
+          "step": {
+            "type": "string",
+            "title": "Step",
+            "default": ""
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": ""
+          },
+          "attributes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attributes",
+            "default": {}
+          },
+          "payload_in": {
+            "title": "Payload In"
+          },
+          "payload_out": {
+            "title": "Payload Out"
+          }
+        },
+        "type": "object",
+        "required": [
+          "span_id",
+          "trace_id",
+          "name"
+        ],
+        "title": "SpanRow"
+      },
       "SubjectRef": {
         "properties": {
           "type": {
@@ -772,6 +1135,415 @@
           "description"
         ],
         "title": "ToolInfo"
+      },
+      "TraceDetail": {
+        "properties": {
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "title": "Subject Type",
+            "default": ""
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id",
+            "default": ""
+          },
+          "request": {
+            "type": "string",
+            "title": "Request",
+            "default": ""
+          },
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id",
+            "default": ""
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "default": ""
+          },
+          "agent": {
+            "type": "string",
+            "title": "Agent",
+            "default": ""
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "default": ""
+          },
+          "root_cause": {
+            "type": "string",
+            "title": "Root Cause",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": ""
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "tool_calls": {
+            "type": "integer",
+            "title": "Tool Calls",
+            "default": 0
+          },
+          "retrievals": {
+            "type": "integer",
+            "title": "Retrievals",
+            "default": 0
+          },
+          "model_calls": {
+            "type": "integer",
+            "title": "Model Calls",
+            "default": 0
+          },
+          "tokens_in": {
+            "type": "integer",
+            "title": "Tokens In",
+            "default": 0
+          },
+          "tokens_out": {
+            "type": "integer",
+            "title": "Tokens Out",
+            "default": 0
+          },
+          "cost_usd": {
+            "type": "number",
+            "title": "Cost Usd",
+            "default": 0.0
+          },
+          "finding": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finding"
+          },
+          "spans": {
+            "items": {
+              "$ref": "#/components/schemas/SpanRow"
+            },
+            "type": "array",
+            "title": "Spans",
+            "default": []
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceLink"
+            },
+            "type": "array",
+            "title": "Links",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "TraceDetail"
+      },
+      "TraceDiff": {
+        "properties": {
+          "a": {
+            "type": "string",
+            "title": "A"
+          },
+          "b": {
+            "type": "string",
+            "title": "B"
+          },
+          "same_scenario": {
+            "type": "boolean",
+            "title": "Same Scenario"
+          },
+          "root_cause": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Root Cause"
+          },
+          "outcome": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Outcome"
+          },
+          "tool_calls_added": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tool Calls Added",
+            "default": []
+          },
+          "tool_calls_removed": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tool Calls Removed",
+            "default": []
+          },
+          "tool_calls_reordered": {
+            "type": "boolean",
+            "title": "Tool Calls Reordered",
+            "default": false
+          },
+          "retrieval_delta": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Retrieval Delta",
+            "default": []
+          },
+          "proposed_actions": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Proposed Actions"
+          },
+          "tokens_delta": {
+            "type": "integer",
+            "title": "Tokens Delta",
+            "default": 0
+          },
+          "duration_ms_delta": {
+            "type": "integer",
+            "title": "Duration Ms Delta",
+            "default": 0
+          },
+          "cost_usd_delta": {
+            "type": "number",
+            "title": "Cost Usd Delta",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "a",
+          "b",
+          "same_scenario",
+          "root_cause",
+          "outcome",
+          "proposed_actions"
+        ],
+        "title": "TraceDiff"
+      },
+      "TraceReplay": {
+        "properties": {
+          "original_trace_id": {
+            "type": "string",
+            "title": "Original Trace Id"
+          },
+          "replay_trace_id": {
+            "type": "string",
+            "title": "Replay Trace Id"
+          },
+          "original_finding": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Finding"
+          },
+          "replay_finding": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Finding"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original_trace_id",
+          "replay_trace_id"
+        ],
+        "title": "TraceReplay"
+      },
+      "TraceSummary": {
+        "properties": {
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "title": "Subject Type",
+            "default": ""
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id",
+            "default": ""
+          },
+          "request": {
+            "type": "string",
+            "title": "Request",
+            "default": ""
+          },
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id",
+            "default": ""
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "default": ""
+          },
+          "agent": {
+            "type": "string",
+            "title": "Agent",
+            "default": ""
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome",
+            "default": ""
+          },
+          "root_cause": {
+            "type": "string",
+            "title": "Root Cause",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": ""
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "title": "Duration Ms",
+            "default": 0
+          },
+          "tool_calls": {
+            "type": "integer",
+            "title": "Tool Calls",
+            "default": 0
+          },
+          "retrievals": {
+            "type": "integer",
+            "title": "Retrievals",
+            "default": 0
+          },
+          "model_calls": {
+            "type": "integer",
+            "title": "Model Calls",
+            "default": 0
+          },
+          "tokens_in": {
+            "type": "integer",
+            "title": "Tokens In",
+            "default": 0
+          },
+          "tokens_out": {
+            "type": "integer",
+            "title": "Tokens Out",
+            "default": 0
+          },
+          "cost_usd": {
+            "type": "number",
+            "title": "Cost Usd",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "trace_id"
+        ],
+        "title": "TraceSummary"
       },
       "TradeRow": {
         "properties": {

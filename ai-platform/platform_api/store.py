@@ -38,6 +38,7 @@ cases = Table(
     Column("subject_id", String, nullable=False),
     Column("summary", String, nullable=False),
     Column("status", String, nullable=False, server_default="OPEN"),
+    Column("trace_id", String, server_default=""),  # the investigation trace that opened it
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
 )
 
@@ -87,3 +88,8 @@ def ensure_schema() -> None:
     with engine().begin() as conn:
         conn.execute(text("create sequence if not exists case_seq"))
         _metadata.create_all(conn.engine, tables=[cases, approvals, audit_events])
+        # additive column for a `cases` table created before W4
+        conn.execute(text("alter table cases add column if not exists trace_id varchar default ''"))
+    from platform_api import trace_store
+
+    trace_store.ensure_schema()

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import type { OpenTrace } from "./App";
 import { api, type Finding, type TradeRow } from "./api";
 
 const cell: React.CSSProperties = { padding: "6px 10px", borderBottom: "1px solid #eee", textAlign: "left" };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
-export default function TradesView() {
+export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
   const [rows, setRows] = useState<TradeRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<TradeRow | null>(null);
@@ -132,7 +133,17 @@ export default function TradesView() {
                   <b>Evidence</b>
                   {finding.evidence.map((e, i) => (
                     <div key={i} style={{ color: e.cited ? "#111" : "#999" }}>
-                      [{e.kind}] <span style={mono}>{e.ref}</span>
+                      [{e.kind}]{" "}
+                      {finding.trace_id ? (
+                        <button
+                          onClick={() => openTrace(finding.trace_id!)}
+                          style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                        >
+                          {e.ref}
+                        </button>
+                      ) : (
+                        <span style={mono}>{e.ref}</span>
+                      )}
                       {e.cited ? "" : " (retrieved, not cited)"}
                     </div>
                   ))}
@@ -150,7 +161,19 @@ export default function TradesView() {
                 </div>
               )}
 
-              <div style={{ color: "#888", marginTop: 8, ...mono }}>trace {finding.trace_id || "—"}</div>
+              <div style={{ color: "#888", marginTop: 8, ...mono }}>
+                trace{" "}
+                {finding.trace_id ? (
+                  <button
+                    onClick={() => openTrace(finding.trace_id!)}
+                    style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                  >
+                    {finding.trace_id}
+                  </button>
+                ) : (
+                  "—"
+                )}
+              </div>
             </div>
           )}
         </div>

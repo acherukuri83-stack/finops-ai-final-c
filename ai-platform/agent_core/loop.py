@@ -21,8 +21,10 @@ from agent_core.schemas.plan import Plan, PlanStep
 from agent_core.spans import set_attrs, span
 from mcp_servers.errors import is_error
 from mcp_servers.hub import Tools, open_session, tool_access
-from platform_api import cases
+from platform_api import cases, trace_store
 from platform_api.settings import settings
+
+_PAYLOAD_CLIP = 16_000
 
 _BUDGET = 12
 _MAX_PLANNING_TURNS = 4
@@ -54,12 +56,14 @@ async def investigate(
             verdict = await classify_request(client, request)
             if not verdict.on_topic:
                 set_attrs(root, {"outcome": "OUT_OF_SCOPE"})
-                return Finding(
+                finding = Finding(
                     subject=SubjectRef(type="request", id=trade_id),
                     outcome=Outcome.OUT_OF_SCOPE,
                     confidence_basis=verdict.reason or "not an operations request",
                     trace_id=trace_id,
                 )
+                _persist_trace(finding, trace_id, ask, trade_id, scenario_id)
+                return finding
 
         async with open_session() as tools:
             catalog = await tools.list()
@@ -94,14 +98,56 @@ async def investigate(
                     "case.id": finding.case_id,
                 },
             )
-            return finding
+    _persist_trace(finding, trace_id, ask, trade_id, scenario_id)
+    return finding
+
+
+def _persist_trace(
+    finding: Finding, trace_id: str, request: str, trade_id: str, scenario_id: str | None
+) -> None:
+    """Stamp the trace-level row once the investigation is done (best-effort; a no-op
+    when TRACES_ENABLED is false)."""
+    trace_store.finalize_trace(
+        trace_id,
+        request=request,
+        subject_type=finding.subject.type or "trade",
+        subject_id=finding.subject.id or trade_id,
+        scenario_id=scenario_id,
+        case_id=finding.case_id,
+        agent=_AGENT,
+        outcome=finding.outcome.value,
+        root_cause=finding.root_cause,
+        status="COMPLETE",
+        finding=finding.model_dump(mode="json"),
+    )
+
+
+def _as_int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _clip(obj: Any) -> Any:
+    """A payload small enough to store on a span, always JSON-serialisable. Big results
+    are truncated to a string; anything json can't encode is stringified."""
+    try:
+        text = json.dumps(obj, default=str)
+    except (TypeError, ValueError):
+        return str(obj)[:_PAYLOAD_CLIP]
+    if len(text) <= _PAYLOAD_CLIP:
+        return json.loads(text)  # normalised: no datetimes, no custom objects
+    return text[:_PAYLOAD_CLIP] + "…[clipped]"
 
 
 def _open_case(finding: Finding, trade_id: str) -> None:
     """Open a case and register each surviving proposed action for approval."""
     if not finding.proposed_actions:
         return
-    case = cases.create_case("trade", trade_id, finding.root_cause or finding.outcome.value)
+    case = cases.create_case(
+        "trade", trade_id, finding.root_cause or finding.outcome.value, trace_id=finding.trace_id
+    )
     finding.case_id = case["case_id"]
     for action in finding.proposed_actions:
         approval = cases.propose_action(
@@ -155,6 +201,7 @@ async def _plan(
             max_tokens=4096,
         )
         _record_usage(current, resp)
+        set_attrs(current, {"payload.out": _clip([s.model_dump() for s in plan.steps])})
     return plan
 
 
@@ -163,7 +210,10 @@ async def _run_step(tools: Tools, step: PlanStep) -> Any:
     name = f"{step.server}.{step.tool}"
     kind = "retrieval" if is_retrieval else "tool"
     attrs: dict[str, Any] = (
-        {"retrieval.query": step.args.get("query", "")}
+        {
+            "retrieval.query": step.args.get("query", ""),
+            "retrieval.k": _as_int(step.args.get("k"), 5),
+        }
         if is_retrieval
         else {
             "tool.server": step.server,
@@ -173,6 +223,7 @@ async def _run_step(tools: Tools, step: PlanStep) -> Any:
     )
     with span(name, kind, **attrs) as current:
         result = await tools.call(step.server, step.tool, **step.args)
+        set_attrs(current, {"payload.in": _clip(step.args), "payload.out": _clip(result)})
         if is_retrieval:
             set_attrs(current, {"retrieval.results": _summarise_retrieval(result)})
         else:
@@ -209,6 +260,22 @@ async def _synthesize(
             max_tokens=8192,
         )
         _record_usage(current, resp)
+        set_attrs(
+            current,
+            {
+                "payload.out": _clip(
+                    {
+                        "root_cause": finding.root_cause,
+                        "outcome": finding.outcome.value,
+                        "evidence": [e.model_dump() for e in finding.evidence],
+                        "proposed_actions": [a.model_dump() for a in finding.proposed_actions],
+                        "rejected_alternatives": [
+                            r.model_dump() for r in finding.rejected_alternatives
+                        ],
+                    }
+                )
+            },
+        )
     if not finding.subject.id:
         finding.subject = SubjectRef(type="trade", id=trade_id)
     if finding.outcome not in set(Outcome):

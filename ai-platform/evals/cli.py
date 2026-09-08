@@ -27,6 +27,7 @@ async def _run(scenario: str | None, n: int) -> list[ScenarioResult]:
         raise SystemExit("ANTHROPIC_API_KEY is not set — the eval suite needs a real model.")
     counter = CountingModelClient(AnthropicModelClient(settings.anthropic_api_key))
     cases.set_backend(cases.MemBackend())  # score the Finding, not a case DB
+    settings.traces_enabled = False  # the harness scores Findings, not traces — no trace DB
     results: list[ScenarioResult] = []
     for sc in scenarios:
         print(f"[eval] scenario {sc.sid} ({sc.name}) — {n} run(s)…", flush=True)

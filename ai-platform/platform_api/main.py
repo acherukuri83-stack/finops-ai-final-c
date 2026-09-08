@@ -17,10 +17,11 @@ from agent_core.schemas.finding import Finding
 from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
-from platform_api import cases, store
+from platform_api import cases, store, trace_store
 from platform_api.schemas import ConnectionsResponse, KnowledgeHit, TradeRow
 from platform_api.settings import settings
 from platform_api.telemetry import init_tracing
+from platform_api.traces import router as traces_router
 
 init_tracing()
 if os.environ.get("CASES_INMEMORY") != "1":
@@ -29,6 +30,7 @@ if os.environ.get("CASES_INMEMORY") != "1":
 app = FastAPI(title="FinOps AI — platform API", version="0.1.0")
 FastAPIInstrumentor.instrument_app(app)
 mount_all(app)
+app.include_router(traces_router)
 
 
 class InvestigateRequest(BaseModel):
@@ -101,11 +103,32 @@ async def get_case(case_id: str) -> dict[str, Any]:
 async def decide_approval(approval_id: str, req: DecideRequest) -> dict[str, Any]:
     """A human (role `OPS_ANALYST`) approves or rejects a proposed action."""
     try:
-        return cases.decide(approval_id, req.decision, req.decided_by, req.role)
+        approval = cases.decide(approval_id, req.decision, req.decided_by, req.role)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=f"no approval {approval_id}") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    try:  # stitch the decision into the investigation's trace as an `approval` span
+        case = cases.get_case(approval["case_id"])
+        elapsed = _elapsed_ms(approval.get("created_at"), approval.get("decided_at"))
+        trace_store.record_approval_span(
+            case.get("trace_id", ""),
+            approval_id=approval_id,
+            status=approval["status"],
+            by=str(approval.get("decided_by") or ""),
+            role=str(approval.get("role") or ""),
+            elapsed_ms=elapsed,
+        )
+    except Exception:  # noqa: BLE001 — the decision succeeded; tracing is best-effort
+        pass
+    return approval
+
+
+def _elapsed_ms(created: Any, decided: Any) -> int:
+    if hasattr(created, "timestamp") and hasattr(decided, "timestamp"):
+        return max(0, int((decided.timestamp() - created.timestamp()) * 1000))
+    return 0
 
 
 async def _enterprise_get(path: str, params: dict[str, Any] | None = None) -> Any:

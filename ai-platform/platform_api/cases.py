@@ -18,7 +18,9 @@ PENDING, APPROVED, REJECTED = "PENDING", "APPROVED", "REJECTED"
 
 
 class Backend(Protocol):
-    def create_case(self, subject_type: str, subject_id: str, summary: str) -> dict[str, Any]: ...
+    def create_case(
+        self, subject_type: str, subject_id: str, summary: str, trace_id: str
+    ) -> dict[str, Any]: ...
     def update_case(self, case_id: str, notes: str, status: str | None) -> dict[str, Any]: ...
     def propose_action(
         self,
@@ -46,7 +48,9 @@ class MemBackend:
         self._audit: list[dict[str, Any]] = []
         self._n = 0
 
-    def create_case(self, subject_type: str, subject_id: str, summary: str) -> dict[str, Any]:
+    def create_case(
+        self, subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+    ) -> dict[str, Any]:
         self._n += 1
         case_id = f"CS-{self._n:04d}"
         self._cases[case_id] = {
@@ -55,6 +59,7 @@ class MemBackend:
             "subject_id": subject_id,
             "summary": summary,
             "status": "OPEN",
+            "trace_id": trace_id,
             "created_at": datetime.now(UTC),
         }
         self.log_audit(case_id, f"case opened for {subject_type} {subject_id}")
@@ -134,7 +139,9 @@ class MemBackend:
 
 
 class SqlBackend:
-    def create_case(self, subject_type: str, subject_id: str, summary: str) -> dict[str, Any]:
+    def create_case(
+        self, subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+    ) -> dict[str, Any]:
         from sqlalchemy import text
 
         from platform_api import store
@@ -148,6 +155,7 @@ class SqlBackend:
                     subject_type=subject_type,
                     subject_id=subject_id,
                     summary=summary,
+                    trace_id=trace_id,
                 )
             )
             conn.execute(
@@ -336,8 +344,10 @@ def set_backend(b: Backend | None) -> None:
     _backend = b
 
 
-def create_case(subject_type: str, subject_id: str, summary: str) -> dict[str, Any]:
-    return backend().create_case(subject_type, subject_id, summary)
+def create_case(
+    subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+) -> dict[str, Any]:
+    return backend().create_case(subject_type, subject_id, summary, trace_id)
 
 
 def update_case(case_id: str, notes: str, status: str | None = None) -> dict[str, Any]:
