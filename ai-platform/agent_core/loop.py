@@ -122,13 +122,23 @@ def _persist_trace(
     )
 
 
+def _as_int(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def _clip(obj: Any) -> Any:
-    """A payload small enough to store on a span. Big results are truncated to a string."""
+    """A payload small enough to store on a span, always JSON-serialisable. Big results
+    are truncated to a string; anything json can't encode is stringified."""
     try:
         text = json.dumps(obj, default=str)
     except (TypeError, ValueError):
-        text = str(obj)
-    return obj if len(text) <= _PAYLOAD_CLIP else text[:_PAYLOAD_CLIP] + "…[clipped]"
+        return str(obj)[:_PAYLOAD_CLIP]
+    if len(text) <= _PAYLOAD_CLIP:
+        return json.loads(text)  # normalised: no datetimes, no custom objects
+    return text[:_PAYLOAD_CLIP] + "…[clipped]"
 
 
 def _open_case(finding: Finding, trade_id: str) -> None:
@@ -200,7 +210,10 @@ async def _run_step(tools: Tools, step: PlanStep) -> Any:
     name = f"{step.server}.{step.tool}"
     kind = "retrieval" if is_retrieval else "tool"
     attrs: dict[str, Any] = (
-        {"retrieval.query": step.args.get("query", ""), "retrieval.k": int(step.args.get("k", 5))}
+        {
+            "retrieval.query": step.args.get("query", ""),
+            "retrieval.k": _as_int(step.args.get("k"), 5),
+        }
         if is_retrieval
         else {
             "tool.server": step.server,
