@@ -119,5 +119,6 @@ async def test_a_real_investigation_persists_every_span_type(_sql_traces: None) 
     types = {s["span_type"] for s in row["spans"]}
     assert {"agent", "tool"} <= types, f"span types were {types}"
     synth = next(s for s in row["spans"] if s["step"] == "synthesize")
-    assert "update_ssi" in json.dumps(synth["payload_out"])
-    assert "Handbook §8.4" in json.dumps(synth["payload_out"])
+    payload = json.dumps(synth["payload_out"], ensure_ascii=False)
+    assert "update_ssi" in payload
+    assert "Handbook §8.4" in payload
