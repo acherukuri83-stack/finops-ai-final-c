@@ -34,7 +34,13 @@ export type Approval = {
   created_at: string;
 };
 export type AuditEvent = { case_id: string; event: string; at: string };
-export type CaseDetail = CaseRow & { approvals: Approval[]; audit: AuditEvent[] };
+export type CaseDetail = CaseRow & { trace_id?: string; approvals: Approval[]; audit: AuditEvent[] };
+
+export type TraceSummary = components["schemas"]["TraceSummary"];
+export type SpanRow = components["schemas"]["SpanRow"];
+export type TraceDetail = components["schemas"]["TraceDetail"];
+export type TraceDiff = components["schemas"]["TraceDiff"];
+export type TraceReplay = components["schemas"]["TraceReplay"];
 
 async function getJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${API}${path}`);
@@ -63,4 +69,13 @@ export const api = {
   case: (id: string) => getJSON<CaseDetail>(`/cases/${encodeURIComponent(id)}`),
   decide: (approvalId: string, body: DecideRequest) =>
     postJSON<Approval>(`/approvals/${encodeURIComponent(approvalId)}/decide`, body),
+  traces: (params: { case_id?: string; scenario_id?: string } = {}) => {
+    const q = new URLSearchParams(params as Record<string, string>).toString();
+    return getJSON<TraceSummary[]>(`/traces${q ? `?${q}` : ""}`);
+  },
+  trace: (id: string) => getJSON<TraceDetail>(`/traces/${encodeURIComponent(id)}`),
+  traceExportUrl: (id: string) => `${API}/traces/${encodeURIComponent(id)}/export`,
+  replayTrace: (id: string) => postJSON<TraceReplay>(`/traces/${encodeURIComponent(id)}/replay`, {}),
+  diffTraces: (a: string, b: string) =>
+    getJSON<TraceDiff>(`/traces/diff?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`),
 };

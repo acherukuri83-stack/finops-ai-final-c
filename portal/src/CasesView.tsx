@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { OpenTrace } from "./App";
 import { api, type Approval, type CaseDetail, type CaseRow } from "./api";
 
 const cell: React.CSSProperties = { padding: "6px 10px", borderBottom: "1px solid #eee", textAlign: "left" };
@@ -29,7 +30,7 @@ function Badge({ value }: { value: string }) {
   );
 }
 
-export default function CasesView() {
+export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
   const [rows, setRows] = useState<CaseRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -122,6 +123,16 @@ export default function CasesView() {
               <div style={{ color: "#555" }}>
                 {detail.subject_type} <span style={mono}>{detail.subject_id}</span> — {detail.summary}
               </div>
+              {detail.trace_id ? (
+                <div style={{ marginTop: 4 }}>
+                  <button
+                    onClick={() => openTrace(detail.trace_id!)}
+                    style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                  >
+                    open trace {detail.trace_id.slice(0, 8)}…
+                  </button>
+                </div>
+              ) : null}
 
               <div style={{ margin: "10px 0" }}>
                 <label style={{ color: "#888" }}>
@@ -177,6 +188,14 @@ export default function CasesView() {
 
               <div style={{ marginTop: 14 }}>
                 <b>Audit</b>
+                {detail.trace_id ? (
+                  <button
+                    onClick={() => openTrace(detail.trace_id!)}
+                    style={{ marginLeft: 8, fontSize: 11 }}
+                  >
+                    view in trace
+                  </button>
+                ) : null}
                 <ol style={{ margin: "4px 0 0", paddingLeft: 18, color: "#555" }}>
                   {detail.audit.map((e, i) => (
                     <li key={i}>

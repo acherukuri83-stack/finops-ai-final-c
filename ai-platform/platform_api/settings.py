@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     otel_exporter_otlp_endpoint: str = "http://localhost:4318"
     ai_platform_split: bool = False
     service_name: str = "ai-platform"
+    traces_enabled: bool = True  # persist spans to Postgres for the Trace screen
 
 
 settings = Settings()

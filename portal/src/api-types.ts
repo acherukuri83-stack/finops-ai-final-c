@@ -4,6 +4,91 @@
  */
 
 export interface paths {
+    "/traces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Traces */
+        get: operations["list_traces_traces_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/traces/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Diff Traces */
+        get: operations["diff_traces_traces_diff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/traces/{trace_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Trace */
+        get: operations["get_trace_traces__trace_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/traces/{trace_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Trace */
+        get: operations["export_trace_traces__trace_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/traces/{trace_id}/replay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replay Trace */
+        post: operations["replay_trace_traces__trace_id__replay_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -200,6 +285,13 @@ export interface components {
              */
             role: string;
         };
+        /** EvidenceLink */
+        EvidenceLink: {
+            /** Ref */
+            ref: string;
+            /** Span Id */
+            span_id: string;
+        };
         /** EvidenceRef */
         EvidenceRef: {
             /** Kind */
@@ -325,6 +417,60 @@ export interface components {
             /** Tools */
             tools: components["schemas"]["ToolInfo"][];
         };
+        /** SpanRow */
+        SpanRow: {
+            /** Span Id */
+            span_id: string;
+            /** Trace Id */
+            trace_id: string;
+            /**
+             * Parent Span Id
+             * @default
+             */
+            parent_span_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Span Type
+             * @default
+             */
+            span_type: string;
+            /**
+             * Agent
+             * @default
+             */
+            agent: string;
+            /**
+             * Step
+             * @default
+             */
+            step: string;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /**
+             * Duration Ms
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Status
+             * @default
+             */
+            status: string;
+            /**
+             * Attributes
+             * @default {}
+             */
+            attributes: {
+                [key: string]: unknown;
+            };
+            /** Payload In */
+            payload_in?: unknown;
+            /** Payload Out */
+            payload_out?: unknown;
+        };
         /** SubjectRef */
         SubjectRef: {
             /** Type */
@@ -340,6 +486,271 @@ export interface components {
             access: string;
             /** Description */
             description: string;
+        };
+        /** TraceDetail */
+        TraceDetail: {
+            /** Trace Id */
+            trace_id: string;
+            /**
+             * Subject Type
+             * @default
+             */
+            subject_type: string;
+            /**
+             * Subject Id
+             * @default
+             */
+            subject_id: string;
+            /**
+             * Request
+             * @default
+             */
+            request: string;
+            /**
+             * Scenario Id
+             * @default
+             */
+            scenario_id: string;
+            /**
+             * Case Id
+             * @default
+             */
+            case_id: string;
+            /**
+             * Agent
+             * @default
+             */
+            agent: string;
+            /**
+             * Outcome
+             * @default
+             */
+            outcome: string;
+            /**
+             * Root Cause
+             * @default
+             */
+            root_cause: string;
+            /**
+             * Status
+             * @default
+             */
+            status: string;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /**
+             * Duration Ms
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Tool Calls
+             * @default 0
+             */
+            tool_calls: number;
+            /**
+             * Retrievals
+             * @default 0
+             */
+            retrievals: number;
+            /**
+             * Model Calls
+             * @default 0
+             */
+            model_calls: number;
+            /**
+             * Tokens In
+             * @default 0
+             */
+            tokens_in: number;
+            /**
+             * Tokens Out
+             * @default 0
+             */
+            tokens_out: number;
+            /**
+             * Cost Usd
+             * @default 0
+             */
+            cost_usd: number;
+            /** Finding */
+            finding?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Spans
+             * @default []
+             */
+            spans: components["schemas"]["SpanRow"][];
+            /**
+             * Links
+             * @default []
+             */
+            links: components["schemas"]["EvidenceLink"][];
+        };
+        /** TraceDiff */
+        TraceDiff: {
+            /** A */
+            a: string;
+            /** B */
+            b: string;
+            /** Same Scenario */
+            same_scenario: boolean;
+            /** Root Cause */
+            root_cause: {
+                [key: string]: string | null;
+            };
+            /** Outcome */
+            outcome: {
+                [key: string]: string | null;
+            };
+            /**
+             * Tool Calls Added
+             * @default []
+             */
+            tool_calls_added: string[];
+            /**
+             * Tool Calls Removed
+             * @default []
+             */
+            tool_calls_removed: string[];
+            /**
+             * Tool Calls Reordered
+             * @default false
+             */
+            tool_calls_reordered: boolean;
+            /**
+             * Retrieval Delta
+             * @default []
+             */
+            retrieval_delta: {
+                [key: string]: unknown;
+            }[];
+            /** Proposed Actions */
+            proposed_actions: {
+                [key: string]: string[];
+            };
+            /**
+             * Tokens Delta
+             * @default 0
+             */
+            tokens_delta: number;
+            /**
+             * Duration Ms Delta
+             * @default 0
+             */
+            duration_ms_delta: number;
+            /**
+             * Cost Usd Delta
+             * @default 0
+             */
+            cost_usd_delta: number;
+        };
+        /** TraceReplay */
+        TraceReplay: {
+            /** Original Trace Id */
+            original_trace_id: string;
+            /** Replay Trace Id */
+            replay_trace_id: string;
+            /** Original Finding */
+            original_finding?: {
+                [key: string]: unknown;
+            } | null;
+            /** Replay Finding */
+            replay_finding?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** TraceSummary */
+        TraceSummary: {
+            /** Trace Id */
+            trace_id: string;
+            /**
+             * Subject Type
+             * @default
+             */
+            subject_type: string;
+            /**
+             * Subject Id
+             * @default
+             */
+            subject_id: string;
+            /**
+             * Request
+             * @default
+             */
+            request: string;
+            /**
+             * Scenario Id
+             * @default
+             */
+            scenario_id: string;
+            /**
+             * Case Id
+             * @default
+             */
+            case_id: string;
+            /**
+             * Agent
+             * @default
+             */
+            agent: string;
+            /**
+             * Outcome
+             * @default
+             */
+            outcome: string;
+            /**
+             * Root Cause
+             * @default
+             */
+            root_cause: string;
+            /**
+             * Status
+             * @default
+             */
+            status: string;
+            /** Started At */
+            started_at?: string | null;
+            /** Ended At */
+            ended_at?: string | null;
+            /**
+             * Duration Ms
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Tool Calls
+             * @default 0
+             */
+            tool_calls: number;
+            /**
+             * Retrievals
+             * @default 0
+             */
+            retrievals: number;
+            /**
+             * Model Calls
+             * @default 0
+             */
+            model_calls: number;
+            /**
+             * Tokens In
+             * @default 0
+             */
+            tokens_in: number;
+            /**
+             * Tokens Out
+             * @default 0
+             */
+            tokens_out: number;
+            /**
+             * Cost Usd
+             * @default 0
+             */
+            cost_usd: number;
         };
         /** TradeRow */
         TradeRow: {
@@ -390,6 +801,166 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_traces_traces_get: {
+        parameters: {
+            query?: {
+                case_id?: string | null;
+                scenario_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    diff_traces_traces_diff_get: {
+        parameters: {
+            query: {
+                a: string;
+                b: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDiff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_trace_traces__trace_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_trace_traces__trace_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    replay_trace_traces__trace_id__replay_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TraceReplay"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;

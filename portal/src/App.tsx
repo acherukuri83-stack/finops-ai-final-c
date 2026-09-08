@@ -1,20 +1,29 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api, type Health } from "./api";
 import CasesView from "./CasesView";
 import ConnectionsView from "./ConnectionsView";
 import KnowledgeView from "./KnowledgeView";
+import TracesView from "./TracesView";
 import TradesView from "./TradesView";
 
 const TABS = ["Cases", "Trades", "Settlements", "Knowledge", "Connections", "Traces", "Audit"] as const;
 type Tab = (typeof TABS)[number];
-const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Cases", "Trades", "Knowledge", "Connections"]);
+const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Cases", "Trades", "Knowledge", "Connections", "Traces"]);
+
+export type OpenTrace = (traceId: string, spanId?: string) => void;
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [tab, setTab] = useState<Tab>("Trades");
+  const [traceTarget, setTraceTarget] = useState<{ traceId: string; spanId?: string }>();
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => setHealth(null));
+  }, []);
+
+  const openTrace = useCallback<OpenTrace>((traceId, spanId) => {
+    setTraceTarget({ traceId, spanId });
+    setTab("Traces");
   }, []);
 
   return (
@@ -45,10 +54,13 @@ export default function App() {
         )}
       </nav>
 
-      {tab === "Cases" && <CasesView />}
-      {tab === "Trades" && <TradesView />}
+      {tab === "Cases" && <CasesView openTrace={openTrace} />}
+      {tab === "Trades" && <TradesView openTrace={openTrace} />}
       {tab === "Knowledge" && <KnowledgeView />}
       {tab === "Connections" && <ConnectionsView />}
+      {tab === "Traces" && (
+        <TracesView initialTraceId={traceTarget?.traceId} focusSpanId={traceTarget?.spanId} />
+      )}
 
       <p style={{ color: "#888", marginTop: 32, fontSize: 12 }}>
         platform-api: {health ? `${health.status} (${health.service})` : "unreachable"}

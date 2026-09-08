@@ -37,3 +37,12 @@ Ideas that are out of the current phase's scope. Append; don't build.
   the worst run's Finding on failure): check what `ops.search_knowledge` returns for the
   duplicate case and whether the log line is being cited. Every other scenario passes
   n=3 (Sc. 12 excluded — needs process-global FAULT_INJECT).
+- W4 (Trace screen): `span_payload` is stored **unredacted** — `platform_api/trace_store.redact()`
+  is an identity seam. Phase A data is entirely fictional so nothing leaks, but the
+  observability standard's "payloads stored post-scrub" line and the `pii_scrub` guardrail
+  span are unmet. Phase G: implement `redact()` (drop/obfuscate emails, names, account
+  numbers on the way into `span_payloads`) and emit a `guardrail` span reporting the
+  redaction count. Same PR should add the `schema_validation` guardrail span from
+  `complete_structured_traced`'s retry path (kept out of W4 to keep `model_client.py`
+  dependency-free). `finops.tool.retries` is also not emitted — thread the retry count
+  out of `mcp_servers/_enterprise._request` when it's wired.
