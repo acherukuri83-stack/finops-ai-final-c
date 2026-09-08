@@ -20,6 +20,13 @@ on:
       - "ai-platform/knowledge/**"
       - "ai-platform/evals/**"
       - "simulator/**"
+
+# A new push to the same PR/branch cancels the running eval — one real-model run
+# (~$2, ~35 min) can be in flight at a time, not a stack of superseded ones.
+concurrency:
+  group: eval-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   eval:
     runs-on: ubuntu-latest

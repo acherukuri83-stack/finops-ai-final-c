@@ -9,6 +9,7 @@ import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
@@ -28,6 +29,15 @@ if os.environ.get("CASES_INMEMORY") != "1":
     store.ensure_schema()
 
 app = FastAPI(title="FinOps AI — platform API", version="0.1.0")
+# The portal is a separate origin (its own Railway domain / :5173 locally).
+# CORS_ALLOW_ORIGINS is a comma-separated list; "*" for the public demo.
+_origins = [o.strip() for o in os.environ.get("CORS_ALLOW_ORIGINS", "*").split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 FastAPIInstrumentor.instrument_app(app)
 mount_all(app)
 app.include_router(traces_router)
