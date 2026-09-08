@@ -13,7 +13,7 @@ plant:
     - {account: ACC-88213, type: SETTLEMENT_HOLD, reason: "KYC refresh overdue",
        set_by: compliance.rlee, set_at: 2026-09-03T14:20:00}
   trades:
-    - {id: T100261, client: HEDGE_FUND_101, account: ACC-88213, security: MSFT, qty: 5000, side: SELL,
+    - {id: T100261, client: HEDGE_FUND_101, account: ACC-88213, security: META, qty: 5000, side: SELL,
        price: 418.90, trade_date: 2026-09-03, settle_date: 2026-09-04, status: FAILED,
        failure_code: ACCOUNT_RESTRICTED, cpty: CP-017}
   settlement_attempts:
