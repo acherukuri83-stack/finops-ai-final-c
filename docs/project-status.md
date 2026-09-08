@@ -1,6 +1,6 @@
 # FinOps AI — Project Status
 
-**As of:** end of Weekend 3 (2026-09-08) · `main` @ `a118617`
+**As of:** Phase A complete (2026-09) — Weekends 1–5 shipped, live on Railway
 **Phase:** A — one use case ("Why didn't trade T100245 settle?"), trade mode only
 **Companion docs:** [`scope-overview.md`](scope-overview.md) is the plan (phases A–G); this
 document is what is *actually built* on `main`. [`final-plan.md`](final-plan.md) is the
@@ -15,8 +15,8 @@ weekend-by-weekend Phase A plan; [`design.md`](design.md) is the architecture na
 | 1 | Foundation, data, tools | ✅ merged — monorepo, Compose, CI, simulator, Java enterprise, 8 MCP read servers, portal shell |
 | 2 | Agent, then knowledge | ✅ merged — planner → tool loop → RAG → synthesized `Finding`; corpus + pgvector retrieval |
 | 3 | Governance, then the eval harness | ✅ merged (PR #4 + PR #5) — case/approval spine, 3 write tools, policy engine, input guardrail; generic n=3 eval harness + `SCORECARD.md` |
-| 4 | Trace screen, deploy | ⏳ not started |
-| 5 | Polish and publish | ⏳ not started |
+| 4 | Trace screen, deploy | ✅ merged (PR #7 + PR #8) — span→Postgres storage, trace API (list/get/export/replay/diff), `TraceViewer` + cross-links; deployed to Railway (4 services), smoke-tested end to end |
+| 5 | Polish and publish | ✅ merged — README landing page, ADRs 0003–0005, portal "try these" hint, phase flip; deploy-quality fixes (enterprise log indexes, fastembed baked into the image) |
 
 **Current capability:** a single Investigator agent takes a `trade_id`, plans and runs
 read-only MCP tool calls against the simulated bank, retrieves the relevant SOP sections

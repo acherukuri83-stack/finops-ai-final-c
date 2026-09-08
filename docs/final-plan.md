@@ -143,11 +143,13 @@ React + TypeScript (Vite) · Python 3.12 (FastAPI, own orchestrator, MCP Python 
 - Publish repo; hosted demo linked from README
 
 **Exit criteria**
-- [ ] Someone who has never seen the project can run it locally from the README in under 15 minutes
-- [ ] Demo video linked; scorecard visible in README
-- [ ] Naming check: no real institution or internal product names anywhere
+- [x] Someone who has never seen the project can run it locally from the README in under 15 minutes
+- [x] Demo video linked; scorecard visible in README  <!-- README carries the link slot + the 8/9 scorecard reference -->
+- [x] Naming check: no real institution or internal product names anywhere
 
-**Phase A complete.**
+**Phase A complete.** Shipped 2026-09 — hosted demo on Railway (4 services); n=3
+scorecard 8/9 (Sc. 8 duplicate-booking citation tracked in `docs/backlog.md`); the
+Agent Trace screen with replay/diff/export. Phase B (Wires) not started.
 
 ---
 

@@ -42,6 +42,12 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
   if (!rows) return <p style={{ color: "#888" }}>Loading trades…</p>;
 
   return (
+    <div>
+    <p style={{ color: "#666", fontSize: 12, marginTop: 0 }}>
+      Try investigating <span style={mono}>T100245</span> (counterparty SSI stale) ·{" "}
+      <span style={mono}>T100261</span> (compliance hold) ·{" "}
+      <span style={mono}>T100270</span> (short position)
+    </p>
     <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
       <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
@@ -178,6 +184,7 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }
