@@ -91,7 +91,8 @@ def render_scorecard(results: list[ScenarioResult], *, strong_model: str, cheap_
         "|---|---|---|---|---|---|---|---|---|---|---|",
         *rows,
         "",
-        "_Tokens are the per-run average (input includes cached-prompt reads). Spend is a "
-        "list-price estimate, strong-model rate applied to the whole run._",
+        "_Tokens are the per-run average of the uncached input and the output; prompt "
+        "caching serves the system prompt and tool definitions. Spend is a list-price "
+        "estimate at the strong-model rate applied to the whole run._",
     ]
     return "\n".join(lines) + "\n"
