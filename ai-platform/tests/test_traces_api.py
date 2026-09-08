@@ -168,7 +168,7 @@ from platform_api.settings import settings  # noqa: E402
 
 
 @pytest.fixture
-def _sql_traces() -> Iterator[None]:
+def _sql_traces(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     if not os.environ.get("ENTERPRISE_BASE_URL"):
         pytest.skip("needs the running stack + seeded Postgres")
     from mcp_servers import _enterprise
@@ -177,6 +177,7 @@ def _sql_traces() -> Iterator[None]:
     from platform_api.telemetry import init_tracing
 
     settings.traces_enabled = True
+    monkeypatch.setattr(trace_store, "_STRICT", True)  # surface write failures in CI
     store.ensure_schema()
     init_tracing()  # register the PostgresSpanProcessor for this run
     cases.set_backend(cases.SqlBackend())
@@ -220,9 +221,31 @@ _FINDING_JSON = json.dumps(
 
 
 @pytest.mark.contract
-async def test_a_real_investigation_persists_every_span_type(_sql_traces: None) -> None:
-    from platform_api import trace_store
+def test_trace_store_round_trips_against_postgres(_sql_traces: None) -> None:
+    """Isolates the store layer from the loop: a hand-built trace persists and reads back."""
+    tid = "deadbeef" * 4
+    trace_store.finalize_trace(
+        tid,
+        request="manual",
+        subject_type="trade",
+        subject_id="T1",
+        scenario_id=None,
+        case_id="",
+        agent="investigator",
+        outcome="RESOLVED_CAUSE",
+        root_cause="X",
+        status="COMPLETE",
+        finding={"root_cause": "X"},
+    )
+    try:
+        got = trace_store.get_trace(tid)
+        assert got is not None and got["root_cause"] == "X"
+    finally:
+        trace_store.delete_trace(tid)
 
+
+@pytest.mark.contract
+async def test_a_real_investigation_persists_every_span_type(_sql_traces: None) -> None:
     fake = FakeModelClient(
         [
             ModelResponse(

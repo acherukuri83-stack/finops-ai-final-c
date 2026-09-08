@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import UTC, datetime
 from typing import Any
 
@@ -37,6 +38,16 @@ from platform_api.settings import settings
 
 _log = logging.getLogger("finops.trace_store")
 _metadata = MetaData()
+
+# best-effort by default; `TRACE_STORE_STRICT=1` re-raises write failures (tests/CI).
+_STRICT = os.environ.get("TRACE_STORE_STRICT") == "1"
+
+
+def _swallow(what: str, key: str) -> None:
+    if _STRICT:
+        raise
+    _log.warning("%s failed for %s", what, key, exc_info=True)
+
 
 traces = Table(
     "traces",
@@ -157,7 +168,7 @@ def record_span(span: ReadableSpan) -> None:
                     )
                 )
     except Exception:  # noqa: BLE001 — tracing must never break the request
-        _log.warning("record_span failed for %s", span.name, exc_info=True)
+        _swallow("record_span", span.name)
 
 
 def finalize_trace(
@@ -239,7 +250,7 @@ def finalize_trace(
                 )
             )
     except Exception:  # noqa: BLE001
-        _log.warning("finalize_trace failed for %s", trace_id, exc_info=True)
+        _swallow("finalize_trace", trace_id)
 
 
 # --- reads ------------------------------------------------------------------
@@ -328,7 +339,7 @@ def record_approval_span(
                 )
             )
     except Exception:  # noqa: BLE001
-        _log.warning("record_approval_span failed for %s", approval_id, exc_info=True)
+        _swallow("record_approval_span", approval_id)
 
 
 def delete_trace(trace_id: str) -> None:
