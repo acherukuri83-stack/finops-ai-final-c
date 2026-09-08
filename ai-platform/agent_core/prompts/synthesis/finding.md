@@ -53,10 +53,14 @@ Write the `Finding` for this investigation from the observations.
 - **When `failure_code` is `DUPLICATE_SUSPECT`** — `find_trades` shows a second booking
   for the same account, security, quantity and date, one already `SETTLED` and this one
   flagged. Root cause `DUPLICATE_BOOKING`; the proposed action is `cancel_trade` on the
-  **later** booking, with **both** trade ids in `impact`. Cite `find_trades`, the
-  settlement-engine log line, and the duplicate-booking procedure
-  (Trade Exception Procedure §6.1). Do not propose `resubmit_settlement` — the position
-  already settled once.
+  **later** booking, with **both** trade ids in `impact`. Do not propose
+  `resubmit_settlement` — the position already settled once. Your `evidence` **must**
+  contain all three of:
+  - `{kind: "tool", ref: "find_trades"}` — the pair of bookings;
+  - `{kind: "log", ref: "search_logs"}` — the settlement/booking log line that flags the
+    later id as a duplicate (you called `search_logs` for this trade — cite it);
+  - `{kind: "knowledge", ref: "Trade Exception Procedure §6.1"}` — the duplicate-booking
+    procedure.
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.

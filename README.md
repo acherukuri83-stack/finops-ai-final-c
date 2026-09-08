@@ -14,9 +14,9 @@ n=3 eval scorecard, and a full Agent Trace screen. Roadmap and phase plan in
 [`docs/final-plan.md`](docs/final-plan.md); architecture narrative in
 [`docs/design.md`](docs/design.md).
 
-**▶ Hosted demo:** _add your Railway portal URL here_ · try investigating **`T100245`**
-(counterparty SSI stale), **`T100261`** (compliance hold), **`T100270`** (short
-position).
+**▶ Hosted demo:** <https://portal-production-0d4c.up.railway.app> · try investigating
+**`T100245`** (counterparty SSI stale), **`T100261`** (compliance hold), **`T100270`**
+(short position).
 
 **▶ Demo video (4 min):** _link_ — Sc. 1 investigate → approve → Sc. 4 restraint →
 Sc. 2 flip → the trace → the scorecard.
