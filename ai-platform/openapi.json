@@ -943,6 +943,11 @@
               }
             ],
             "title": "Approval Id"
+          },
+          "proposed_by": {
+            "type": "string",
+            "title": "Proposed By",
+            "default": ""
           }
         },
         "type": "object",

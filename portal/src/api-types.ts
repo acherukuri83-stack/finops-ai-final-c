@@ -396,6 +396,11 @@ export interface components {
             reversible: boolean;
             /** Approval Id */
             approval_id?: string | null;
+            /**
+             * Proposed By
+             * @default
+             */
+            proposed_by: string;
         };
         /** RejectedAlternative */
         RejectedAlternative: {

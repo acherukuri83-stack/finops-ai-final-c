@@ -143,14 +143,16 @@ def _combined() -> FastMCP:
 
 
 class Tools:
-    """A thin facade over the in-memory MCP client session."""
+    """A thin facade over the in-memory MCP client session. `servers` scopes what
+    `list()` returns (Phase C specialists) — every tool is still callable."""
 
-    def __init__(self, session: Any) -> None:
+    def __init__(self, session: Any, servers: set[str] | None = None) -> None:
         self._session = session
+        self._servers = servers
 
     async def list(self) -> list[dict[str, Any]]:
         listed = await self._session.list_tools()
-        return [
+        rows = [
             {
                 "server": TOOL_SERVER.get(tool.name, "?"),
                 "tool": tool.name,
@@ -160,6 +162,9 @@ class Tools:
             }
             for tool in listed.tools
         ]
+        if self._servers is not None:
+            rows = [r for r in rows if r["server"] in self._servers]
+        return rows
 
     async def call(self, server: str, tool: str, **arguments: Any) -> Any:
         del server  # tool names are globally unique; kept for a readable call site
@@ -195,9 +200,9 @@ def _tool_error(message: str) -> dict[str, Any]:
 
 
 @asynccontextmanager
-async def open_session() -> AsyncIterator[Tools]:
+async def open_session(*, servers: set[str] | None = None) -> AsyncIterator[Tools]:
     async with create_connected_server_and_client_session(_combined()) as session:
-        yield Tools(session)
+        yield Tools(session, servers)
 
 
 def mount_all(app: Any) -> None:

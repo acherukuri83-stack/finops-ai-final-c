@@ -2,9 +2,9 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: A — complete · next mainline phase: C
+## Current phase: C — supervisor & specialists (in progress)
 
-"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. All five weekends of `docs/final-plan.md` are shipped: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness (8/9), the Agent Trace screen, and a live Railway deployment. **The next mainline phase is C — Supervisor & specialists.** Nothing in C–G has been chosen or started; supervisor, Developer Agent, events, and prime-finance domains remain out of scope until their phase begins — do not build them, stub them, or "prepare" for them. When a phase starts, bump this line and read that phase's section in `docs/phase-breakdown.md` first.
+Phase A is shipped and deployed (single Investigator, trade mode: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness at 8/9, the Agent Trace screen, live on Railway). **Phase C is now in progress** — split the Investigator into a Supervisor + specialists (Settlement · Risk/Client · Knowledge), each structurally scoped by tool set and policy allowlist. Read the "Phase C — Supervisor and specialists" section of `docs/phase-breakdown.md` and `ai-platform/agent_core/agents/CLAUDE.md` first. Still out of scope until their phase: Developer Agent, events, prime-finance. Wires (B) is an optional module. When Phase C completes, bump this line to "C — complete · next mainline phase: D".
 
 ## Roadmap (all phases, for orientation only)
 
@@ -47,7 +47,7 @@ The Python tier is the AI platform. The Java tier is "the bank's systems" — ke
 - Java: Maven, Spring Boot 3, JPA, Testcontainers for integration tests. `-Xmx512m`.
 - React: TypeScript strict, functional components, no state library until needed.
 - Prompts live in `agent_core/prompts/*.md`, versioned. Never inline prompt text in Python.
-- `prompts/`, `policy/`, `evals/` changes go in **their own PR**, separate from feature code.
+- Prefer to keep `prompts/`, `policy/`, `evals/` changes in their own PR, separate from feature code — unless a change is inseparable from the feature (e.g. a specialist split defined by its per-agent allowlist), in which case call it out in the PR body. (The eval gate that this rule originally served is `workflow_dispatch`-only during the build — see `docs/backlog.md`.)
 - Prompt caching on system prompt + tool descriptions is on by default via `ModelClient`.
 - Model routing: `classify` → cheap model; `plan`, `synthesize` → strong model. Configured in `agent_core/reasoning/model_router.py`, never hard-coded.
 

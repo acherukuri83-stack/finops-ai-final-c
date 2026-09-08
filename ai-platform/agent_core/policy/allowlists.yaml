@@ -1,4 +1,27 @@
-# Per-agent action allowlists. Enforced in code (W3), never in prompts.
+# Per-agent action allowlists. Enforced in code (agent_core/policy/engine.py), never in
+# prompts. An action a specialist proposes that is not on its key is dropped from the
+# Finding with a REJECTED policy span and a note in open_questions.
+
+# Phase C — the Investigator split into specialists.
+settlement:            # trades / settlement / SSI *analysis* — but NOT the SSI write
+  - resubmit_settlement
+  - cancel_trade
+  - open_compliance_referral
+  - escalate
+
+risk_client:           # SSI current-vs-history, restrictions, screening — owns update_ssi
+  - update_ssi
+  - open_compliance_referral
+  - escalate
+
+knowledge: []          # retrieval only, proposes nothing
+
+supervisor:            # decomposes, correlates, opens the case — proposes nothing itself
+  - create_case
+  - update_case
+
+# Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
+# as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:
   - resubmit_settlement
   - cancel_trade

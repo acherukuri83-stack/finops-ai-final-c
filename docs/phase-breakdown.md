@@ -70,14 +70,14 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 | | |
 |---|---|
 | **Scope in** | Split the Investigator; add a Supervisor that decomposes, dispatches in parallel, correlates findings by shared cause, and synthesizes |
-| **Agents** | **Supervisor** (classify → decompose → correlate → synthesize; allowlist: `create_case`, `update_case` only) · **Settlement** (trade mode; scope trade/counterparty/position) · **Wire** (wire mode; scope wire/reference) · **Risk/Client** (new: restrictions, screening, SSI current-vs-history; **owns the only path to `update_ssi`**) · **Knowledge** (retrieval + citation packaging; read-only) |
-| **Contracts** | `SubTask{agent, subject_ids, question, deadline, budget}`; `Finding` unchanged; known-actions registry so synthesis can't drop a proposal |
-| **Simulated data** | Sc. 11: HF101 with three fails sharing one counterparty cause + one held wire |
+| **Agents** | **Supervisor** (classify → decompose → correlate → synthesize; allowlist: `create_case`, `update_case` only) · **Settlement** (trade mode; scope trade/counterparty/position/client-read/ops — **cannot** propose `update_ssi`) · **Risk/Client** (new: restrictions, screening, SSI current-vs-history; **owns the only path to `update_ssi`**) · **Knowledge** (retrieval + citation packaging; read-only). The **Wire** specialist ships with the optional Wires module, not here. |
+| **Contracts** | `SubTask{agent, subject_ids, question, budget}`; `Finding` gains additive `sub_findings` + `proposed_actions[].proposed_by`; known-actions registry so synthesis can't drop a proposal |
+| **Simulated data** | Sc. 11 (wire-free): HF101 with 3–4 settlement fails — two sharing one counterparty cause, one distinct (e.g. a short position) |
 | **Portal** | Client-level investigation view; grouped actions; delegation shown in trace |
 | **Governance** | Allowlists per agent in `allowlists.yaml`; Settlement Agent cannot propose `update_ssi` (policy rejection in trace) |
-| **Scenarios** | 11 multi-issue client; regression on all Phase A/B scenarios after the split |
-| **Demo** | "Investigate all problems affecting HF101 today" → fan-out → two root causes → three trades under one action, wire separate → any `INSUFFICIENT_EVIDENCE` surfaced verbatim |
-| **Effort** | 1–2 weekends |
+| **Scenarios** | 11 multi-issue client; regression sweep of the Phase A scenarios after the split (manual `workflow_dispatch` eval) |
+| **Demo** | "Investigate all problems affecting HF101 today" → fan-out → two root causes → several trades under one action, the distinct fail separate → any `INSUFFICIENT_EVIDENCE` surfaced verbatim |
+| **Effort** | 1–2 weekends · delivered as two PRs (specialist runner; Supervisor + Sc. 11) |
 
 ---
 
