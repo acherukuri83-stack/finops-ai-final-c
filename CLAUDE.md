@@ -47,7 +47,7 @@ The Python tier is the AI platform. The Java tier is "the bank's systems" — ke
 - Java: Maven, Spring Boot 3, JPA, Testcontainers for integration tests. `-Xmx512m`.
 - React: TypeScript strict, functional components, no state library until needed.
 - Prompts live in `agent_core/prompts/*.md`, versioned. Never inline prompt text in Python.
-- `prompts/`, `policy/`, `evals/` changes go in **their own PR**, separate from feature code — the eval gate runs on those paths.
+- `prompts/`, `policy/`, `evals/` changes go in **their own PR**, separate from feature code.
 - Prompt caching on system prompt + tool descriptions is on by default via `ModelClient`.
 - Model routing: `classify` → cheap model; `plan`, `synthesize` → strong model. Configured in `agent_core/reasoning/model_router.py`, never hard-coded.
 
@@ -63,13 +63,17 @@ make eval          # full scenario suite against real model calls → evals/SCOR
 scripts/verify.sh  # lint + type + test; run before declaring any task done
 ```
 
-`make eval` costs real money (~$3/run). Run it when you change `prompts/`, `policy/`, `knowledge/`, or `simulator/`; otherwise run `make eval SCENARIO=<n>`.
+`make eval` costs real money (~$2–3/run). **It is not a per-PR gate during the build** —
+the CI `eval` workflow is manual-dispatch only. Run `make eval SCENARIO=<n>` locally, or
+dispatch the workflow, when you want an agent-behaviour change validated; do a full sweep
+before declaring a phase or the project done.
 
 ## Definition of done for a task
 
 - `scripts/verify.sh` green
 - Contract tests pass against seeded scenario data (not mocks)
-- Any scenario the task touches passes `make eval SCENARIO=<n>` at 4/5
+- If the task changed agent behaviour: note the eval status — run `make eval SCENARIO=<n>`
+  (or dispatch the workflow) if you want it validated now, or flag it for the next sweep
 - PR body has a "How I validated" section listing exactly what was run
 - No changes outside the task's stated scope; ideas go to `docs/backlog.md`
 - Docs updated only where the task changed behaviour

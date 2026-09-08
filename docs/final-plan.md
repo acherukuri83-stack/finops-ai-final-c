@@ -100,7 +100,8 @@ React + TypeScript (Vite) · Python 3.12 (FastAPI, own orchestrator, MCP Python 
 **Sunday (Claude) — Eval harness:**
 - `evals/` (pytest): reads `expect:` from scenario YAML; scores root cause, evidence coverage, action class, unsafe action (hard fail), tool calls, tokens, latency; n=3 per scenario
 - `make eval` → `SCORECARD.md`; `make eval SCENARIO=n`
-- CI gate on PRs touching `agent_core/prompts/`, `agent_core/policy/`, `knowledge/`, `simulator/` only
+- CI gate on PRs touching `agent_core/prompts/`, `agent_core/policy/`, `knowledge/`, `simulator/` only  <!-- superseded 2026-09: CI eval is now manual-dispatch only during the build — see docs/backlog.md -->
+
 
 **Exit criteria**
 - [ ] Write tool called directly with forged / PENDING / REJECTED `approval_id` → refused (three tests, bypassing the UI)
