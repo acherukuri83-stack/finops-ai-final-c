@@ -1,10 +1,10 @@
 # FinOps AI — Final Plan
 
-Supersedes `phase-a-scope.md` and the Phase A portion of `build-plan.md`. Later phases (B onward) still follow `build-plan.md` and `agent-plan.md`.
+Supersedes `phase-a-scope.md` and the Phase A portion of `build-plan.md`. Later phases (C onward) still follow `build-plan.md` and `agent-plan.md`; **Phase B — Wires is optional** (phase 7 there) and off the mainline. Mainline: A → C → D → E → F → G.
 
 ## Principles
 
-1. **One use case first.** "Why didn't trade T100245 settle?" — trades only, one Investigator agent. Wires, supervisor, events, Developer Agent, and prime-finance domains wait for Phase B+.
+1. **One use case first.** "Why didn't trade T100245 settle?" — trades only, one Investigator agent. Supervisor, events, Developer Agent, and prime-finance domains wait for later mainline phases (C+). **Wires is an optional module**, not a prerequisite for anything.
 2. **Weekend cadence, Claude-heavy.** Claude Code writes ~80% of the code. Your time goes to specifying (contracts, transcripts, issues), reviewing the 20% that matters (policy, write-tool guards, prompts, schemas), and verifying exit criteria.
 3. **Order: data → tools → agent → knowledge → governance → evals → trace → deploy.** Governance and evals sit in the middle, not the end — they change how the loop is built and they validate everything after them.
 4. **Exit criteria are gates.** A weekend isn't done until its boxes are ticked; otherwise the next weekend's work is debt.
@@ -149,7 +149,8 @@ React + TypeScript (Vite) · Python 3.12 (FastAPI, own orchestrator, MCP Python 
 
 **Phase A complete.** Shipped 2026-09 — hosted demo on Railway (4 services); n=3
 scorecard 8/9 (Sc. 8 duplicate-booking citation tracked in `docs/backlog.md`); the
-Agent Trace screen with replay/diff/export. Phase B (Wires) not started.
+Agent Trace screen with replay/diff/export. **Next mainline phase: C — Supervisor &
+specialists.** Phase B (Wires) is optional and not started.
 
 ---
 
