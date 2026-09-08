@@ -2,9 +2,9 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: A — one use case
+## Current phase: A — complete
 
-"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. Scope is `docs/final-plan.md`. **Wires, supervisor, Developer Agent, events, and prime-finance domains are out of scope.** Do not build them, stub them, or "prepare" for them beyond the interfaces listed there.
+"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. All five weekends of `docs/final-plan.md` are shipped: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness (8/9), the Agent Trace screen, and a live Railway deployment. **Phase B (Wires) has not been chosen or started.** Wires, supervisor, Developer Agent, events, and prime-finance domains remain out of scope: do not build them, stub them, or "prepare" for them. When Phase B starts, bump this line and read `docs/phase-breakdown.md` Phase B first.
 
 ## Roadmap (all phases, for orientation only)
 
