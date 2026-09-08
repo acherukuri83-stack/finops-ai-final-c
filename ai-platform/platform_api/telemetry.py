@@ -48,9 +48,7 @@ def init_tracing() -> TracerProvider:
     if isinstance(existing, TracerProvider):
         provider = existing
     else:
-        provider = TracerProvider(
-            resource=Resource.create({"service.name": settings.service_name})
-        )
+        provider = TracerProvider(resource=Resource.create({"service.name": settings.service_name}))
         provider.add_span_processor(
             BatchSpanProcessor(
                 OTLPSpanExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/traces")
