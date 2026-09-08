@@ -28,3 +28,12 @@ Ideas that are out of the current phase's scope. Append; don't build.
   runners download it fine. To ingest/retrieve locally, point `SSL_CERT_FILE` at a bundle
   that includes the corporate root CA, or run on an unfiltered network. Same stance as
   `ScenarioContractTest`.
+- W3 PR2: eval scorecard shows **Sc. 8 (duplicate_trade) at 0–1/3**, deterministically
+  67% evidence — right root cause (`DUPLICATE_BOOKING`), right action (`cancel_trade`,
+  no unsafe), but the run cites only 2 of `[find_trades, search_logs, "Trade Exception
+  Procedure §6.1"]`. A DUPLICATE_SUSPECT synthesis branch + a planner knowledge-retrieval
+  step were added and did not move it — retrieval likely isn't surfacing §6.1 for the
+  query the planner forms. Hill-climb with `make eval SCENARIO=8 N=3` (the CLI now dumps
+  the worst run's Finding on failure): check what `ops.search_knowledge` returns for the
+  duplicate case and whether the log line is being cited. Every other scenario passes
+  n=3 (Sc. 12 excluded — needs process-global FAULT_INJECT).

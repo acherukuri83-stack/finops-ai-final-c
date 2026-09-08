@@ -50,6 +50,13 @@ Write the `Finding` for this investigation from the observations.
   `open_compliance_referral`, quoting the restriction's reason and set-by. Do **not**
   propose `resubmit_settlement`, `update_ssi`, or `cancel_trade` — operations may not lift
   or work around a hold (Client Account Restrictions §2.1).
+- **When `failure_code` is `DUPLICATE_SUSPECT`** — `find_trades` shows a second booking
+  for the same account, security, quantity and date, one already `SETTLED` and this one
+  flagged. Root cause `DUPLICATE_BOOKING`; the proposed action is `cancel_trade` on the
+  **later** booking, with **both** trade ids in `impact`. Cite `find_trades`, the
+  settlement-engine log line, and the duplicate-booking procedure
+  (Trade Exception Procedure §6.1). Do not propose `resubmit_settlement` — the position
+  already settled once.
 - `proposed_actions`: what a human should approve. Use the action names from the tool
   allowlist (`resubmit_settlement`, `cancel_trade`, `update_ssi`,
   `open_compliance_referral`, `escalate`). Give `rationale` and `impact`.

@@ -23,7 +23,8 @@ Ordering that works:
    - restricted → `client.get_account`, `compliance.get_restrictions`.
    - position → `position.get_position`, then `position.get_borrow_availability` only if
      short.
-   - duplicate → `trade.find_trades` for the same account + security + date.
+   - duplicate → `trade.find_trades` for the same account + security + date, then an
+     `ops.search_knowledge` for the duplicate-booking / trade-exception procedure.
 4. `ops.search_logs` with the `trade_id` for corroborating log lines.
 5. **Only once the failure code is known**: `ops.search_knowledge` for the procedure that
    covers this code, and `ops.find_incidents` for similar past incidents.
