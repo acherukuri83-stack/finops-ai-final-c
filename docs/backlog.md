@@ -46,3 +46,16 @@ Ideas that are out of the current phase's scope. Append; don't build.
   `complete_structured_traced`'s retry path (kept out of W4 to keep `model_client.py`
   dependency-free). `finops.tool.retries` is also not emitted — thread the retry count
   out of `mcp_servers/_enterprise._request` when it's wired.
+- Build-phase policy (2026-09): the CI `eval` workflow is **manual-dispatch only** — the
+  `pull_request` path trigger was removed to stop ~$2/35-min real-model runs firing on
+  every PR (and every no-op re-push) during active development. This reverses the W3
+  decision ("CI eval n=3 on every sensitive-path PR"). **Before declaring a phase or the
+  project done**, run a full `workflow_dispatch` sweep and commit the `SCORECARD.md`. If a
+  standing pre-merge gate is wanted again, re-add the `pull_request:` paths block to
+  `.github/workflows/eval.yml` (it's in git history) — optionally label-gated
+  (`if: contains(labels, 'run-eval')`) or at n=1 to keep it cheap.
+- Sc. 8 (duplicate_trade): the `synthesis/finding.md` DUPLICATE_SUSPECT branch now names
+  `{kind: log, ref: search_logs}` as required evidence (PR #11) — on the live deploy the
+  agent calls `search_logs` 3× but omitted it from `evidence`, which is the one ref
+  holding Sc. 8 at 2/3. **Not yet eval-validated** (run was cancelled). Confirm 9/9 on the
+  next manual sweep; if still 8/9, the earlier hill-climb notes above apply.

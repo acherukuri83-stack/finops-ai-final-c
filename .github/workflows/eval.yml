@@ -1,7 +1,10 @@
 name: eval
-# Costs real money (Claude API calls). Runs when agent-behaviour inputs change, or on
-# manual dispatch. Needs the repo secret ANTHROPIC_API_KEY — without it `evals.cli`
-# exits with a clear message and the job fails (it never silently passes).
+# Costs real money (Claude API calls, ~$2 / ~35 min per n=3 run). **Manual only during
+# the build** — no automatic PR trigger. Run it on demand from the Actions tab
+# (`Run workflow`) before merging an agent-behaviour change you want validated, and do a
+# full sweep before declaring a phase / the project done. Re-add a `pull_request:` path
+# trigger here if/when a standing pre-merge gate is wanted again (see docs/backlog.md).
+# Needs the repo secret ANTHROPIC_API_KEY — without it `evals.cli` fails loudly.
 on:
   workflow_dispatch:
     inputs:
@@ -11,18 +14,8 @@ on:
       scenario:
         description: "single scenario id (blank = whole suite)"
         default: ""
-  pull_request:
-    paths:
-      - "ai-platform/agent_core/prompts/**"
-      - "ai-platform/agent_core/policy/**"
-      - "ai-platform/agent_core/loop.py"
-      - "ai-platform/agent_core/outcomes.py"
-      - "ai-platform/knowledge/**"
-      - "ai-platform/evals/**"
-      - "simulator/**"
 
-# A new push to the same PR/branch cancels the running eval — one real-model run
-# (~$2, ~35 min) can be in flight at a time, not a stack of superseded ones.
+# Guard kept for overlapping manual dispatches on the same ref.
 concurrency:
   group: eval-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

@@ -74,7 +74,8 @@ policy checks, the approval — is one trace you can open in the portal.
   timeline, expandable payloads, retrieved-vs-cited, replay, diff, JSON export;
   Evidence / Audit / Case ↔ Trace cross-links.
 - **Eval harness** — one generic scorer over each scenario's `expect:` block, run
-  **n=3**; CI gates on it.
+  **n=3** (`make eval` / a manual CI dispatch — see `docs/backlog.md` for the
+  build-phase policy).
 
 ## Scorecard
 
