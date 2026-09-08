@@ -32,6 +32,7 @@ class ProposedAction(BaseModel):
     rationale: str
     impact: list[SubjectRef] = Field(default_factory=list)
     reversible: bool = True
+    approval_id: str | None = None  # set by the loop after case.propose_action registers it
 
 
 class RejectedAlternative(BaseModel):
@@ -52,3 +53,5 @@ class Finding(BaseModel):
     degraded_tools: list[str] = Field(default_factory=list)  # for TOOL_DEGRADED
     confidence_basis: str = ""
     trace_id: str = ""
+    case_id: str = ""  # set once the loop opens a case and registers the proposed actions
+    planning_turns: int = 1  # how many planner turns ran — >1 means a re-plan happened

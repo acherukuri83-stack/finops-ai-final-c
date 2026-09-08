@@ -276,6 +276,123 @@
           }
         }
       }
+    },
+    "/cases": {
+      "get": {
+        "summary": "List Cases",
+        "description": "All cases, newest first \u2014 for the portal's Cases tab.",
+        "operationId": "list_cases_cases_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Cases Cases Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cases/{case_id}": {
+      "get": {
+        "summary": "Get Case",
+        "operationId": "get_case_cases__case_id__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Case Cases  Case Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/approvals/{approval_id}/decide": {
+      "post": {
+        "summary": "Decide Approval",
+        "description": "A human (role `OPS_ANALYST`) approves or rejects a proposed action.",
+        "operationId": "decide_approval_approvals__approval_id__decide_post",
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Approval Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Decide Approval Approvals  Approval Id  Decide Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -305,6 +422,29 @@
           "servers"
         ],
         "title": "ConnectionsResponse"
+      },
+      "DecideRequest": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "title": "Decision"
+          },
+          "decided_by": {
+            "type": "string",
+            "title": "Decided By"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "OPS_ANALYST"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision",
+          "decided_by"
+        ],
+        "title": "DecideRequest"
       },
       "EvidenceRef": {
         "properties": {
@@ -399,6 +539,16 @@
             "type": "string",
             "title": "Trace Id",
             "default": ""
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id",
+            "default": ""
+          },
+          "planning_turns": {
+            "type": "integer",
+            "title": "Planning Turns",
+            "default": 1
           }
         },
         "type": "object",
@@ -506,6 +656,17 @@
             "type": "boolean",
             "title": "Reversible",
             "default": true
+          },
+          "approval_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Id"
           }
         },
         "type": "object",

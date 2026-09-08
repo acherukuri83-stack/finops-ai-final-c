@@ -42,9 +42,12 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://finops:finops@localhost:5432/finops
         run: cd ai-platform && uv run python -m knowledge.ingest --fixtures CN-2026-081
-      - name: MCP contract tests
+      - name: MCP + governance contract tests
         env:
           ENTERPRISE_BASE_URL: http://localhost:8080
+          DATABASE_URL: postgresql+psycopg://finops:finops@localhost:5432/finops
+        # `test_governance.py`'s round-trip is `-m contract`; its `_sql_cases` fixture
+        # runs `store.ensure_schema()` (idempotent DDL) against this Postgres.
         run: cd ai-platform && uv run pytest -m contract -q
       - name: Enterprise log (on failure)
         if: failure()

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { api, type Health } from "./api";
+import CasesView from "./CasesView";
 import ConnectionsView from "./ConnectionsView";
 import KnowledgeView from "./KnowledgeView";
 import TradesView from "./TradesView";
 
 const TABS = ["Cases", "Trades", "Settlements", "Knowledge", "Connections", "Traces", "Audit"] as const;
 type Tab = (typeof TABS)[number];
-const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Trades", "Knowledge", "Connections"]);
+const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Cases", "Trades", "Knowledge", "Connections"]);
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -44,6 +45,7 @@ export default function App() {
         )}
       </nav>
 
+      {tab === "Cases" && <CasesView />}
       {tab === "Trades" && <TradesView />}
       {tab === "Knowledge" && <KnowledgeView />}
       {tab === "Connections" && <ConnectionsView />}

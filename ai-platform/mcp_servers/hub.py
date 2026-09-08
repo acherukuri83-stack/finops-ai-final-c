@@ -20,8 +20,16 @@ from mcp.server.fastmcp import FastMCP
 from mcp.shared.memory import create_connected_server_and_client_session
 from mcp.types import TextContent
 
+from mcp_servers.case.server import mcp as case_mcp
+from mcp_servers.case.tools import create_case, get_approval, log_audit, propose_action, update_case
 from mcp_servers.client.server import mcp as client_mcp
-from mcp_servers.client.tools import get_account, get_client, get_ssi, get_ssi_history
+from mcp_servers.client.tools import (
+    get_account,
+    get_client,
+    get_ssi,
+    get_ssi_history,
+    update_ssi,
+)
 from mcp_servers.compliance.server import mcp as compliance_mcp
 from mcp_servers.compliance.tools import get_restrictions, get_screening_result
 from mcp_servers.counterparty.server import mcp as counterparty_mcp
@@ -40,17 +48,35 @@ from mcp_servers.position.tools import get_borrow_availability, get_position
 from mcp_servers.reference.server import mcp as reference_mcp
 from mcp_servers.reference.tools import get_market_calendar, get_security
 from mcp_servers.trade.server import mcp as trade_mcp
-from mcp_servers.trade.tools import find_trades, get_settlement_status, get_trade
+from mcp_servers.trade.tools import (
+    cancel_trade,
+    find_trades,
+    get_settlement_status,
+    get_trade,
+    resubmit_settlement,
+)
 from platform_api.settings import settings
 
 _ToolFn = Callable[..., Awaitable[Any]]
+
+# access tier per tool (docs/tool-contracts.md). `write` needs an APPROVED approval_id in
+# the tool; `write*` is agent-allowed bookkeeping (the `case` server).
+WRITE_TOOLS = frozenset({"resubmit_settlement", "cancel_trade", "update_ssi"})
+GOV_TOOLS = frozenset({"create_case", "update_case", "propose_action", "log_audit"})
+
+
+def tool_access(name: str) -> str:
+    if name in WRITE_TOOLS:
+        return "write"
+    if name in GOV_TOOLS:
+        return "write*"
+    return "read"
 
 
 @dataclass(frozen=True)
 class ServerSpec:
     name: str
     mcp: FastMCP
-    # every Phase A server is read-only; writes arrive with the `case` server in W3
     tools: list[_ToolFn] = field(default_factory=list)
     access: str = "read"
 
@@ -58,8 +84,18 @@ class ServerSpec:
 SERVERS: dict[str, ServerSpec] = {
     s.name: s
     for s in (
-        ServerSpec("trade", trade_mcp, [get_trade, get_settlement_status, find_trades]),
-        ServerSpec("client", client_mcp, [get_client, get_account, get_ssi, get_ssi_history]),
+        ServerSpec(
+            "trade",
+            trade_mcp,
+            [get_trade, get_settlement_status, find_trades, resubmit_settlement, cancel_trade],
+            "read+write",
+        ),
+        ServerSpec(
+            "client",
+            client_mcp,
+            [get_client, get_account, get_ssi, get_ssi_history, update_ssi],
+            "read+write",
+        ),
         ServerSpec(
             "counterparty",
             counterparty_mcp,
@@ -70,6 +106,12 @@ SERVERS: dict[str, ServerSpec] = {
         ServerSpec("market", market_mcp, [get_price]),
         ServerSpec("compliance", compliance_mcp, [get_restrictions, get_screening_result]),
         ServerSpec("ops", ops_mcp, [search_logs, search_knowledge, find_incidents]),
+        ServerSpec(
+            "case",
+            case_mcp,
+            [create_case, update_case, propose_action, get_approval, log_audit],
+            "write*",
+        ),
     )
 }
 
@@ -112,7 +154,7 @@ class Tools:
             {
                 "server": TOOL_SERVER.get(tool.name, "?"),
                 "tool": tool.name,
-                "access": "read",
+                "access": tool_access(tool.name),
                 "description": tool.description or "",
                 "params": sorted((tool.inputSchema or {}).get("properties", {})),
             }
@@ -178,7 +220,11 @@ async def describe() -> dict[str, Any]:
                 "access": spec.access,
                 "healthy": healthy,
                 "tools": [
-                    {"name": t.name, "access": spec.access, "description": t.description or ""}
+                    {
+                        "name": t.name,
+                        "access": tool_access(t.name),
+                        "description": t.description or "",
+                    }
                     for t in listed
                 ],
             }

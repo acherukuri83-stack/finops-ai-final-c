@@ -1,7 +1,9 @@
-"""The Investigator orchestrator: plan -> tool loop (budget 12, re-plan) -> synthesize
--> outcome rules -> Finding. Every step is a span (docs/standards/observability.md).
+"""The Investigator orchestrator: guardrail -> plan -> tool loop (budget 12, re-plan) ->
+synthesize -> outcome rules -> policy -> open a case + register the proposed actions ->
+Finding. Every step is a span (docs/standards/observability.md).
 
-W2: trade mode only, no approvals. Replaces agent_core/skeleton.py.
+W3: trade mode; proposals go through the policy engine and the case/approval gate. The
+write itself waits for a human decision (portal / `POST /approvals/{id}/decide`).
 """
 
 from __future__ import annotations
@@ -9,7 +11,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from agent_core import prompts
+from agent_core import policy, prompts
+from agent_core.guardrails.input_classification import classify_request
 from agent_core.outcomes import Observation, classify
 from agent_core.reasoning.model_client import ModelClient, ModelResponse, complete_structured_traced
 from agent_core.reasoning.model_router import Step, model_for
@@ -17,12 +20,14 @@ from agent_core.schemas.finding import Finding, Outcome, SubjectRef
 from agent_core.schemas.plan import Plan, PlanStep
 from agent_core.spans import set_attrs, span
 from mcp_servers.errors import is_error
-from mcp_servers.hub import Tools, open_session
+from mcp_servers.hub import Tools, open_session, tool_access
+from platform_api import cases
 from platform_api.settings import settings
 
 _BUDGET = 12
 _MAX_PLANNING_TURNS = 4
 _RETRIEVAL_TOOLS = {("ops", "search_knowledge"), ("ops", "find_incidents")}
+_AGENT = "investigator"
 
 
 def _default_client() -> ModelClient:
@@ -32,21 +37,39 @@ def _default_client() -> ModelClient:
 
 
 async def investigate(
-    trade_id: str, *, client: ModelClient | None = None, scenario_id: str | None = None
+    trade_id: str,
+    *,
+    request: str | None = None,
+    client: ModelClient | None = None,
+    scenario_id: str | None = None,
 ) -> Finding:
     client = client or _default_client()
-    request = f"Investigate why trade {trade_id} failed settlement."
+    ask = request or f"Investigate why trade {trade_id} failed settlement."
     framing = prompts.load("system/domain_framing")
 
-    with span("investigate", "agent", agent="investigator", **{"scenario.id": scenario_id}) as root:
+    with span("investigate", "agent", agent=_AGENT, **{"scenario.id": scenario_id}) as root:
         trace_id = format(root.get_span_context().trace_id, "032x")
+
+        if request is not None:
+            verdict = await classify_request(client, request)
+            if not verdict.on_topic:
+                set_attrs(root, {"outcome": "OUT_OF_SCOPE"})
+                return Finding(
+                    subject=SubjectRef(type="request", id=trade_id),
+                    outcome=Outcome.OUT_OF_SCOPE,
+                    confidence_basis=verdict.reason or "not an operations request",
+                    trace_id=trace_id,
+                )
+
         async with open_session() as tools:
             catalog = await tools.list()
             observations: list[Observation] = []
             budget = _BUDGET
+            turns = 0
 
             for turn in range(_MAX_PLANNING_TURNS):
-                plan = await _plan(client, framing, request, catalog, observations, turn)
+                plan = await _plan(client, framing, ask, catalog, observations, turn)
+                turns = turn + 1
                 if not plan.steps:
                     break
                 for step in plan.steps:
@@ -57,11 +80,39 @@ async def investigate(
                 if budget <= 0:
                     break
 
-            finding = await _synthesize(client, framing, request, trade_id, observations)
+            finding = await _synthesize(client, framing, ask, trade_id, observations)
             finding = classify(finding, observations)
+            finding = policy.apply(finding, _AGENT)
             finding.trace_id = trace_id
-            set_attrs(root, {"outcome": finding.outcome, "tool.calls": _BUDGET - budget})
+            finding.planning_turns = turns
+            _open_case(finding, trade_id)
+            set_attrs(
+                root,
+                {
+                    "outcome": finding.outcome,
+                    "tool.calls": _BUDGET - budget,
+                    "case.id": finding.case_id,
+                },
+            )
             return finding
+
+
+def _open_case(finding: Finding, trade_id: str) -> None:
+    """Open a case and register each surviving proposed action for approval."""
+    if not finding.proposed_actions:
+        return
+    case = cases.create_case("trade", trade_id, finding.root_cause or finding.outcome.value)
+    finding.case_id = case["case_id"]
+    for action in finding.proposed_actions:
+        approval = cases.propose_action(
+            case["case_id"],
+            action.action_type,
+            action.params,
+            action.rationale,
+            [s.model_dump() for s in action.impact] or [{"type": "trade", "id": trade_id}],
+            action.reversible,
+        )
+        action.approval_id = approval["approval_id"]
 
 
 def _record_usage(current: Any, resp: ModelResponse) -> None:
@@ -114,7 +165,11 @@ async def _run_step(tools: Tools, step: PlanStep) -> Any:
     attrs: dict[str, Any] = (
         {"retrieval.query": step.args.get("query", "")}
         if is_retrieval
-        else {"tool.server": step.server, "tool.name": step.tool, "tool.access": "read"}
+        else {
+            "tool.server": step.server,
+            "tool.name": step.tool,
+            "tool.access": tool_access(step.tool),
+        }
     )
     with span(name, kind, **attrs) as current:
         result = await tools.call(step.server, step.tool, **step.args)

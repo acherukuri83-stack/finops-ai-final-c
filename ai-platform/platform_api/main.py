@@ -5,6 +5,7 @@ With AI_PLATFORM_SPLIT=1 the MCP servers run as separate processes instead (see 
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -16,11 +17,14 @@ from agent_core.schemas.finding import Finding
 from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
+from platform_api import cases, store
 from platform_api.schemas import ConnectionsResponse, KnowledgeHit, TradeRow
 from platform_api.settings import settings
 from platform_api.telemetry import init_tracing
 
 init_tracing()
+if os.environ.get("CASES_INMEMORY") != "1":
+    store.ensure_schema()
 
 app = FastAPI(title="FinOps AI — platform API", version="0.1.0")
 FastAPIInstrumentor.instrument_app(app)
@@ -29,6 +33,12 @@ mount_all(app)
 
 class InvestigateRequest(BaseModel):
     trade_id: str
+
+
+class DecideRequest(BaseModel):
+    decision: str  # APPROVED | REJECTED
+    decided_by: str
+    role: str = "OPS_ANALYST"
 
 
 @app.get("/health")
@@ -71,6 +81,31 @@ async def get_trade(trade_id: str) -> TradeRow:
 async def knowledge(q: str, k: int = 5) -> list[KnowledgeHit]:
     """Search the SOP / fixture corpus — for the portal's Knowledge tab."""
     return [KnowledgeHit.model_validate(hit) for hit in retrieval.search_knowledge(q, k)]
+
+
+@app.get("/cases")
+async def list_cases() -> list[dict[str, Any]]:
+    """All cases, newest first — for the portal's Cases tab."""
+    return cases.list_cases()
+
+
+@app.get("/cases/{case_id}")
+async def get_case(case_id: str) -> dict[str, Any]:
+    try:
+        return cases.get_case(case_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"no case {case_id}") from exc
+
+
+@app.post("/approvals/{approval_id}/decide")
+async def decide_approval(approval_id: str, req: DecideRequest) -> dict[str, Any]:
+    """A human (role `OPS_ANALYST`) approves or rejects a proposed action."""
+    try:
+        return cases.decide(approval_id, req.decision, req.decided_by, req.role)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"no approval {approval_id}") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 async def _enterprise_get(path: str, params: dict[str, Any] | None = None) -> Any:

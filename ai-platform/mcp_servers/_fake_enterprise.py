@@ -133,6 +133,7 @@ class FakeEnterpriseClient:
     def __init__(self) -> None:
         self.fail_with: int | None = None
         self.calls: list[tuple[str, dict[str, Any]]] = []
+        self.writes: list[tuple[str, str, dict[str, Any] | None]] = []  # (method, path, body)
 
     async def get_json(self, tool: str, path: str, params: dict[str, Any] | None = None) -> Any:
         self.calls.append((path, {k: v for k, v in (params or {}).items() if v is not None}))
@@ -145,3 +146,15 @@ class FakeEnterpriseClient:
         if path in _ROUTES:
             return _ROUTES[path]
         raise EnterpriseError(from_http(tool, 404, f"fake: no route {path}"))
+
+    async def post_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any:
+        return await self._write("POST", tool, path, body)
+
+    async def put_json(self, tool: str, path: str, body: dict[str, Any] | None = None) -> Any:
+        return await self._write("PUT", tool, path, body)
+
+    async def _write(self, method: str, tool: str, path: str, body: dict[str, Any] | None) -> Any:
+        self.writes.append((method, path, body))
+        if self.fail_with is not None:
+            raise EnterpriseError(from_http(tool, self.fail_with, f"forced {self.fail_with}"))
+        return {"ok": True, "path": path, "body": body}
