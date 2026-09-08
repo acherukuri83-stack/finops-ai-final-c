@@ -42,8 +42,11 @@ class HttpEnterpriseClient:
     """Shared async client. One instance per process (see ``get_enterprise_client``)."""
 
     def __init__(self, base_url: str, *, transport: httpx.AsyncBaseTransport | None = None) -> None:
+        # 20s, not 10 — a cold 512 MB JVM behind Railway's private network can take
+        # >10s on the first hit to a list endpoint. The loop already tolerates a slow
+        # tool; this just stops spurious ReadTimeouts on a fresh deploy.
         self._client = httpx.AsyncClient(
-            base_url=base_url.rstrip("/"), timeout=10.0, transport=transport
+            base_url=base_url.rstrip("/"), timeout=20.0, transport=transport
         )
 
     async def get_json(self, tool: str, path: str, params: dict[str, Any] | None = None) -> Any:

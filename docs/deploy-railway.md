@@ -74,17 +74,35 @@ the portal already points at ai-platform via the template ref above.
 
 ## 4. Seed the demo data (once)
 
-The schema is Flyway's; the trades / SSIs / logs / corpus are the simulator's. From a
-checkout of this repo with the Railway CLI linked to the project:
+The schema is Flyway's (created when `enterprise` boots). The trades / SSIs / logs are
+the simulator's; the knowledge corpus is `knowledge.ingest`. Two parts because they need
+different things.
+
+**a) Scenario data — needs a repo checkout + a reachable Postgres.** Railway's Postgres
+is private by default, so `railway run` (which injects the *internal* URL) can't reach it
+from your laptop. Enable the public proxy: **Postgres → Settings → Networking → TCP
+Proxy → port 5432**, then copy `DATABASE_PUBLIC_URL` from the Postgres **Variables** tab
+and run:
 
 ```bash
-railway run --service ai-platform ./scripts/deploy-seed.sh
+DATABASE_URL='<DATABASE_PUBLIC_URL>' ./scripts/deploy-seed.sh
 ```
 
-(or export `DATABASE_URL` from the Postgres service's Connect tab and run
-`./scripts/deploy-seed.sh` directly). It waits for the schema, seeds all scenarios,
-and ingests the knowledge corpus (`--fixtures CN-2026-081`). Idempotent — rerun any
-time to reset.
+It waits for the schema, seeds all scenarios, and — if your machine can reach Hugging
+Face — also ingests the corpus. Idempotent. Turn the TCP proxy back off afterwards if
+you want the DB locked down.
+
+**b) Knowledge corpus — needs the embedding model.** It is baked into the `ai-platform`
+image (`FASTEMBED_CACHE_PATH`), so the reliable path is to ingest *inside* the container:
+
+```bash
+railway ssh --service ai-platform
+# then, in the container:
+uv run python -m knowledge.ingest --fixtures CN-2026-081
+```
+
+(If step (a) already ingested successfully because your machine has Hugging Face access,
+skip (b).) Verify: `curl https://<ai-platform-domain>/knowledge?q=counterparty+ssi` returns hits.
 
 ## 5. Guardrails (do not skip)
 
