@@ -2,13 +2,13 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: A — complete
+## Current phase: A — complete · next mainline phase: C
 
-"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. All five weekends of `docs/final-plan.md` are shipped: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness (8/9), the Agent Trace screen, and a live Railway deployment. **Phase B (Wires) has not been chosen or started.** Wires, supervisor, Developer Agent, events, and prime-finance domains remain out of scope: do not build them, stub them, or "prepare" for them. When Phase B starts, bump this line and read `docs/phase-breakdown.md` Phase B first.
+"Why didn't trade T100245 settle?" — a single Investigator agent, trade mode only. All five weekends of `docs/final-plan.md` are shipped: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness (8/9), the Agent Trace screen, and a live Railway deployment. **The next mainline phase is C — Supervisor & specialists.** Nothing in C–G has been chosen or started; supervisor, Developer Agent, events, and prime-finance domains remain out of scope until their phase begins — do not build them, stub them, or "prepare" for them. When a phase starts, bump this line and read that phase's section in `docs/phase-breakdown.md` first.
 
 ## Roadmap (all phases, for orientation only)
 
-Phase A (this one) → B wires → C supervisor & specialists → D event-driven → E Developer Agent → F prime finance → G hardening. Each phase is cumulative and reuses everything before it. **`docs/phase-breakdown.md` is the canonical full-scope reference for all phases — read it first**; it also explains which `docs/build-plan.md` / `docs/agent-plan.md` phase numbers (an older 0–13 scheme) map to which letter phase and which of those are superseded. **Read the relevant phase's section before starting it — don't build ahead of "Current phase" above.** When a phase starts, update "Current phase" and give its new code its own nested `CLAUDE.md` (see `enterprise/CLAUDE.md` for the pattern), rather than growing this file.
+**Mainline: Phase A (done) → C supervisor & specialists → D event-driven → E Developer Agent → F prime finance → G hardening.** **Phase B — Wires is an optional module**: it depends only on Phase A, nothing in C–G depends on it, and it can be slotted in at any point after A (or skipped). Each mainline phase is cumulative and reuses everything before it. **`docs/phase-breakdown.md` is the canonical full-scope reference — read it first**; it maps `docs/build-plan.md` / `docs/agent-plan.md` phase numbers (an older 0–13 scheme) to the letters (9=C, 10=D, 11–12=E, 13=F; the optional Wires module is 7=B) and marks which are superseded. **Read the relevant phase's section before starting it — don't build ahead of "Current phase" above.** When a phase starts, update "Current phase" and give its new code its own nested `CLAUDE.md` (see `enterprise/CLAUDE.md` for the pattern), rather than growing this file.
 
 ## Architecture (two tiers, two languages)
 

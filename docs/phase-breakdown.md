@@ -2,19 +2,21 @@
 
 Every phase in the same shape: what it proves, what's in scope, which agents exist, which tools, data, corpus, screens, governance, scenarios, and what you can demo at the end. Cumulative — each phase adds to the previous one.
 
-**This is the canonical full-scope reference, A through G — read this first for orientation.** For execution-level detail (weekend-by-weekend build steps, exit criteria) one phase at a time: Phase A → `docs/final-plan.md`. Phases B–F → `docs/build-plan.md` / `docs/agent-plan.md`, phases 7 (B), 9 (C), 10 (D), 11–12 (E), 13 (F) respectively — **phases 0–6 and 8 in those two files are superseded**, absorbed into Phase A by `final-plan.md`; don't treat them as open work. Phase G has no further detail written yet.
+**Mainline sequence: A → C → D → E → F → G.** **Phase B — Wires is an optional module**: it depends only on Phase A, nothing in C–G depends on it, and it can be built at any point after A (or never). Phase A is complete and deployed; the next mainline phase is C.
+
+**This is the canonical full-scope reference — read this first for orientation.** For execution-level detail (weekend-by-weekend build steps, exit criteria) one phase at a time: Phase A → `docs/final-plan.md`. Phases C–F → `docs/build-plan.md` / `docs/agent-plan.md`, phases 9 (C), 10 (D), 11–12 (E), 13 (F) respectively; the optional Wires module is phase 7 (B) in those files — **phases 0–6 and 8 there are superseded**, absorbed into Phase A by `final-plan.md`; don't treat them as open work. Phase G has no further detail written yet.
 
 ## At a glance
 
 | Phase | Theme | Agents (cumulative) | MCP servers (cumulative) | Scenarios | Concepts showcased | Effort |
 |---|---|---|---|---|---|---|
-| **A** | One trade use case, end to end | Investigator | trade, client, counterparty, position, reference, market, compliance (r), ops, case | 1–6, 8–10, 12 | LLM · RAG · MCP · Agentic (single) · Platform · Governance · Evals · Trace | 5 weekends |
-| **B** | Wires | + wire mode | + wire, compliance (w) | 7, 13–16 | Maker–checker · hard rules · second vertical on same substrate | 1–2 weekends |
+| **A** ✅ | One trade use case, end to end | Investigator | trade, client, counterparty, position, reference, market, compliance (r), ops, case | 1–6, 8–10, 12 | LLM · RAG · MCP · Agentic (single) · Platform · Governance · Evals · Trace | 5 weekends — done |
 | **C** | Supervisor & specialists | Supervisor, Settlement, Wire, Risk/Client, Knowledge | — | 11 | Delegation · correlation · policy per agent | 1–2 weekends |
 | **D** | Event-driven | + event entry | — (EventBus) | event scenarios | Platform reacts unprompted · dedup | 1 weekend |
 | **E** | Developer Agent | + Developer (incident, verify, review, author) | + platform, repo, ci | 17–25 | Engineering agents · closed loop · self-review | 2–3 weekends |
 | **F** | Prime finance | + StockLoan, Margin, CorpActions, Cash | + stockloan, margin, corpactions, cash | 26–30 | Domain depth from your background | 1 weekend/domain |
 | **G** | Hardening | — | — | — | Replay/diff · AWS path · model swaps | as needed |
+| **B** | Wires — *optional module* | + wire mode | + wire, compliance (w) | 7, 13–16 | Maker–checker · hard rules · second vertical on same substrate | 1–2 weekends · optional, depends only on A |
 
 ---
 
@@ -41,6 +43,8 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 ---
 
 ## Phase B — Wires
+
+> **Optional module — off the critical path.** Build whenever a second write-heavy vertical (maker–checker, cutoffs, screening) is wanted. It depends only on Phase A; nothing in C–G depends on it. Deferring it defers the pure maker–checker / human-only-release demo.
 
 **Proves:** the substrate supports a second vertical with different controls — maker–checker, standing instructions, cutoffs, screening — without touching Phase A code.
 
@@ -143,13 +147,17 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 
 ## Concept coverage by phase
 
-| Concept | A | B | C | D | E | F |
+Mainline is A · C · D · E · F. **B (opt)** is the optional Wires module — deferring it
+defers the pure maker–checker / human-only-release demo; approval-at-the-tool, per-agent
+allowlists, and "no deploy/merge tools" (E) carry the governance story on the mainline.
+
+| Concept | A | C | D | E | F | B (opt) |
 |---|---|---|---|---|---|---|
-| LLM — reason, decide, explain | plan, root cause, rejected alternatives | wire reasoning around hard rules | decomposition, synthesis | classify from event | diff classification, review synthesis | domain reasoning |
-| R2D2 / RAG — evidence | SOP + incident citations; Sc. 2 flip | wire guide, sanctions | Knowledge Agent | — | standards corpus, release notes, write-back | domain corpora |
-| MCP — connections | 9 servers, read/write tiers | + wire, compliance writes | scoped per agent | — | + platform, repo, ci | + 4 domains |
-| Agentic AI — worker | single agent, restraint (4, 10, 12) | maker not checker | delegation, correlation | unprompted | engineering modes, self-review | specialists |
-| Platform — shell | cases, approvals, audit, trace, evals, UI | reviewer role, reports | client-level view | event source | engineering tab, change control | mixed-domain synthesis |
-| Governance | approval at tool, allowlists | hard rules, human-only release | per-agent policy | dedup | no deploy/merge tools | proposals only |
-| Evaluation | 10 scenarios, CI gate | 16 | regression on split | event tests | 25 + agent-authored | 30 |
-| Observability | Trace screen | — | delegation spans | event root span | review/verification traces | — |
+| LLM — reason, decide, explain | plan, root cause, rejected alternatives | decomposition, synthesis | classify from event | diff classification, review synthesis | domain reasoning | wire reasoning around hard rules |
+| R2D2 / RAG — evidence | SOP + incident citations; Sc. 2 flip | Knowledge Agent | — | standards corpus, release notes, write-back | domain corpora | wire guide, sanctions |
+| MCP — connections | 9 servers, read/write tiers | scoped per agent | — | + platform, repo, ci | + 4 domains | + wire, compliance writes |
+| Agentic AI — worker | single agent, restraint (4, 10, 12) | delegation, correlation | unprompted | engineering modes, self-review | specialists | maker not checker |
+| Platform — shell | cases, approvals, audit, trace, evals, UI | client-level view | event source | engineering tab, change control | mixed-domain synthesis | reviewer role, reports |
+| Governance | approval at tool, allowlists | per-agent policy | dedup | no deploy/merge tools | proposals only | hard rules, human-only release |
+| Evaluation | 10 scenarios, CI gate | regression on split | event tests | 25 + agent-authored | 30 | 16 |
+| Observability | Trace screen | delegation spans | event root span | review/verification traces | — | — |

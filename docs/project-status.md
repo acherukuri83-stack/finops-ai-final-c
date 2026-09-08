@@ -326,9 +326,10 @@ needs process-global fault injection):
   usage limit + spend alert
 - Polish, README, demo script
 
-**Later phases (out of scope now):** wires (B), supervisor + specialist agents (C),
-event-driven auto-casing (D), Developer Agent (E), prime-finance domains (F),
-hardening (G). See [`phase-breakdown.md`](phase-breakdown.md).
+**Mainline after A:** C supervisor + specialist agents → D event-driven auto-casing →
+E Developer Agent → F prime-finance domains → G hardening. **Wires (B) is an optional
+module** — depends only on A, nothing in C–G depends on it. See
+[`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 
