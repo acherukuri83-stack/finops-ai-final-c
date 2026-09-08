@@ -50,7 +50,7 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 markers = [
-  "eval: scenario tests that call the real model and cost money",
+  "eval: reserved — the scenario suite now runs from `python -m evals.cli`, not pytest",
   "contract: MCP contract tests that need a running enterprise + seeded Postgres (CI -m contract)",
 ]
-testpaths = ["tests", "evals"]
+testpaths = ["tests"]

@@ -28,7 +28,7 @@ test: migrate
 	cd portal && npm run lint && npx tsc --noEmit
 
 eval:
-	cd ai-platform && uv run pytest -m eval -q evals $(if $(SCENARIO),-k "scenario_$(SCENARIO)",)
+	cd ai-platform && uv run python -m evals.cli $(if $(SCENARIO),--scenario $(SCENARIO),) $(if $(N),--n $(N),)
 
 verify:
 	./scripts/verify.sh

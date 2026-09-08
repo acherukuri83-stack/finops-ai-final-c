@@ -1,9 +1,16 @@
 name: eval
-# Costs real money (Claude API calls). Runs only when agent-behaviour inputs change,
-# or on manual dispatch. Needs the repo secret ANTHROPIC_API_KEY — without it every
-# scenario test skips (the job stays green) rather than failing.
+# Costs real money (Claude API calls). Runs when agent-behaviour inputs change, or on
+# manual dispatch. Needs the repo secret ANTHROPIC_API_KEY — without it `evals.cli`
+# exits with a clear message and the job fails (it never silently passes).
 on:
   workflow_dispatch:
+    inputs:
+      n:
+        description: "runs per scenario"
+        default: "3"
+      scenario:
+        description: "single scenario id (blank = whole suite)"
+        default: ""
   pull_request:
     paths:
       - "ai-platform/agent_core/prompts/**"
@@ -48,13 +55,22 @@ jobs:
           for _ in $(seq 1 60); do curl -sf localhost:8080/health && break; sleep 2; done
           curl -sf localhost:8080/health
 
-      - name: Ingest knowledge corpus
-        run: cd ai-platform && uv run python -m knowledge.ingest --fixtures CN-2026-081
+      - name: Scenario suite (real model, n=3)
+        # The harness seeds + ingests per scenario (Sc. 2's flip needs the fixture in one
+        # run and absent in the other). Sc. 12 is excluded by default — it needs a
+        # process-global FAULT_INJECT on the enterprise; tests/test_loop.py covers it.
+        run: |
+          cd ai-platform && uv run python -m evals.cli \
+            --n "${{ github.event.inputs.n || '3' }}" \
+            ${{ github.event.inputs.scenario && format('--scenario {0}', github.event.inputs.scenario) || '' }}
 
-      - name: Scenario suite (real model)
-        # Sc. 12 needs process-global FAULT_INJECT on the enterprise — the TOOL_DEGRADED
-        # code path is covered by tests/test_loop.py; skip it here.
-        run: cd ai-platform && uv run pytest -m eval -q evals/test_scenarios.py -k "not scenario_12" -rs
+      - name: Upload scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SCORECARD
+          path: ai-platform/evals/SCORECARD.md
+          if-no-files-found: warn
 
       - name: Enterprise log (on failure)
         if: failure()
