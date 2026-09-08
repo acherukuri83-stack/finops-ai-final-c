@@ -17,6 +17,12 @@ make seed SCENARIO=1
 make verify
 ```
 
+## Deploy
+Four services on Railway (portal · ai-platform · enterprise · postgres). Per-service
+`railway.json` + Dockerfiles are in the repo; the dashboard checklist — variables,
+domains, one-time seeding, usage/spend guardrails — is in
+[`docs/deploy-railway.md`](docs/deploy-railway.md).
+
 ## Layout
 ```
 ai-platform/   platform_api · agent_core · mcp_servers · knowledge · evals   (Python)

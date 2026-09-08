@@ -1,5 +1,6 @@
 """Single source of configuration. Everything comes from the environment."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,17 @@ class Settings(BaseSettings):
     ai_platform_split: bool = False
     service_name: str = "ai-platform"
     traces_enabled: bool = True  # persist spans to Postgres for the Trace screen
+
+    @field_validator("database_url")
+    @classmethod
+    def _require_psycopg_driver(cls, v: str) -> str:
+        # managed Postgres (Railway, etc.) hands out a bare postgresql:// URL;
+        # SQLAlchemy needs the driver named.
+        return (
+            v.replace("postgresql://", "postgresql+psycopg://", 1)
+            if v.startswith("postgresql://")
+            else v
+        )
 
 
 settings = Settings()

@@ -17,7 +17,11 @@ DEFAULT_URL = "postgresql+psycopg://finops:finops@localhost:5432/finops"
 
 
 def database_url() -> str:
-    return os.environ.get("DATABASE_URL", DEFAULT_URL)
+    url = os.environ.get("DATABASE_URL", DEFAULT_URL)
+    # managed Postgres hands out a bare postgresql:// URL; name the driver.
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg://", 1)
+    return url
 
 
 _engine: Engine | None = None

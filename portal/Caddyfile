@@ -1,0 +1,12 @@
+# Serve the built SPA; unknown paths fall back to index.html for client routing.
+# $PORT is set by Railway; 8080 locally.
+:{$PORT:8080} {
+	root * /srv
+	encode gzip
+	try_files {path} /index.html
+	file_server
+	header {
+		Cache-Control "public, max-age=300"
+		-Server
+	}
+}
