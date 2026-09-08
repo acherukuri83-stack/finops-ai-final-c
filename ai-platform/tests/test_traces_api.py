@@ -237,11 +237,12 @@ async def test_a_real_investigation_persists_every_span_type(_sql_traces: None) 
         ]
     )
     finding = await investigate("T100245", client=fake)
+    assert finding.trace_id and set(finding.trace_id) != {"0"}, "tracer provider was not active"
 
     row = trace_store.get_trace(finding.trace_id)
-    assert row is not None
+    assert row is not None, f"no trace row for {finding.trace_id}"
     types = {s["span_type"] for s in row["spans"]}
-    assert {"agent", "tool"} <= types
+    assert {"agent", "tool"} <= types, f"span types were {types}"
     synth = next(s for s in row["spans"] if s["step"] == "synthesize")
     assert "update_ssi" in json.dumps(synth["payload_out"])
     assert "Handbook §8.4" in json.dumps(synth["payload_out"])

@@ -106,8 +106,7 @@ def redact(obj: Any) -> Any:
 
 
 def ensure_schema() -> None:
-    with store.connect() as conn:
-        _metadata.create_all(conn.engine, tables=[traces, spans, span_payloads])
+    _metadata.create_all(store.engine(), tables=[traces, spans, span_payloads])
 
 
 # --- writes (best-effort) -----------------------------------------------------

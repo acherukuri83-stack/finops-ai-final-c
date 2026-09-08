@@ -37,17 +37,31 @@ class PostgresSpanProcessor(SpanProcessor):
         return True
 
 
-def init_tracing() -> None:
-    provider = TracerProvider(resource=Resource.create({"service.name": settings.service_name}))
-    provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/traces")
+_pg_processor_added = False
+
+
+def init_tracing() -> TracerProvider:
+    """Install the tracer provider. Idempotent: if one is already set (e.g. a test
+    already called this), reuse it and just add our processors once."""
+    global _pg_processor_added
+    existing = trace.get_tracer_provider()
+    if isinstance(existing, TracerProvider):
+        provider = existing
+    else:
+        provider = TracerProvider(
+            resource=Resource.create({"service.name": settings.service_name})
         )
-    )
-    if settings.traces_enabled:
+        provider.add_span_processor(
+            BatchSpanProcessor(
+                OTLPSpanExporter(endpoint=f"{settings.otel_exporter_otlp_endpoint}/v1/traces")
+            )
+        )
+        trace.set_tracer_provider(provider)
+        HTTPXClientInstrumentor().instrument()
+    if settings.traces_enabled and not _pg_processor_added:
         provider.add_span_processor(PostgresSpanProcessor())
-    trace.set_tracer_provider(provider)
-    HTTPXClientInstrumentor().instrument()
+        _pg_processor_added = True
+    return provider
 
 
 def tracer() -> trace.Tracer:
