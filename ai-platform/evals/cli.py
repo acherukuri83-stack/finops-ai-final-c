@@ -34,6 +34,14 @@ async def _run(scenario: str | None, n: int) -> list[ScenarioResult]:
         state = "PASS" if res.passed else "FAIL"
         detail = res.error or f"{res.runs_passed}/{res.n} runs"
         print(f"[eval] scenario {sc.sid}: {state} — {detail}", flush=True)
+        if not res.passed and res.runs:
+            worst = min(res.runs, key=lambda r: r.score.evidence_coverage)
+            print(
+                f"[eval]   worst run — missing evidence {worst.score.evidence_missing}, "
+                f"notes {worst.score.notes}\n"
+                f"[eval]   finding: {worst.finding.model_dump_json(indent=2)}",
+                flush=True,
+            )
         results.append(res)
     return results
 
