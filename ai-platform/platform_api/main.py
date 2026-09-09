@@ -193,6 +193,42 @@ async def post_verify(req: VerifyRequest) -> Finding:
     return await verify_change(req.ticket_id)
 
 
+class WireReleaseRequest(BaseModel):
+    wire_id: str
+    released_by: str
+    role: str = "WIRE_REVIEWER"
+
+
+@app.get("/wire/queue")
+async def wire_queue() -> list[dict[str, Any]]:
+    """Wires currently routed to a reviewer — {wire_id, action_id, reviewer, reason, packet}."""
+    from mcp_servers.wire import store as wire_store
+
+    return wire_store.get_approval_queue()
+
+
+@app.get("/wire/exceptions")
+async def wire_exceptions() -> list[dict[str, Any]]:
+    """The daily wire exception report — every currently HELD wire with its hold reason."""
+    from mcp_servers.wire import store as wire_store
+
+    return wire_store.exceptions()
+
+
+@app.post("/wire/release")
+async def wire_release(req: WireReleaseRequest) -> dict[str, Any]:
+    """Release a held wire — a **human-only `WIRE_REVIEWER` action**. There is no
+    `release_wire` agent tool; the agent is the maker, the reviewer is the checker."""
+    if req.role != "WIRE_REVIEWER":
+        raise HTTPException(status_code=403, detail="wire release requires role WIRE_REVIEWER")
+    from mcp_servers.wire import store as wire_store
+
+    released = wire_store.release_wire(req.wire_id, req.released_by)
+    if released is None:
+        raise HTTPException(status_code=409, detail=f"{req.wire_id} is not a HELD wire")
+    return released
+
+
 @app.post("/events")
 async def publish_event(event: Event) -> dict[str, str]:
     """Publish an estate event onto the bus (demo / portal convenience — the simulator is

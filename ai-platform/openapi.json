@@ -538,6 +538,95 @@
         }
       }
     },
+    "/wire/queue": {
+      "get": {
+        "summary": "Wire Queue",
+        "description": "Wires currently routed to a reviewer \u2014 {wire_id, action_id, reviewer, reason, packet}.",
+        "operationId": "wire_queue_wire_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Wire Queue Wire Queue Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wire/exceptions": {
+      "get": {
+        "summary": "Wire Exceptions",
+        "description": "The daily wire exception report \u2014 every currently HELD wire with its hold reason.",
+        "operationId": "wire_exceptions_wire_exceptions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Wire Exceptions Wire Exceptions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/wire/release": {
+      "post": {
+        "summary": "Wire Release",
+        "description": "Release a held wire \u2014 a **human-only `WIRE_REVIEWER` action**. There is no\n`release_wire` agent tool; the agent is the maker, the reviewer is the checker.",
+        "operationId": "wire_release_wire_release_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WireReleaseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Wire Release Wire Release Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events": {
       "post": {
         "summary": "Publish Event",
@@ -2304,6 +2393,29 @@
           "ticket_id"
         ],
         "title": "VerifyRequest"
+      },
+      "WireReleaseRequest": {
+        "properties": {
+          "wire_id": {
+            "type": "string",
+            "title": "Wire Id"
+          },
+          "released_by": {
+            "type": "string",
+            "title": "Released By"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "WIRE_REVIEWER"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wire_id",
+          "released_by"
+        ],
+        "title": "WireReleaseRequest"
       }
     }
   }

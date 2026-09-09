@@ -35,8 +35,14 @@ stay as-is — they're pointers, not open work.
     §2.4 referral + freeze), `knowledge/corpus/incidents/INC-2001…2005.md`. `planner/wire.md`
     + `synthesis/wire.md` cite the governing section; the wire scenarios' `required_evidence`
     names it. Ingested by the standard `python -m knowledge.ingest` glob (CI does this).
-  - **Still deferred:** the portal `WIRE_REVIEWER` release flow + reviewer queue view +
-    daily wire exception report (needs a human-only release endpoint — shape TBD).
+  - ~~portal `WIRE_REVIEWER` release flow~~ **DONE (2026-09-09)** — `GET /wire/queue`,
+    `GET /wire/exceptions`, `POST /wire/release {wire_id, released_by, role}` in
+    `platform_api/main.py` (role-gated to `WIRE_REVIEWER`; 403 otherwise). `wire.store`
+    gains `release_wire` (mark RELEASED, close the OPEN route action, record a `release`
+    action) and `exceptions`; `_finance_store.FinanceStore.update` added for the
+    human-initiated mutation. `portal/src/WireReviewView.tsx` — a **Wire Review** tab with
+    the reviewer queue (+ Release button) and the exception report. Still **no
+    `release_wire` agent tool**. `tests/test_wire_review.py` (3). **Phase B is complete.**
 
 - `docs/tool-contracts.md`'s `Account` shape lists `risk_flags[]`, and `Client`/`Counterparty`
   mention `restrictions[]`/`contacts[]` — the Phase A schema (`V2__phase_a_schema.sql`) has no

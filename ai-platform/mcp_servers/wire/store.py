@@ -353,3 +353,26 @@ def record_action(
 
 def actions() -> list[dict[str, Any]]:
     return _S.actions()
+
+
+def exceptions() -> list[dict[str, Any]]:
+    """The wire exception report — every currently HELD wire with its hold reason."""
+    rows = list_wires(status="HELD")
+    return sorted(rows, key=lambda r: (str(r.get("hold_reason")), str(r.get("wire_id"))))
+
+
+def release_wire(wire_id: str, by: str) -> dict[str, Any] | None:
+    """Mark a HELD wire RELEASED — a human-only WIRE_REVIEWER action. Closes any OPEN
+    `route_to_reviewer` action and records a `release` action for the audit trail. Returns
+    the released wire, or None if it does not exist or is not HELD."""
+    wire = _S.get("wires", wire_id=wire_id)
+    if not wire or wire.get("status") != "HELD":
+        return None
+    _S.update("wires", {"wire_id": wire_id}, {"status": "RELEASED"})
+    _S.update(
+        "wire_actions",
+        {"subject_id": wire_id, "kind": "route_to_reviewer", "status": "OPEN"},
+        {"status": "RELEASED"},
+    )
+    _S.record_action("release", wire_id, {"by": by}, "")
+    return _S.get("wires", wire_id=wire_id)
