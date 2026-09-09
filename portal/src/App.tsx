@@ -14,7 +14,6 @@ import "./styles.css";
 import "./workspaces.css";
 
 const TABS = [
-  "Cases",
   "Trades",
   "Client",
   "Prime Finance",
@@ -26,6 +25,7 @@ const TABS = [
   "Traces",
   "AI & Agents",
   "Audit",
+  "Cases",
 ] as const;
 type Tab = (typeof TABS)[number];
 const LIVE: ReadonlySet<Tab> = new Set<Tab>([
