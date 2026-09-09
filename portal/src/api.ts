@@ -64,6 +64,8 @@ export const api = {
   trade: (id: string) => getJSON<TradeRow>(`/trades/${encodeURIComponent(id)}`),
   connections: () => getJSON<ConnectionsResponse>("/connections"),
   investigate: (tradeId: string) => postJSON<Finding>("/investigate", { trade_id: tradeId }),
+  investigateClient: (clientId: string) =>
+    postJSON<Finding>("/investigate", { client_id: clientId }),
   knowledge: (q: string) => getJSON<KnowledgeHit[]>(`/knowledge?q=${encodeURIComponent(q)}`),
   cases: () => getJSON<CaseRow[]>("/cases"),
   case: (id: string) => getJSON<CaseDetail>(`/cases/${encodeURIComponent(id)}`),

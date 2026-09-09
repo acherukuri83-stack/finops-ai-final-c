@@ -56,3 +56,5 @@ class Finding(BaseModel):
     trace_id: str = ""
     case_id: str = ""  # set once the loop opens a case and registers the proposed actions
     planning_turns: int = 1  # how many planner turns ran — >1 means a re-plan happened
+    # Phase C: a Supervisor's per-specialist findings; [] for single-agent runs
+    sub_findings: list[Finding] = Field(default_factory=list)

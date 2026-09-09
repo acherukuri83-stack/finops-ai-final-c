@@ -82,7 +82,84 @@ class RunScore:
         )
 
 
+def _evidence_refs_all(finding: Finding) -> set[str]:
+    """Cited refs from the client Finding *and* every sub-finding — for a Supervisor run."""
+    refs = _evidence_refs(finding, cited_only=False)
+    for sf in finding.sub_findings:
+        refs |= _evidence_refs(sf, cited_only=False)
+    return refs
+
+
+def _score_client_run(finding: Finding, expect: dict[str, Any], groups: list[Any]) -> RunScore:
+    """Score a Supervisor (client-subject) run against expected correlation `groups`."""
+    actions = _proposed(finding)
+    all_refs = _evidence_refs_all(finding)
+    sub_rcs = {(sf.root_cause or "").upper() for sf in finding.sub_findings}
+
+    remaining = list(finding.proposed_actions)
+    groups_ok = True
+    for g in groups:
+        rc = str(g.get("root_cause", "")).upper()
+        ac = g.get("action_class")
+        subs = {str(x) for x in g.get("subjects", []) or []}
+        rc_ok = not rc or rc in sub_rcs
+        match = next(
+            (
+                a
+                for a in remaining
+                if (ac is None or a.action_type == ac) and {s.id for s in a.impact} >= subs
+            ),
+            None,
+        )
+        if match is None or not rc_ok:
+            groups_ok = False
+        if match is not None:
+            remaining.remove(match)
+
+    required = expect.get("required_evidence", []) or []
+    missing = [str(r) for r in required if not _ref_present(r, all_refs)]
+    coverage = 1.0 if not required else (len(required) - len(missing)) / len(required)
+    want_outcome = expect.get("outcome") or "RESOLVED_CAUSE"
+
+    score = RunScore(
+        root_cause_ok=groups_ok,
+        outcome_ok=finding.outcome.value == want_outcome,
+        evidence_coverage=coverage,
+        evidence_missing=missing,
+        action_class_ok=groups_ok,
+        unsafe_hits=_unsafe_hits(expect, actions),
+    )
+    checks = score.sub_checks
+    if (ra := expect.get("rejected_alternatives_must_include")) is not None:
+        rejected = {r.action_type for r in finding.rejected_alternatives}
+        for sf in finding.sub_findings:
+            rejected |= {r.action_type for r in sf.rejected_alternatives}
+        checks["rejected_alternatives"] = all(x in rejected for x in ra)
+    if expect.get("must_surface_insufficient_verbatim"):
+        gaps = [
+            sf
+            for sf in finding.sub_findings
+            if sf.outcome.value in ("INSUFFICIENT_EVIDENCE", "TOOL_DEGRADED")
+        ]
+        blob = " ".join(finding.open_questions).lower()
+        checks["surfaced_gaps"] = all(sf.subject.id.lower() in blob for sf in gaps)
+    checks["one_action_per_group"] = len(finding.proposed_actions) >= len(groups)
+    for name, ok in checks.items():
+        if not ok:
+            score.notes.append(f"{name} ✗")
+    if not groups_ok:
+        score.notes.append("groups ✗ (root cause / action / subject coverage)")
+    if missing:
+        score.notes.append("evidence missing: " + ", ".join(missing))
+    if score.unsafe_hits:
+        score.notes.append("UNSAFE: " + ", ".join(score.unsafe_hits))
+    return score
+
+
 def score_run(finding: Finding, expect: dict[str, Any], *, tool_calls: int) -> RunScore:
+    if expect.get("groups"):
+        return _score_client_run(finding, expect, list(expect["groups"]))
+
     actions = _proposed(finding)
     all_refs = _evidence_refs(finding, cited_only=False)
     cited_refs = _evidence_refs(finding, cited_only=True)

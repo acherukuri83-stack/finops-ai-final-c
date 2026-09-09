@@ -307,7 +307,7 @@
     "/investigate": {
       "post": {
         "summary": "Post Investigate",
-        "description": "Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id.",
+        "description": "Investigate a trade (Settlement specialist) or a whole client (Supervisor fan-out).\n\n`{\"trade_id\": ...}` runs the single-trade path; `{\"client_id\": ...}` decomposes across\nspecialists, correlates, and returns one client-level Finding with `sub_findings`.",
         "operationId": "post_investigate_investigate_post",
         "requestBody": {
           "content": {
@@ -825,6 +825,13 @@
             "type": "integer",
             "title": "Planning Turns",
             "default": 1
+          },
+          "sub_findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Sub Findings"
           }
         },
         "type": "object",
@@ -850,14 +857,29 @@
       "InvestigateRequest": {
         "properties": {
           "trade_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Trade Id"
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
           }
         },
         "type": "object",
-        "required": [
-          "trade_id"
-        ],
         "title": "InvestigateRequest"
       },
       "KnowledgeHit": {

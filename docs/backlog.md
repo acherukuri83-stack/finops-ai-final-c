@@ -59,3 +59,15 @@ Ideas that are out of the current phase's scope. Append; don't build.
   agent calls `search_logs` 3× but omitted it from `evidence`, which is the one ref
   holding Sc. 8 at 2/3. **Not yet eval-validated** (run was cancelled). Confirm 9/9 on the
   next manual sweep; if still 8/9, the earlier hill-climb notes above apply.
+- Phase C PR 2 (Supervisor): the **Knowledge specialist is registered but not dispatched**
+  — `agent_core/prompts/supervisor/decompose.md` only emits `settlement` / `risk_client`
+  sub-tasks, and `supervisor._decompose` filters to those two. Wiring Knowledge means a
+  degenerate `run_knowledge` (a fixed `ops.search_knowledge` + `ops.find_incidents` call,
+  no planner, read-only, returns cited evidence + a one-line relevance note per chunk) in
+  `agent_core/agents/base.py` and a `knowledge` branch in the decompose prompt. Left out
+  of PR 2 to keep it reviewable; Scenario 11 does not need it.
+- Phase C exit: run the manual `workflow_dispatch` eval sweep (scenarios 1–6, 8–10, 12 +
+  the new client-subject Sc. 11) and commit `evals/SCORECARD.md` before moving
+  `CLAUDE.md` to "C — complete · next mainline phase: D". The specialists must reproduce
+  the Investigator's Phase A results at the split (low regression risk — every Phase A
+  scenario is still a single-specialist Settlement run).
