@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { OpenTrace } from "./App";
 import { api, type Approval, type CaseDetail, type CaseRow } from "./api";
 
-const cell: React.CSSProperties = { padding: "6px 10px", borderBottom: "1px solid #eee", textAlign: "left" };
+const cell: React.CSSProperties = {
+  padding: "6px 10px",
+  borderBottom: "1px solid #eee",
+  textAlign: "left",
+};
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -19,6 +23,7 @@ const STATUS_COLOR: Record<string, string> = {
 function Badge({ value }: { value: string }) {
   return (
     <span
+      className="case-badge"
       style={{
         ...mono,
         fontSize: 11,
@@ -42,7 +47,11 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = () => api.cases().then(setRows).catch((e: Error) => setError(e.message));
+    const load = () =>
+      api
+        .cases()
+        .then(setRows)
+        .catch((e: Error) => setError(e.message));
     load();
     const t = setInterval(load, 5000); // event-triggered cases appear without a manual refresh
     return () => clearInterval(t);
@@ -67,7 +76,11 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
     setBusy(a.approval_id);
     setError(null);
     try {
-      await api.decide(a.approval_id, { decision, decided_by: analyst.trim(), role: "OPS_ANALYST" });
+      await api.decide(a.approval_id, {
+        decision,
+        decided_by: analyst.trim(),
+        role: "OPS_ANALYST",
+      });
       await Promise.all([loadDetail(a.case_id), api.cases().then(setRows)]);
     } catch (e) {
       setError((e as Error).message);
@@ -81,59 +94,79 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
   if (rows.length === 0)
     return (
       <p style={{ color: "#888" }}>
-        No cases yet. Run an investigation that proposes an action and a case opens here.
+        No cases yet. Run an investigation that proposes an action and a case
+        opens here.
       </p>
     );
 
   return (
-    <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-      <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
-        <thead>
-          <tr>
-            {["Case", "Subject", "Summary", "Source", "Status"].map((h) => (
-              <th key={h} style={{ ...cell, color: "#888", fontWeight: 600 }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((c) => (
-            <tr
-              key={c.case_id}
-              onClick={() => loadDetail(c.case_id)}
-              style={{ cursor: "pointer", background: selectedId === c.case_id ? "#eef4ff" : undefined }}
-            >
-              <td style={{ ...cell, ...mono }}>{c.case_id}</td>
-              <td style={{ ...cell, ...mono }}>
-                {c.subject_type}:{c.subject_id}
-              </td>
-              <td style={cell}>{c.summary}</td>
-              <td style={cell}>
-                <Badge value={c.source ?? "user"} />
-                {c.priority === "HIGH" && (
-                  <>
-                    {" "}
-                    <Badge value="HIGH" />
-                  </>
-                )}
-              </td>
-              <td style={cell}>
-                <Badge value={c.status} />
-              </td>
+    <div className="module-workspace split-workspace cases-workspace">
+      <div className="workspace-table">
+        <h3>
+          Case queue <span className="count-label">{rows.length}</span>
+        </h3>
+        <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr>
+              {["Case", "Subject", "Summary", "Source", "Status"].map((h) => (
+                <th key={h} style={{ ...cell, color: "#888", fontWeight: 600 }}>
+                  {h}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((c) => (
+              <tr
+                key={c.case_id}
+                onClick={() => loadDetail(c.case_id)}
+                style={{
+                  cursor: "pointer",
+                  background: selectedId === c.case_id ? "#eef4ff" : undefined,
+                }}
+              >
+                <td style={{ ...cell, ...mono }}>
+                  <button
+                    className="record-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void loadDetail(c.case_id);
+                    }}
+                  >
+                    {c.case_id}
+                  </button>
+                </td>
+                <td style={{ ...cell, ...mono }}>
+                  {c.subject_type}:{c.subject_id}
+                </td>
+                <td style={cell}>{c.summary}</td>
+                <td style={cell}>
+                  <Badge value={c.source ?? "user"} />
+                  {c.priority === "HIGH" && (
+                    <>
+                      {" "}
+                      <Badge value="HIGH" />
+                    </>
+                  )}
+                </td>
+                <td style={cell}>
+                  <Badge value={c.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {selectedId && (
-        <div style={{ fontSize: 13, minWidth: 380, maxWidth: 560 }}>
+        <div className="workspace-detail">
           {!detail ? (
             <p style={{ color: "#888" }}>Loading {selectedId}…</p>
           ) : (
             <>
               <h3 style={{ marginTop: 0 }}>
-                <span style={mono}>{detail.case_id}</span> <Badge value={detail.status} />{" "}
+                <span style={mono}>{detail.case_id}</span>{" "}
+                <Badge value={detail.status} />{" "}
                 <Badge value={detail.source ?? "user"} />
                 {detail.priority === "HIGH" && (
                   <>
@@ -143,13 +176,21 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
                 )}
               </h3>
               <div style={{ color: "#555" }}>
-                {detail.subject_type} <span style={mono}>{detail.subject_id}</span> — {detail.summary}
+                {detail.subject_type}{" "}
+                <span style={mono}>{detail.subject_id}</span> — {detail.summary}
               </div>
               {detail.trace_id ? (
                 <div style={{ marginTop: 4 }}>
                   <button
                     onClick={() => openTrace(detail.trace_id!)}
-                    style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                    style={{
+                      ...mono,
+                      border: "none",
+                      background: "none",
+                      padding: 0,
+                      color: "#1a48c4",
+                      cursor: "pointer",
+                    }}
                   >
                     open trace {detail.trace_id.slice(0, 8)}…
                   </button>
@@ -169,33 +210,71 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
               </div>
 
               <b>Proposed actions</b>
-              {detail.approvals.length === 0 && <div style={{ color: "#999" }}>none</div>}
+              {detail.approvals.length === 0 && (
+                <div style={{ color: "#999" }}>none</div>
+              )}
               {detail.approvals.map((a) => (
                 <div
                   key={a.approval_id}
-                  style={{ marginTop: 8, padding: 10, background: "#f7f7f7", borderRadius: 6 }}
+                  className="approval-card"
+                  style={{
+                    marginTop: 8,
+                    padding: 10,
+                    background: "#f7f7f7",
+                    borderRadius: 6,
+                  }}
                 >
                   <div>
-                    <span style={mono}>{a.action_type}</span> <Badge value={a.status} />
+                    <span style={mono}>{a.action_type}</span>{" "}
+                    <Badge value={a.status} />
                     {!a.reversible && (
-                      <span style={{ color: "#b00", marginLeft: 6, fontSize: 11 }}>irreversible</span>
+                      <span
+                        style={{ color: "#b00", marginLeft: 6, fontSize: 11 }}
+                      >
+                        irreversible
+                      </span>
                     )}
                   </div>
-                  <div style={{ color: "#555", marginTop: 4 }}>{a.rationale}</div>
+                  <div style={{ color: "#555", marginTop: 4 }}>
+                    {a.rationale}
+                  </div>
                   {a.impact.length > 0 && (
-                    <div style={{ color: "#888", marginTop: 4, ...mono, fontSize: 12 }}>
-                      impact: {a.impact.map((i) => `${i.type ?? "?"}:${i.id ?? "?"}`).join(", ")}
+                    <div
+                      style={{
+                        color: "#888",
+                        marginTop: 4,
+                        ...mono,
+                        fontSize: 12,
+                      }}
+                    >
+                      impact:{" "}
+                      {a.impact
+                        .map((i) => `${i.type ?? "?"}:${i.id ?? "?"}`)
+                        .join(", ")}
                     </div>
                   )}
-                  <div style={{ ...mono, fontSize: 12, color: "#888", marginTop: 4 }}>
+                  <div
+                    style={{
+                      ...mono,
+                      fontSize: 12,
+                      color: "#888",
+                      marginTop: 4,
+                    }}
+                  >
                     {a.approval_id}
                   </div>
                   {a.status === "PENDING" ? (
                     <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                      <button disabled={busy === a.approval_id} onClick={() => decide(a, "APPROVED")}>
+                      <button
+                        disabled={busy === a.approval_id}
+                        onClick={() => decide(a, "APPROVED")}
+                      >
                         Approve
                       </button>
-                      <button disabled={busy === a.approval_id} onClick={() => decide(a, "REJECTED")}>
+                      <button
+                        disabled={busy === a.approval_id}
+                        onClick={() => decide(a, "REJECTED")}
+                      >
                         Reject
                       </button>
                     </div>
@@ -218,10 +297,13 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
                     view in trace
                   </button>
                 ) : null}
-                <ol style={{ margin: "4px 0 0", paddingLeft: 18, color: "#555" }}>
+                <ol
+                  style={{ margin: "4px 0 0", paddingLeft: 18, color: "#555" }}
+                >
                   {detail.audit.map((e, i) => (
                     <li key={i}>
-                      <span style={{ ...mono, fontSize: 12 }}>{e.at}</span> — {e.event}
+                      <span style={{ ...mono, fontSize: 12 }}>{e.at}</span> —{" "}
+                      {e.event}
                     </li>
                   ))}
                 </ol>

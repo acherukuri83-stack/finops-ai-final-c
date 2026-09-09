@@ -1,0 +1,346 @@
+.module-workspace {
+  font-size: 13px;
+  min-width: 0;
+}
+.module-intro {
+  color: #65728a;
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 14px 16px;
+  background: #f7f8fc;
+  border-left: 2px solid #736bef;
+  margin: 0 0 20px;
+}
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.workflow-card {
+  padding: 22px;
+  border: 1px solid #dfe4ee;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #f7f8ff, #fff);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.workflow-card svg {
+  width: 36px;
+  height: 36px;
+  padding: 7px;
+  border-radius: 8px;
+  background: #ebe9ff;
+  stroke: #5b51db;
+  fill: none;
+  stroke-width: 1.7;
+}
+.workflow-card h3 {
+  margin: 0;
+}
+.workflow-card p {
+  color: #69758b;
+  font-size: 12px;
+  margin: 0;
+  min-height: 40px;
+}
+.workflow-card input {
+  width: 100% !important;
+}
+.workflow-card button {
+  margin-top: auto;
+}
+.result-panel {
+  border: 1px solid #e0e5ee;
+  padding: 22px !important;
+  background: #fafbfe !important;
+  border-radius: 10px !important;
+  margin-top: 24px !important;
+  line-height: 1.7;
+}
+.module-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px;
+  background: #f7f8fc;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+}
+.form-caption {
+  flex: 1;
+  min-width: 190px;
+}
+.form-caption strong,
+.form-caption span {
+  display: block;
+}
+.form-caption span {
+  font-size: 11px;
+  color: #748098;
+  margin-top: 4px;
+}
+.domain-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.view-panel .domain-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  padding: 16px;
+  gap: 10px;
+  background: #fff;
+  color: #344159;
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+}
+.domain-card strong {
+  font-size: 14px;
+}
+.domain-card small {
+  color: #718097;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.domain-number {
+  color: #625bd8;
+  background: #efedff;
+  padding: 5px 8px;
+  border-radius: 5px;
+  align-self: flex-start;
+}
+.view-panel .domain-card[aria-pressed="true"] {
+  border-color: #7b71e8;
+  background: #f7f5ff;
+  box-shadow: inset 0 3px #7164e9;
+}
+.domain-margin .domain-number {
+  background: #fff3d8;
+  color: #91690b;
+}
+.domain-cash .domain-number {
+  background: #e5f5ed;
+  color: #24815d;
+}
+.domain-corpaction .domain-number {
+  background: #fce9f0;
+  color: #af5475;
+}
+.domain-wire .domain-number {
+  background: #e4f2fb;
+  color: #347d9f;
+}
+.module-error {
+  color: #a62d40;
+  background: #fff0f2;
+  padding: 14px;
+  border-radius: 7px;
+}
+.specialist-finding {
+  border: 1px solid #dfe4ee;
+  padding: 14px;
+  border-radius: 8px;
+  background: #fff;
+  margin-top: 12px;
+}
+.specialist-finding summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #4d51ac;
+}
+.section-heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.section-heading h3 {
+  margin: 0;
+}
+.section-heading p {
+  margin: 5px 0 0;
+  color: #748098;
+  font-size: 12px;
+}
+.section-symbol {
+  font-size: 28px;
+  padding: 8px 16px;
+  background: #efedff;
+  color: #6057d7;
+  border-radius: 9px;
+}
+.knowledge-card {
+  border: 1px solid #e0e5ee;
+  border-radius: 9px;
+  padding: 20px;
+  margin-top: 16px;
+  line-height: 1.75;
+  background: #fcfcff;
+  overflow-wrap: anywhere;
+}
+.source-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  color: #675fce;
+  margin-bottom: 10px;
+}
+.score-label {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #edf0f8;
+  color: #66728a;
+  font-size: 10px;
+}
+.module-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid #dfe4ee;
+  border-radius: 8px;
+  margin: 18px 0;
+}
+.module-stats > div {
+  padding: 18px;
+  border-right: 1px solid #dfe4ee;
+}
+.module-stats > div:last-child {
+  border: 0;
+}
+.module-stats strong,
+.module-stats span {
+  display: block;
+}
+.module-stats strong {
+  font-size: 25px;
+  color: #514ac6;
+}
+.module-stats span {
+  font-size: 11px;
+  color: #78849a;
+}
+.service-card {
+  border: 1px solid #dfe4ee;
+  border-radius: 10px;
+  margin: 18px 0;
+  padding: 20px;
+  overflow: auto;
+}
+.service-meta {
+  color: #7a8499;
+  font-size: 11px;
+}
+.service-card table {
+  max-width: none !important;
+}
+.split-workspace {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+.workspace-table {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid #e1e5ee;
+  border-radius: 8px;
+}
+.workspace-table h3 {
+  padding: 16px;
+  margin: 0;
+}
+.workspace-detail {
+  flex: 1;
+  min-width: 0;
+  padding: 22px;
+  background: #fafbfe;
+  border: 1px solid #e0e5ee;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.count-label {
+  font-size: 11px;
+  padding: 3px 7px;
+  margin-left: 8px;
+  background: #efedff;
+  color: #6b61ca;
+  border-radius: 4px;
+}
+.view-panel .record-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #5048ce;
+}
+.case-badge {
+  border-radius: 5px !important;
+  padding: 3px 6px !important;
+  font-size: 10px !important;
+}
+.approval-card {
+  padding: 16px !important;
+  border: 1px solid #e1e5ee;
+  background: white !important;
+  border-radius: 8px !important;
+}
+.trace-node {
+  border-left: 2px solid #d9dcf3;
+  margin-top: 8px;
+}
+.trace-node-heading {
+  padding: 10px;
+  border: 1px solid #e5e8f0;
+  background: #fff;
+  border-radius: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.trace-node-heading:focus-visible {
+  outline: 2px solid #7770ed;
+  outline-offset: 2px;
+}
+@media (max-width: 1200px) {
+  .domain-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .split-workspace {
+    flex-direction: column;
+  }
+  .workspace-table,
+  .workspace-detail {
+    width: 100%;
+  }
+}
+@media (max-width: 850px) {
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+  .workflow-card p {
+    min-height: 0;
+  }
+  .domain-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .module-stats {
+    grid-template-columns: 1fr;
+  }
+  .module-stats > div {
+    border-right: 0;
+    border-bottom: 1px solid #dfe4ee;
+  }
+  .module-form {
+    align-items: stretch;
+  }
+  .module-form input {
+    min-width: 0;
+  }
+  .workspace-detail {
+    padding: 14px;
+  }
+}

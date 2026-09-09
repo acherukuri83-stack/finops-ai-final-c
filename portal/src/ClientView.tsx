@@ -3,7 +3,12 @@ import type { OpenTrace } from "./App";
 import { api, type Finding } from "./api";
 
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
-const box: React.CSSProperties = { marginTop: 12, padding: 12, background: "#f7f7f7", borderRadius: 6 };
+const box: React.CSSProperties = {
+  marginTop: 12,
+  padding: 12,
+  background: "#f7f7f7",
+  borderRadius: 6,
+};
 
 export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
   const [clientId, setClientId] = useState("HEDGE_FUND_101");
@@ -25,16 +30,21 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
   }
 
   return (
-    <div style={{ fontSize: 13, maxWidth: 720 }}>
-      <p style={{ color: "#666", fontSize: 12, marginTop: 0 }}>
-        A client-level question fans out across specialists (Settlement · Risk/Client), correlates
-        the findings by shared cause, and opens one case. Try{" "}
-        <span style={mono}>HEDGE_FUND_101</span> (scenario 11: three counterparty SSI fails + one
-        short position).
+    <div className="module-workspace client-workspace">
+      <p className="module-intro">
+        A client-level question fans out across specialists (Settlement ·
+        Risk/Client), correlates the findings by shared cause, and opens one
+        case. Try <span style={mono}>HEDGE_FUND_101</span> (scenario 11: three
+        counterparty SSI fails + one short position).
       </p>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <div className="module-form">
+        <div className="form-caption">
+          <strong>Client investigation</strong>
+          <span>Coordinate specialist findings for one client.</span>
+        </div>
         <input
+          aria-label="Client ID"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           style={{ ...mono, padding: "4px 8px", width: 260 }}
@@ -44,21 +54,30 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
         </button>
       </div>
 
-      {error && <p style={{ color: "#b00" }}>Error: {error}</p>}
+      {error && (
+        <p role="alert" className="module-error">
+          Error: {error}
+        </p>
+      )}
 
       {finding && (
-        <div style={box}>
+        <div className="result-panel" style={box}>
           <div>
             outcome <b>{finding.outcome}</b>
             {finding.subject ? (
               <>
                 {" "}
-                · <span style={mono}>{finding.subject.type}:{finding.subject.id}</span>
+                ·{" "}
+                <span style={mono}>
+                  {finding.subject.type}:{finding.subject.id}
+                </span>
               </>
             ) : null}
           </div>
           {finding.confidence_basis ? (
-            <div style={{ color: "#555", marginTop: 4 }}>{finding.confidence_basis}</div>
+            <div style={{ color: "#555", marginTop: 4 }}>
+              {finding.confidence_basis}
+            </div>
           ) : null}
 
           {finding.proposed_actions && finding.proposed_actions.length > 0 && (
@@ -67,7 +86,9 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
               {finding.proposed_actions.map((a, i) => (
                 <div key={i} style={{ marginTop: 4 }}>
                   <span style={mono}>{a.action_type}</span>
-                  {a.proposed_by ? <span style={{ color: "#888" }}> · {a.proposed_by}</span> : null}
+                  {a.proposed_by ? (
+                    <span style={{ color: "#888" }}> · {a.proposed_by}</span>
+                  ) : null}
                   {" — "}
                   {a.rationale}
                   {a.impact && a.impact.length > 0 && (
@@ -95,7 +116,7 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
             <div style={{ marginTop: 10 }}>
               <b>Sub-findings</b>
               {finding.sub_findings.map((sf, i) => (
-                <details key={i} style={{ marginTop: 4 }}>
+                <details className="specialist-finding" key={i}>
                   <summary style={mono}>
                     {sf.subject?.type}:{sf.subject?.id} — {sf.outcome}
                     {sf.root_cause ? ` · ${sf.root_cause}` : ""}
@@ -103,12 +124,14 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
                   <div style={{ padding: "4px 0 4px 16px" }}>
                     {sf.proposed_actions?.map((a, j) => (
                       <div key={j}>
-                        <span style={mono}>{a.action_type}</span> — {a.rationale}
+                        <span style={mono}>{a.action_type}</span> —{" "}
+                        {a.rationale}
                       </div>
                     ))}
                     {sf.rejected_alternatives?.map((r, j) => (
                       <div key={j} style={{ color: "#888" }}>
-                        rejected <span style={mono}>{r.action_type}</span> — {r.reason}
+                        rejected <span style={mono}>{r.action_type}</span> —{" "}
+                        {r.reason}
                       </div>
                     ))}
                   </div>
@@ -122,7 +145,14 @@ export default function ClientView({ openTrace }: { openTrace: OpenTrace }) {
             {finding.trace_id ? (
               <button
                 onClick={() => openTrace(finding.trace_id!)}
-                style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                style={{
+                  ...mono,
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  color: "#1a48c4",
+                  cursor: "pointer",
+                }}
               >
                 {finding.trace_id}
               </button>

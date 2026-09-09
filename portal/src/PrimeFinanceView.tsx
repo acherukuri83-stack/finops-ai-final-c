@@ -3,29 +3,54 @@ import type { OpenTrace } from "./App";
 import { api, type Finding } from "./api";
 
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
-const box: React.CSSProperties = { marginTop: 12, padding: 12, background: "#f7f7f7", borderRadius: 6 };
+const box: React.CSSProperties = {
+  marginTop: 12,
+  padding: 12,
+  background: "#f7f7f7",
+  borderRadius: 6,
+};
 
 type Domain = "loan" | "margin" | "cash" | "corpaction" | "wire";
 
-const DOMAINS: { key: Domain; label: string; hint: string; sample: string }[] = [
-  { key: "loan", label: "Stock Loan", hint: "a loan id — recall window vs buy-in", sample: "LN-5001" },
-  { key: "margin", label: "Margin", hint: "a margin call id — meet vs close-out", sample: "MC-9001" },
-  { key: "cash", label: "Cash", hint: "a projected cash break — fund vs escalate", sample: "CB-8001" },
-  {
-    key: "corpaction",
-    label: "Corp Actions",
-    hint: "an event id + account id — held/lent split over the record date",
-    sample: "CA-7001",
-  },
-  {
-    key: "wire",
-    label: "Wire",
-    hint: "a held wire id — route to reviewer / reschedule / refer (maker only)",
-    sample: "W300917",
-  },
-];
+const DOMAINS: { key: Domain; label: string; hint: string; sample: string }[] =
+  [
+    {
+      key: "loan",
+      label: "Stock Loan",
+      hint: "a loan id — recall window vs buy-in",
+      sample: "LN-5001",
+    },
+    {
+      key: "margin",
+      label: "Margin",
+      hint: "a margin call id — meet vs close-out",
+      sample: "MC-9001",
+    },
+    {
+      key: "cash",
+      label: "Cash",
+      hint: "a projected cash break — fund vs escalate",
+      sample: "CB-8001",
+    },
+    {
+      key: "corpaction",
+      label: "Corp Actions",
+      hint: "an event id + account id — held/lent split over the record date",
+      sample: "CA-7001",
+    },
+    {
+      key: "wire",
+      label: "Wire",
+      hint: "a held wire id — route to reviewer / reschedule / refer (maker only)",
+      sample: "W300917",
+    },
+  ];
 
-export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }) {
+export default function PrimeFinanceView({
+  openTrace,
+}: {
+  openTrace: OpenTrace;
+}) {
   const [domain, setDomain] = useState<Domain>("loan");
   const [id, setId] = useState("LN-5001");
   const [account, setAccount] = useState("ACC-88213");
@@ -59,20 +84,47 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
     }
   }
 
-  const ready = domain === "corpaction" ? !!id.trim() && !!account.trim() : !!id.trim();
+  const ready =
+    domain === "corpaction" ? !!id.trim() && !!account.trim() : !!id.trim();
 
   return (
-    <div style={{ fontSize: 13, maxWidth: 720 }}>
-      <p style={{ color: "#666", fontSize: 12, marginTop: 0 }}>
-        Non-trade specialists — Stock Loan, Margin, Cash, Corp Actions, and Wire (the optional
-        module). Each runs the same plan → tool loop → synthesise → policy pipeline as Settlement,
-        with its own tool set, its own hard rule (recall window, call window, funding cutoff, record
-        date, wire maker/checker + cutoff + screening), and its own allowlist. They propose; a human
-        approves — and for a wire, only a human releases.
+    <div className="module-workspace primefinance-workspace">
+      <p className="module-intro">
+        Non-trade specialists — Stock Loan, Margin, Cash, Corp Actions, and Wire
+        (the optional module). Each runs the same plan → tool loop → synthesise
+        → policy pipeline as Settlement, with its own tool set, its own hard
+        rule (recall window, call window, funding cutoff, record date, wire
+        maker/checker + cutoff + screening), and its own allowlist. They
+        propose; a human approves — and for a wire, only a human releases.
       </p>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-        <select value={domain} onChange={(e) => pick(e.target.value as Domain)} style={{ padding: "4px 8px" }}>
+      <div
+        className="domain-grid"
+        role="group"
+        aria-label="Choose finance domain"
+      >
+        {DOMAINS.map((d, index) => (
+          <button
+            key={d.key}
+            className={`domain-card domain-${d.key}`}
+            aria-pressed={domain === d.key}
+            disabled={busy}
+            onClick={() => pick(d.key)}
+          >
+            <span className="domain-number">0{index + 1}</span>
+            <strong>{d.label}</strong>
+            <small>{d.hint}</small>
+          </button>
+        ))}
+      </div>
+      <div className="module-form">
+        <select
+          aria-label="Finance domain"
+          disabled={busy}
+          value={domain}
+          onChange={(e) => pick(e.target.value as Domain)}
+          style={{ padding: "4px 8px" }}
+        >
           {DOMAINS.map((d) => (
             <option key={d.key} value={d.key}>
               {d.label}
@@ -80,6 +132,7 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
           ))}
         </select>
         <input
+          aria-label="Subject ID"
           value={id}
           onChange={(e) => setId(e.target.value)}
           placeholder={meta.sample}
@@ -87,6 +140,7 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
         />
         {domain === "corpaction" && (
           <input
+            aria-label="Account ID"
             value={account}
             onChange={(e) => setAccount(e.target.value)}
             placeholder="ACC-88213"
@@ -99,10 +153,14 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
       </div>
       <p style={{ color: "#888", fontSize: 12 }}>{meta.hint}</p>
 
-      {error && <p style={{ color: "#b00" }}>Error: {error}</p>}
+      {error && (
+        <p role="alert" className="module-error">
+          Error: {error}
+        </p>
+      )}
 
       {finding && (
-        <div style={box}>
+        <div className="result-panel" style={box}>
           <div>
             outcome <b>{finding.outcome}</b>
             {finding.root_cause ? (
@@ -113,7 +171,9 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
             ) : null}
           </div>
           {finding.confidence_basis ? (
-            <div style={{ color: "#555", marginTop: 4 }}>{finding.confidence_basis}</div>
+            <div style={{ color: "#555", marginTop: 4 }}>
+              {finding.confidence_basis}
+            </div>
           ) : null}
 
           {finding.proposed_actions && finding.proposed_actions.length > 0 && (
@@ -137,16 +197,17 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
             </div>
           )}
 
-          {finding.rejected_alternatives && finding.rejected_alternatives.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <b>Rejected</b>
-              {finding.rejected_alternatives.map((r, i) => (
-                <div key={i}>
-                  <span style={mono}>{r.action_type}</span> — {r.reason}
-                </div>
-              ))}
-            </div>
-          )}
+          {finding.rejected_alternatives &&
+            finding.rejected_alternatives.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <b>Rejected</b>
+                {finding.rejected_alternatives.map((r, i) => (
+                  <div key={i}>
+                    <span style={mono}>{r.action_type}</span> — {r.reason}
+                  </div>
+                ))}
+              </div>
+            )}
 
           {finding.open_questions && finding.open_questions.length > 0 && (
             <div style={{ marginTop: 8 }}>
@@ -164,7 +225,14 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
             {finding.trace_id ? (
               <button
                 onClick={() => openTrace(finding.trace_id!)}
-                style={{ ...mono, border: "none", background: "none", padding: 0, color: "#1a48c4", cursor: "pointer" }}
+                style={{
+                  ...mono,
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  color: "#1a48c4",
+                  cursor: "pointer",
+                }}
               >
                 {finding.trace_id}
               </button>

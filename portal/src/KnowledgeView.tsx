@@ -22,8 +22,18 @@ export default function KnowledgeView() {
   }
 
   return (
-    <div style={{ fontSize: 13, maxWidth: 820 }}>
+    <div className="module-workspace knowledge-workspace">
+      <div className="section-heading">
+        <span className="section-symbol">⌕</span>
+        <div>
+          <h3>Search the knowledge library</h3>
+          <p>
+            Find procedures and source passages that support an investigation.
+          </p>
+        </div>
+      </div>
       <form
+        className="module-form"
         onSubmit={(e) => {
           e.preventDefault();
           void run();
@@ -45,13 +55,19 @@ export default function KnowledgeView() {
       {hits?.length === 0 && <p style={{ color: "#888" }}>No results.</p>}
 
       {hits?.map((h, i) => (
-        <div key={i} style={{ borderBottom: "1px solid #eee", padding: "10px 0" }}>
+        <div key={i} className="knowledge-card">
+          <span className="source-label">SOURCE {i + 1}</span>
           <div style={mono}>
             {h.doc}
             {h.section ? ` §${h.section}` : ""} {h.title ? `— ${h.title}` : ""}
-            <span style={{ color: "#888" }}> · {h.score.toFixed(3)}</span>
+            <span className="score-label">
+              {" "}
+              Similarity {h.score.toFixed(3)}
+            </span>
           </div>
-          <div style={{ color: "#444", marginTop: 4, whiteSpace: "pre-wrap" }}>{h.text}</div>
+          <div style={{ color: "#444", marginTop: 4, whiteSpace: "pre-wrap" }}>
+            {h.text}
+          </div>
         </div>
       ))}
     </div>
