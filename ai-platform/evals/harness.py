@@ -20,6 +20,7 @@ import yaml
 
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
+from agent_core.supervisor import investigate_client
 from evals.metrics import CountingModelClient, span_sink
 from evals.scoring import RunScore, score_run
 
@@ -40,14 +41,19 @@ class Scenario:
     trade_id: str
     expect: dict[str, Any]
     fixtures: frozenset[str]
+    subject_kind: str = "trade"  # "trade" (single-agent) | "client" (Supervisor fan-out)
+    subject_id: str = ""  # the client id when subject_kind == "client"
 
     @staticmethod
     def load(path: Path) -> Scenario:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         trades = (raw.get("plant") or {}).get("trades") or []
         failed = [t for t in trades if t.get("status") == "FAILED"]
-        trade_id = str((failed or trades)[0]["id"]) if trades else ""
+        first = (failed or trades)[0] if trades else {}
+        trade_id = str(first.get("id", "")) if trades else ""
         expect = raw.get("expect") or {}
+        subject_kind = "client" if expect.get("subject") == "client" else "trade"
+        subject_id = str(first.get("client", "")) if subject_kind == "client" else trade_id
         fixtures = {
             m for ref in expect.get("required_evidence", []) or [] for m in _CN.findall(str(ref))
         }
@@ -58,6 +64,8 @@ class Scenario:
             trade_id=trade_id,
             expect=expect,
             fixtures=frozenset(fixtures),
+            subject_kind=subject_kind,
+            subject_id=subject_id,
         )
 
 
@@ -126,6 +134,13 @@ class ScenarioResult:
         return self.runs_passed >= need and self.flip_ok is not False
 
 
+async def _run_subject(sc: Scenario, counter: CountingModelClient) -> Finding:
+    """Dispatch to the single-trade path or the Supervisor, per the scenario's subject."""
+    if sc.subject_kind == "client":
+        return await investigate_client(sc.subject_id, client=counter, scenario_id=sc.sid)
+    return await investigate(sc.trade_id, client=counter, scenario_id=sc.sid)
+
+
 async def run_scenario(sc: Scenario, *, n: int, counter: CountingModelClient) -> ScenarioResult:
     result = ScenarioResult(scenario=sc, n=n)
     try:
@@ -138,7 +153,7 @@ async def run_scenario(sc: Scenario, *, n: int, counter: CountingModelClient) ->
         counter.reset()
         try:
             with span_sink() as sink:
-                finding = await investigate(sc.trade_id, client=counter, scenario_id=sc.sid)
+                finding = await _run_subject(sc, counter)
             metrics = sink.read(counter)
         except Exception as exc:  # noqa: BLE001 — one bad run must not sink the suite
             result.error = f"run raised: {type(exc).__name__}: {exc}"

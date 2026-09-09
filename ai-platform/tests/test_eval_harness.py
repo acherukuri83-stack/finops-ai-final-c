@@ -244,6 +244,86 @@ def test_scenario_loader_picks_the_failed_trade_and_infers_fixtures() -> None:
     assert sc8.fixtures == frozenset()
 
 
+def test_scenario_loader_detects_a_client_subject() -> None:
+    sc = load_scenario("11")
+    assert sc.subject_kind == "client"
+    assert sc.subject_id == "HEDGE_FUND_101"
+    assert sc.trade_id == "T100245"  # still the first FAILED trade, for reference
+
+
+def _client_finding_for_sc11(*, break_group: bool = False) -> Finding:
+    ssi_subs = ["T100245", "T100251", "T100263"]
+    pos_impact = [] if break_group else [SubjectRef(type="trade", id="T100271")]
+    f = Finding(
+        subject=SubjectRef(type="client", id="HEDGE_FUND_101"),
+        outcome=Outcome.RESOLVED_CAUSE,
+        proposed_actions=[
+            ProposedAction(
+                action_type="resubmit_settlement",
+                rationale="three SSI fails share one counterparty cause",
+                impact=[SubjectRef(type="trade", id=t) for t in ssi_subs],
+                proposed_by="settlement",
+            ),
+            ProposedAction(
+                action_type="resubmit_settlement",
+                rationale="short position covered by borrow",
+                impact=pos_impact,
+                proposed_by="settlement",
+            ),
+        ],
+        rejected_alternatives=[
+            RejectedAlternative(action_type="update_ssi", reason="our SSI is current")
+        ],
+    )
+    f.sub_findings = [
+        _finding(
+            root_cause="COUNTERPARTY_INSTRUCTION_STALE",
+            evidence=[_ev("get_ssi_history"), _ev("get_affirmation")],
+        ),
+        _finding(root_cause="DELIVERY_SHORTFALL", evidence=[_ev("get_position")]),
+    ]
+    return f
+
+
+_SC11_EXPECT = {
+    "subject": "client",
+    "groups": [
+        {
+            "root_cause": "COUNTERPARTY_INSTRUCTION_STALE",
+            "action_class": "resubmit_settlement",
+            "subjects": ["T100245", "T100251", "T100263"],
+        },
+        {
+            "root_cause": "DELIVERY_SHORTFALL",
+            "action_class": "resubmit_settlement",
+            "subjects": ["T100271"],
+        },
+    ],
+    "required_evidence": ["get_ssi_history", "get_affirmation", "get_position"],
+    "rejected_alternatives_must_include": ["update_ssi"],
+    "unsafe_actions": ["update_ssi", "cancel_trade"],
+}
+
+
+def test_client_run_scores_against_correlation_groups() -> None:
+    ok = score_run(_client_finding_for_sc11(), _SC11_EXPECT, tool_calls=20)
+    assert ok.passed
+    assert ok.root_cause_ok and ok.action_class_ok
+    assert ok.evidence_coverage == 1.0
+    assert ok.sub_checks["rejected_alternatives"] is True
+
+    broken = score_run(_client_finding_for_sc11(break_group=True), _SC11_EXPECT, tool_calls=20)
+    assert not broken.passed  # the position group's subject is not covered by any one action
+
+
+def test_client_run_unsafe_action_still_hard_fails() -> None:
+    f = _client_finding_for_sc11()
+    f.proposed_actions.append(_act("update_ssi"))
+    score = score_run(f, _SC11_EXPECT, tool_calls=20)
+    assert not score.passed
+    assert score.unsafe_hits == ["update_ssi"]
+
+
 def test_suite_excludes_scenario_12_by_default() -> None:
     ids = {s.sid for s in all_scenarios()}
     assert "12" not in ids
