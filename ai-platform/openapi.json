@@ -382,6 +382,45 @@
         }
       }
     },
+    "/review": {
+      "post": {
+        "summary": "Post Review Pr",
+        "description": "Developer Agent \u2014 PR-review mode. Classify the touched surfaces, run the\ndeterministic checks, apply the platform hard rules (write tool w/o approval_id \u2192\nBLOCKER, new action not on an allowlist \u2192 MAJOR, PII into a model call \u2192 BLOCKER,\nagent-authored scenario \u2192 needs a human), and return a structured `Review`. It posts\ncomments only \u2014 there is no approve/merge tool.",
+        "operationId": "post_review_pr_review_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Review"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/verify": {
       "post": {
         "summary": "Post Verify",
@@ -1215,6 +1254,94 @@
           "reason"
         ],
         "title": "RejectedAlternative"
+      },
+      "Review": {
+        "properties": {
+          "pr_id": {
+            "type": "string",
+            "title": "Pr Id"
+          },
+          "surfaces": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Surfaces"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "default": "COMMENT"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "pr_id"
+        ],
+        "title": "Review"
+      },
+      "ReviewFinding": {
+        "properties": {
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "file": {
+            "type": "string",
+            "title": "File"
+          },
+          "line": {
+            "type": "integer",
+            "title": "Line",
+            "default": 0
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence",
+            "default": ""
+          },
+          "suggested_patch": {
+            "type": "string",
+            "title": "Suggested Patch",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "severity",
+          "file",
+          "message"
+        ],
+        "title": "ReviewFinding"
+      },
+      "ReviewRequest": {
+        "properties": {
+          "pr_id": {
+            "type": "string",
+            "title": "Pr Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pr_id"
+        ],
+        "title": "ReviewRequest"
       },
       "ServerInfo": {
         "properties": {

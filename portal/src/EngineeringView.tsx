@@ -1,14 +1,17 @@
 import { useState } from "react";
 import type { OpenTrace } from "./App";
-import { api, type Finding } from "./api";
+import { api, type Finding, type Review } from "./api";
 
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 const box: React.CSSProperties = { marginTop: 12, padding: 12, background: "#f7f7f7", borderRadius: 6 };
+const SEV_COLOR: Record<string, string> = { BLOCKER: "#b00", MAJOR: "#a5670f", MINOR: "#666", NIT: "#999" };
 
 export default function EngineeringView({ openTrace }: { openTrace: OpenTrace }) {
   const [subject, setSubject] = useState("job-4471");
   const [ticket, setTicket] = useState("");
+  const [pr, setPr] = useState("");
   const [finding, setFinding] = useState<Finding | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -16,8 +19,23 @@ export default function EngineeringView({ openTrace }: { openTrace: OpenTrace })
     setBusy(true);
     setError(null);
     setFinding(null);
+    setReview(null);
     try {
       setFinding(await fn());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runReview() {
+    setBusy(true);
+    setError(null);
+    setFinding(null);
+    setReview(null);
+    try {
+      setReview(await api.review(pr.trim()));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -57,8 +75,56 @@ export default function EngineeringView({ openTrace }: { openTrace: OpenTrace })
           {busy ? "Verifying…" : "Verify change ticket"}
         </button>
       </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <input
+          value={pr}
+          placeholder="PR-19"
+          onChange={(e) => setPr(e.target.value)}
+          style={{ ...mono, padding: "4px 8px", width: 220 }}
+        />
+        <button onClick={runReview} disabled={busy || !pr.trim()}>
+          {busy ? "Reviewing…" : "Review a PR"}
+        </button>
+      </div>
 
       {error && <p style={{ color: "#b00" }}>Error: {error}</p>}
+
+      {review && (
+        <div style={box}>
+          <div>
+            <span style={mono}>{review.pr_id}</span> · recommendation{" "}
+            <b style={{ color: review.recommendation === "APPROVE" ? "#137333" : "#b00" }}>
+              {review.recommendation}
+            </b>
+          </div>
+          <div style={{ color: "#555", marginTop: 4 }}>{review.summary}</div>
+          {review.surfaces && review.surfaces.length > 0 && (
+            <div style={{ ...mono, color: "#888", marginTop: 4 }}>
+              surfaces: {review.surfaces.join(", ")}
+            </div>
+          )}
+          {review.findings && review.findings.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              {review.findings.map((f, i) => (
+                <div key={i} style={{ marginTop: 4 }}>
+                  <b style={{ color: SEV_COLOR[f.severity] ?? "#333" }}>{f.severity}</b>{" "}
+                  <span style={mono}>
+                    {f.file}
+                    {f.line ? `:${f.line}` : ""}
+                  </span>{" "}
+                  — {f.message}
+                  {f.evidence ? <span style={{ color: "#888" }}> [{f.evidence}]</span> : null}
+                  {f.suggested_patch ? (
+                    <div style={{ color: "#555", ...mono, fontSize: 12 }}>
+                      fix: {f.suggested_patch}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {finding && (
         <div style={box}>

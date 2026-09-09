@@ -61,9 +61,19 @@ EXPECTED_TOOLS = {
         "rerate_loan",
         "book_buy_in",
     },
+    "repo": {"get_pull_request", "get_diff", "open_pull_request", "post_review"},
+    "ci": {
+        "run_static_analysis",
+        "run_security_scan",
+        "get_test_coverage",
+        "run_tests",
+        "run_eval",
+    },
     "case": {"create_case", "update_case", "propose_action", "get_approval", "log_audit"},
 }
 EXPECTED_ACCESS = {
+    "open_pull_request": "write",
+    "post_review": "write",
     "resubmit_settlement": "write",
     "cancel_trade": "write",
     "update_ssi": "write",
