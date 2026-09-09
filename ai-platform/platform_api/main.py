@@ -18,7 +18,9 @@ from pydantic import BaseModel
 
 from agent_core.developer import investigate_incident, verify_change
 from agent_core.loop import investigate
+from agent_core.review import review_pr
 from agent_core.schemas.finding import Finding
+from agent_core.schemas.review import Review
 from agent_core.stockloan import investigate_loan
 from agent_core.supervisor import investigate_client
 from knowledge import retrieval
@@ -124,6 +126,20 @@ async def post_diagnose(req: DiagnoseRequest) -> Finding:
     service): find the causing change, the blast radius, and revert-vs-fix-forward, and
     propose a change ticket + rerun for a human to approve."""
     return await investigate_incident(req.subject_id, request=req.request)
+
+
+class ReviewRequest(BaseModel):
+    pr_id: str
+
+
+@app.post("/review")
+async def post_review_pr(req: ReviewRequest) -> Review:
+    """Developer Agent — PR-review mode. Classify the touched surfaces, run the
+    deterministic checks, apply the platform hard rules (write tool w/o approval_id →
+    BLOCKER, new action not on an allowlist → MAJOR, PII into a model call → BLOCKER,
+    agent-authored scenario → needs a human), and return a structured `Review`. It posts
+    comments only — there is no approve/merge tool."""
+    return await review_pr(req.pr_id)
 
 
 @app.post("/verify")

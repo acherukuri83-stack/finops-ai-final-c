@@ -8,8 +8,10 @@ Every mainline phase has a merged core slice (A + C full; D full; **E / F / G as
 
 Also done: **Scenario 30 mechanism** — the Supervisor correlating a `settlement` + `stockloan` sub-finding into one mixed-domain client answer, exercised in `tests/test_supervisor.py` (a scored YAML waits on stock-loan data being seeded so `investigate_client` can discover the loan).
 
+Also done: **E PR-review mode** — `repo` + `ci` in-process fixture MCP servers, `Review` schema, `agent_core/review.py` (surface classification + deterministic checks + the platform hard rules as code: write tool w/o `approval_id` → BLOCKER `security.md §4.1`, new `action_type` off every allowlist → MAJOR §5, PII into a model call → BLOCKER §7, `authored_by: agent` scenario → needs a human). `POST /review`; Engineering-tab "Review a PR" input. No `approve_pr` / `merge_pr` tool exists.
+
 Remaining depth (`docs/backlog.md`, any order):
-- **E** — PR-review / eval-authoring modes; `repo` + `ci` MCP servers; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE`; standards corpus.
+- **E** — eval-authoring mode; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE` (product-design open item — no clean incident-subject); standards corpus in pgvector (review cites the `docs/standards/*.md` §s directly for now).
 - **F** — Margin / CorpActions / Cash domains; a seeded table + `simulator` planter for stock loan (unlocks a scored Sc. 30); portal Stock Loan tab.
 - **G** — `schema_validation` guardrail span; `finops.tool.retries` emission; trace replay/diff polish; Bedrock swap; memory loop.
 - **B (Wires)** — the optional module (unbuilt; depends only on A).

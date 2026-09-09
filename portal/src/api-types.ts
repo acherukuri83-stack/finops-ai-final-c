@@ -171,6 +171,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Review Pr
+         * @description Developer Agent — PR-review mode. Classify the touched surfaces, run the
+         *     deterministic checks, apply the platform hard rules (write tool w/o approval_id →
+         *     BLOCKER, new action not on an allowlist → MAJOR, PII into a model call → BLOCKER,
+         *     agent-authored scenario → needs a human), and return a structured `Review`. It posts
+         *     comments only — there is no approve/merge tool.
+         */
+        post: operations["post_review_pr_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/verify": {
         parameters: {
             query?: never;
@@ -532,6 +556,54 @@ export interface components {
             reason: string;
             /** Evidence */
             evidence?: string[];
+        };
+        /** Review */
+        Review: {
+            /** Pr Id */
+            pr_id: string;
+            /** Surfaces */
+            surfaces?: string[];
+            /** Findings */
+            findings?: components["schemas"]["ReviewFinding"][];
+            /**
+             * Recommendation
+             * @default COMMENT
+             */
+            recommendation: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+        };
+        /** ReviewFinding */
+        ReviewFinding: {
+            /** Severity */
+            severity: string;
+            /** File */
+            file: string;
+            /**
+             * Line
+             * @default 0
+             */
+            line: number;
+            /** Message */
+            message: string;
+            /**
+             * Evidence
+             * @default
+             */
+            evidence: string;
+            /**
+             * Suggested Patch
+             * @default
+             */
+            suggested_patch: string;
+        };
+        /** ReviewRequest */
+        ReviewRequest: {
+            /** Pr Id */
+            pr_id: string;
         };
         /** ServerInfo */
         ServerInfo: {
@@ -1188,6 +1260,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Finding"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_review_pr_review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
                 };
             };
             /** @description Validation Error */

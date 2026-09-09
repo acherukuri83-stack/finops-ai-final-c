@@ -6,6 +6,7 @@ export type Health = { status: string; service: string };
 export type TradeRow = components["schemas"]["TradeRow"];
 export type ConnectionsResponse = components["schemas"]["ConnectionsResponse"];
 export type Finding = components["schemas"]["Finding"];
+export type Review = components["schemas"]["Review"];
 export type KnowledgeHit = components["schemas"]["KnowledgeHit"];
 export type DecideRequest = components["schemas"]["DecideRequest"];
 
@@ -71,6 +72,7 @@ export const api = {
     postJSON<Finding>("/investigate", { client_id: clientId }),
   diagnose: (subjectId: string) => postJSON<Finding>("/diagnose", { subject_id: subjectId }),
   verify: (ticketId: string) => postJSON<Finding>("/verify", { ticket_id: ticketId }),
+  review: (prId: string) => postJSON<Review>("/review", { pr_id: prId }),
   knowledge: (q: string) => getJSON<KnowledgeHit[]>(`/knowledge?q=${encodeURIComponent(q)}`),
   cases: () => getJSON<CaseRow[]>("/cases"),
   case: (id: string) => getJSON<CaseDetail>(`/cases/${encodeURIComponent(id)}`),

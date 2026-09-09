@@ -105,13 +105,16 @@ Ideas that are out of the current phase's scope. Append; don't build.
     `sub_findings`, writes a retrievable `INC-3xxx` on a clean fix; a failed fix reports
     FAILED + "re-enter incident mode excluding <hypothesis>" and proposes nothing. Residual
     hand-off is direct to `run_specialist(SETTLEMENT)`, not yet via the Supervisor.
-  - **PR-review mode** — `repo` + `ci` MCP servers (`get_pull_request` / `get_diff` /
-    `get_source` / `open_pull_request` draft / `post_review`; `run_static_analysis` /
-    `run_security_scan` / `get_test_coverage` / `run_tests` / `run_eval`), diff-surface
-    classification → targeted standards retrieval, `Review` schema, code rules (write tool
-    w/o `approval_id` ⇒ BLOCKER; new action not in an allowlist ⇒ MAJOR; model call on an
-    unscrubbed field ⇒ BLOCKER). `open_pull_request` / `post_review` are already on the
-    `developer` allowlist; the servers are not built.
+  - ~~PR-review mode~~ **DONE (2026-09-09)** — `repo` + `ci` in-process fixture servers,
+    `agent_core/schemas/review.py` + `agent_core/review.py` (`POST /review`): surface
+    classification, deterministic checks (security scan / tests / coverage / static), and
+    the platform hard rules as code (write tool w/o `approval_id` → BLOCKER
+    `security.md §4.1`; new `action_type` off every allowlist → MAJOR §5; PII into a model
+    call → BLOCKER §7; `authored_by: agent` scenario → MAJOR + forced `REQUEST_CHANGES`).
+    No `approve_pr` / `merge_pr` tool. **Deferred:** the model interpretation /
+    prioritisation layer over the deterministic results (the slice is fully code);
+    standards retrieval is a direct `docs/standards/*.md` § cite, not pgvector;
+    `repo.get_source` dropped as redundant with `platform.get_source`.
   - **eval-authoring mode** — SOP section → scenario YAML + `expect:` + fixtures →
     baseline `run_eval` → draft PR labelled `authored_by: agent` (blocked from merge
     without a human reviewer).

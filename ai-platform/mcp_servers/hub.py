@@ -22,6 +22,14 @@ from mcp.types import TextContent
 
 from mcp_servers.case.server import mcp as case_mcp
 from mcp_servers.case.tools import create_case, get_approval, log_audit, propose_action, update_case
+from mcp_servers.ci.server import mcp as ci_mcp
+from mcp_servers.ci.tools import (
+    get_test_coverage,
+    run_eval,
+    run_security_scan,
+    run_static_analysis,
+    run_tests,
+)
 from mcp_servers.client.server import mcp as client_mcp
 from mcp_servers.client.tools import (
     get_account,
@@ -61,6 +69,13 @@ from mcp_servers.position.server import mcp as position_mcp
 from mcp_servers.position.tools import get_borrow_availability, get_position
 from mcp_servers.reference.server import mcp as reference_mcp
 from mcp_servers.reference.tools import get_market_calendar, get_security
+from mcp_servers.repo.server import mcp as repo_mcp
+from mcp_servers.repo.tools import (
+    get_diff,
+    get_pull_request,
+    open_pull_request,
+    post_review,
+)
 from mcp_servers.stockloan.server import mcp as stockloan_mcp
 from mcp_servers.stockloan.tools import (
     book_buy_in,
@@ -97,6 +112,8 @@ WRITE_TOOLS = frozenset(
         "initiate_recall",
         "rerate_loan",
         "book_buy_in",
+        "open_pull_request",
+        "post_review",
     }
 )
 GOV_TOOLS = frozenset({"create_case", "update_case", "propose_action", "log_audit"})
@@ -177,6 +194,17 @@ SERVERS: dict[str, ServerSpec] = {
             "read+write",
         ),
         ServerSpec(
+            "repo",
+            repo_mcp,
+            [get_pull_request, get_diff, open_pull_request, post_review],
+            "read+write",
+        ),
+        ServerSpec(
+            "ci",
+            ci_mcp,
+            [run_static_analysis, run_security_scan, get_test_coverage, run_tests, run_eval],
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -204,6 +232,8 @@ LIST_TOOLS = frozenset(
         "diff_config",
         "get_platform_logs",
         "get_incident",
+        "run_static_analysis",
+        "run_security_scan",
         "list_loans",
         "get_rerate_history",
     }
