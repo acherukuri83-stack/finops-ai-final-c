@@ -22,6 +22,7 @@ from mcp_servers.cash import store as cash_store
 from mcp_servers.corpactions import store as ca_store
 from mcp_servers.margin import store as margin_store
 from mcp_servers.stockloan import store as sl_store
+from mcp_servers.wire import store as wire_store
 
 pytestmark = pytest.mark.contract
 
@@ -34,7 +35,7 @@ def sql_mode() -> Iterator[None]:
     except OperationalError:
         pytest.skip("no database reachable")
     _finance_store.set_memory(False)
-    for s in (sl_store, margin_store, ca_store, cash_store):
+    for s in (sl_store, margin_store, ca_store, cash_store, wire_store):
         s.ensure_schema()
     try:
         yield
@@ -89,3 +90,23 @@ def test_make_seed_baseline_is_visible_to_each_domain(sql_mode: None) -> None:
     assert (cash_store.get_cash_break("CB-8001") or {}).get("currency") == "USD"
     ladder = cash_store.get_funding_ladder("ACC-88213", "USD")
     assert ladder and all(set(r) == {"time", "flow", "kind"} for r in ladder)
+
+
+def test_wire_seeded_baseline_and_roundtrip(sql_mode: None) -> None:
+    w = wire_store.get_wire("W300917") or {}
+    assert w.get("client_id") == "HF-201"
+    assert w.get("value_date") == "2026-09-06"  # date -> ISO string
+    assert {x["wire_id"] for x in wire_store.list_wires(client_id="HF-201", status="HELD")} == {
+        "W300915",
+        "W300917",
+    }
+    assert wire_store.get_wire_screening("HF-205")["status"] == "HIT"
+    assert wire_store.get_wire_screening("HF-999")["status"] == "CLEAR"  # fallback row
+    assert (wire_store.get_available_balance("ACCT-206", "USD") or {}).get("available") == 1_200_000
+
+    wire_store.reset()
+    row = wire_store.record_action("route_to_reviewer", "W300917", {"reason": "x"}, "ap_y")
+    assert row["wire_id"] == "W300917" and row["action_id"].startswith("WR-")
+    assert [q["wire_id"] for q in wire_store.get_approval_queue()] == ["W300917"]
+    wire_store.reset()
+    assert wire_store.get_approval_queue() == []

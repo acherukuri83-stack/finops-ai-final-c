@@ -27,6 +27,9 @@ PLANT_KEYS = {
     "ca_events",  # Phase F — a corporate-action event
     "ca_entitlements",  # Phase F — an account's held/lent split over the record date
     "cash_breaks",  # Phase F — a projected cash break
+    "wires",  # Phase B — a held outgoing wire
+    "standing_instructions",  # Phase B — a client's approved wire beneficiaries
+    "wire_screening",  # Phase B — a sanctions screening result (incl. a hit)
     "logs",
     "incidents",
     "corpus_fixtures",

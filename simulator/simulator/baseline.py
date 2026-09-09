@@ -419,8 +419,10 @@ def populate(conn: Connection) -> BaselineIds:
     _populate_logs(conn, rng, trade_rows)
 
     from simulator.finance_baseline import populate_finance
+    from simulator.wire_baseline import populate_wire
 
     populate_finance(conn)  # prime-finance tables (stockloan / margin / corpactions / cash)
+    populate_wire(conn)  # wire tables (Phase B, optional module)
 
     return BaselineIds(
         client_ids=client_ids,

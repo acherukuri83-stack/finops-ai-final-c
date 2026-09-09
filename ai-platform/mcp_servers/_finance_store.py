@@ -1,5 +1,6 @@
-"""Shared backing for the four prime-finance domain stores — stockloan, margin,
-corpactions, cash.
+"""Shared backing for the seeded platform-tier domain stores — stockloan, margin,
+corpactions, cash (prime finance), and wire (the optional Wires module). The name is
+historical; `FinanceStore` is a generic seeded store, nothing in it is finance-specific.
 
 Two modes behind one object, the same split `platform_api.cases` uses:
 
@@ -65,7 +66,7 @@ def _jsonable(row: Mapping[str, Any]) -> dict[str, Any]:
 
 
 class FinanceStore:
-    """One prime-finance domain's data access. `read_tables` are seeded by the simulator;
+    """One seeded domain's data access. `read_tables` are seeded by the simulator;
     `action_table` is written at runtime when a human approves a proposal."""
 
     def __init__(
@@ -202,5 +203,6 @@ def ensure_all_schemas() -> None:
     from mcp_servers.corpactions import store as _ca  # noqa: F401
     from mcp_servers.margin import store as _margin  # noqa: F401
     from mcp_servers.stockloan import store as _sl  # noqa: F401
+    from mcp_servers.wire import store as _wire  # noqa: F401
 
     metadata.create_all(_engine(), checkfirst=True)

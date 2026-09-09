@@ -14,6 +14,7 @@ from mcp_servers.wire.tools import (
     get_wire,
     get_wire_audit_trail,
     get_wire_screening,
+    list_wires,
     open_compliance_referral,
     reschedule_value_date,
     route_to_reviewer,
@@ -23,6 +24,7 @@ mcp = FastMCP("wire")
 
 for _fn in (
     get_wire,
+    list_wires,
     get_wire_audit_trail,
     get_standing_instructions,
     get_approval_queue,

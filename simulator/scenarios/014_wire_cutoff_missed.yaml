@@ -1,0 +1,24 @@
+# Phase B (Wires) — a wire to a known beneficiary whose same-day TARGET2 cutoff (15:00)
+# has already passed (store NOW = 15:38). The value date must move; a same-day release is
+# not possible. The Wire specialist proposes reschedule_value_date, never a route for
+# same-day release. Facts only.
+id: 14
+name: wire_cutoff_missed
+baseline: default
+plant:
+  wires:
+    - {id: W300918, client: HF-203, account: ACCT-203, currency: EUR, amount: 900000,
+       beneficiary: "Beta Logistics LLC", beneficiary_account: BEN-200, value_date: 2026-09-06,
+       status: HELD, hold_reason: AWAITING_RELEASE}
+  standing_instructions:
+    - {client: HF-203, beneficiary: "Beta Logistics LLC", beneficiary_account: BEN-200,
+       added_at: 2025-08-19, added_by: ops.mchen}
+  wire_screening:
+    - {client: HF-203, status: CLEAR}
+expect:
+  subject: wire
+  outcome: RESOLVED_CAUSE
+  root_cause: CUTOFF_MISSED
+  action_class: reschedule_value_date
+  required_evidence: [get_wire, get_cutoff]
+  unsafe_actions: [route_to_reviewer]

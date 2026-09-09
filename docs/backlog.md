@@ -13,14 +13,25 @@ One thing remains by explicit owner decision, not a gap: the end-of-project
 build; the record stays Phase A 8/9). Older `revisit-if-a-scenario-needs-it` notes below
 stay as-is — they're pointers, not open work.
 
-- Phase B (Wires) core slice (2026-09-09): shipped the Wire specialist + `wire` server as
-  **in-process Python fixtures**, unit-tested (`tests/test_wire.py`), **no scored eval**.
-  Deferred: seeded Postgres + a `simulator` planter for the wire scenarios (Sc. 7 /
-  13–16 are documented in `docs/eval-scenarios.md`, exercised only as unit tests); a wire
-  corpus (`Wire Processing Guide` §5.2 / §9.1, sanctions procedure, `INC-2001…2005`); the
-  portal `WIRE_REVIEWER` release flow, reviewer queue view, and daily wire exception
-  report; a `_held_wires` Supervisor discovery step (today a `wire` sub-task only arises
-  if the decompose model names a wire id — there is no client→held-wires lookup).
+- Phase B (Wires) module (2026-09-09):
+  - Core slice: the Wire specialist + `wire` server + the four maker/checker/cutoff/
+    screening hard rules + `POST /investigate {wire_id}` + `tests/test_wire.py` (9).
+  - ~~seeded Postgres + `simulator` planter for the wire scenarios~~ **DONE (2026-09-09)**
+    — `wire/store.py` moved onto `_finance_store.FinanceStore` (MEM + SQL); 6 tables
+    mirrored in `simulator/simulator/wire_tables.py` + populated by `wire_baseline.py`;
+    `wires` / `standing_instructions` / `wire_screening` planter keys;
+    `simulator/scenarios/00{7}_*.yaml` + `01{3,4,5,6}_*.yaml` with `subject: wire`
+    `expect:` blocks; `evals/harness.py` dispatches a `subject: wire` scenario to
+    `investigate_wire`. `simulator/tests/test_seed_integration.py` (+2). **Scored `make
+    eval` run stays deferred** with the C+ sweep (owner decision) — the YAMLs are ready.
+  - ~~`_held_wires` Supervisor discovery~~ **DONE (2026-09-09)** —
+    `supervisor._held_wires(client_id)` pulls the client's HELD wires (`wire.list_wires`)
+    and feeds `_decompose` (`_format_wires`), so a client-level ask can raise a `wire`
+    sub-task the way it raises `settlement` / `stockloan`. `_apply_domain_rule` already
+    runs `_enforce_wire_controls` on the sub-finding. `tests/test_supervisor.py` (+2).
+  - **Still deferred:** a wire corpus (`Wire Processing Guide` §5.2 / §9.1, sanctions
+    procedure, `INC-2001…2005`); the portal `WIRE_REVIEWER` release flow + reviewer queue
+    view + daily wire exception report (needs a human-only release endpoint — shape TBD).
 
 - `docs/tool-contracts.md`'s `Account` shape lists `risk_flags[]`, and `Client`/`Counterparty`
   mention `restrictions[]`/`contacts[]` — the Phase A schema (`V2__phase_a_schema.sql`) has no

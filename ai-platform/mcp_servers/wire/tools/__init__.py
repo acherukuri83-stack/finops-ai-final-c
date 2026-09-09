@@ -26,6 +26,11 @@ async def get_wire(wire_id: str) -> Any:
     return row or _not_found(f"no wire {wire_id}", "get_wire")
 
 
+async def list_wires(client_id: str = "", status: str = "") -> Any:
+    """Wires filterable by `client_id` and/or `status` (e.g. HELD). Returns the same shape as get_wire, one row each."""
+    return store.list_wires(client_id or None, status or None)
+
+
 async def get_wire_audit_trail(wire_id: str) -> Any:
     """The wire's event history: [{at, actor, event}] — receipt, hold, cutoff, screening."""
     return store.get_wire_audit_trail(wire_id)

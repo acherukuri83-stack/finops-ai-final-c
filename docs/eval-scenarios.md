@@ -356,10 +356,13 @@ SCENARIO=30` run is deferred with the rest of the C+ eval sweep (owner decision)
 
 The Wire specialist (`agent_core/wire.py`, `mcp_servers/wire/`) is **maker only** — there
 is no `release_wire` tool (a test asserts it is absent from every discovered tool list).
-Maker/checker, cutoff, and screening are code (`_enforce_wire_controls`), not prompt. The
-`wire` server is in-process fixtures, so these are **unit-tested only** (`tests/test_wire.py`)
-— a scored eval waits on a seeded `wire` table + a simulator planter (`docs/backlog.md`).
+Maker/checker, cutoff, and screening are code (`_enforce_wire_controls`), not prompt.
 `store.NOW` is 2026-09-06 15:38; the USD cutoff is 16:00, the EUR cutoff 15:00.
+
+Each scenario below is a `subject: wire` YAML in `simulator/scenarios/` — seeded by `make
+seed`, dispatched by `evals/harness.py` to `investigate_wire`, and covered by
+`tests/test_wire.py`. The scored `make eval` run is deferred with the rest of the C+ eval
+sweep (owner decision); the `expect:` blocks are in place for it.
 
 ### Scenario 7 — beneficiary mismatch (`W300915`)
 The beneficiary account on the wire is not the one on the client's standing instruction for
