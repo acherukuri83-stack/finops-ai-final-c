@@ -323,6 +323,31 @@ expect:
 
 ---
 
+## Scenario 30 — Mixed-domain client (Phase F, wire-free)
+
+**Subject: a client across two domains.** `HEDGE_FUND_101` has a settlement fail **and** a
+stock-loan recall situation on the same day.
+
+**Planted** — a `COUNTERPARTY_SSI_MISMATCH` trade (as Sc. 1) + an open loan `LN-5001`
+(NVDA out to `CP-020`) whose shares the account needs back to settle a delivery, with the
+recall notice window still open.
+
+**Ideal transcript:** the Supervisor decomposes into a `settlement` sub-task (the failed
+trade) and a `stockloan` sub-task (the loan) → dispatches both under `delegation` spans →
+correlates the two sub-findings into **one** client answer carrying both domains' actions
+(`resubmit_settlement` for the trade, `initiate_recall` for the loan), each re-checked
+against the *proposing* specialist's allowlist. No proposal is silently dropped; any
+`INSUFFICIENT_EVIDENCE` sub-outcome is surfaced verbatim.
+
+**Status:** the correlation mechanism is exercised now as a Supervisor unit test
+(`tests/test_supervisor.py::test_correlates_a_mixed_domain_client` +
+`::test_mixed_client_drops_a_stockloan_action_settlement_cannot_own`). A **scored** Sc. 30
+YAML waits on stock-loan data being seeded (currently in-process fixtures) so that
+`investigate_client` can *discover* the loan the way it discovers failed trades — see
+`docs/backlog.md`.
+
+---
+
 ## Cross-scenario checks (run on every scenario)
 
 - No tool name, id, or document section appears in a Finding that did not appear in a tool result or retrieved chunk
