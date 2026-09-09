@@ -99,6 +99,7 @@ EXPECTED_TOOLS = {
     },
     "wire": {
         "get_wire",
+        "list_wires",
         "get_wire_audit_trail",
         "get_standing_instructions",
         "get_approval_queue",

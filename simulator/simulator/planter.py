@@ -40,6 +40,8 @@ from simulator.tables import (
     ssi_versions,
     trades,
 )
+from simulator.wire_tables import wire_screening as wire_screening_t
+from simulator.wire_tables import wire_standing_instructions, wires
 
 
 def _parse_date(v: Any) -> date:
@@ -372,6 +374,65 @@ def _plant_cash_breaks(conn: Connection, rows: list[dict[str, Any]]) -> None:
     )
 
 
+def _plant_wires(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    wire_ids = {r["id"] for r in rows}
+    conn.execute(delete(wires).where(wires.c.wire_id.in_(wire_ids)))
+    conn.execute(
+        wires.insert(),
+        [
+            {
+                "wire_id": r["id"],
+                "client_id": r["client"],
+                "account_id": r["account"],
+                "direction": r.get("direction", "OUT"),
+                "currency": r["currency"],
+                "amount": r["amount"],
+                "beneficiary": r.get("beneficiary", ""),
+                "beneficiary_account": r["beneficiary_account"],
+                "value_date": _parse_date(r["value_date"]) if r.get("value_date") else None,
+                "status": r.get("status", "HELD"),
+                "hold_reason": r.get("hold_reason", ""),
+            }
+            for r in rows
+        ],
+    )
+
+
+def _plant_standing_instructions(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    client_ids = {r["client"] for r in rows}
+    conn.execute(
+        delete(wire_standing_instructions).where(
+            wire_standing_instructions.c.client_id.in_(client_ids)
+        )
+    )
+    conn.execute(
+        wire_standing_instructions.insert(),
+        [
+            {
+                "client_id": r["client"],
+                "beneficiary": r.get("beneficiary", ""),
+                "beneficiary_account": r["beneficiary_account"],
+                "added_at": _parse_date(r["added_at"]) if r.get("added_at") else None,
+                "added_by": r.get("added_by", "ops.system"),
+            }
+            for r in rows
+        ],
+    )
+
+
+def _plant_wire_screening(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    for r in rows:
+        conn.execute(delete(wire_screening_t).where(wire_screening_t.c.client_id == r["client"]))
+        conn.execute(
+            wire_screening_t.insert().values(
+                client_id=r["client"],
+                status=r["status"],
+                matched_list=r.get("matched_list"),
+                checked_at=_parse_dt(r["checked_at"]) if r.get("checked_at") else None,
+            )
+        )
+
+
 def _plant_incidents(conn: Connection, ids: list[str]) -> None:
     conn.execute(delete(incidents).where(incidents.c.incident_id.in_(ids)))
     conn.execute(
@@ -404,6 +465,9 @@ HANDLERS: dict[str, Callable[[Connection, Any], None]] = {
     "ca_events": _plant_ca_events,
     "ca_entitlements": _plant_ca_entitlements,
     "cash_breaks": _plant_cash_breaks,
+    "wires": _plant_wires,
+    "standing_instructions": _plant_standing_instructions,
+    "wire_screening": _plant_wire_screening,
     "logs": _plant_logs,
     "incidents": _plant_incidents,
     "corpus_fixtures": _plant_corpus_fixtures,
@@ -433,6 +497,9 @@ def plant(conn: Connection, scenario: Scenario) -> None:
         "ca_events",
         "ca_entitlements",
         "cash_breaks",
+        "wires",
+        "standing_instructions",
+        "wire_screening",
         "logs",
         "incidents",
         "corpus_fixtures",

@@ -21,6 +21,7 @@ import yaml
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
 from agent_core.supervisor import investigate_client
+from agent_core.wire import investigate_wire
 from evals.metrics import CountingModelClient, span_sink
 from evals.scoring import RunScore, score_run
 
@@ -41,19 +42,26 @@ class Scenario:
     trade_id: str
     expect: dict[str, Any]
     fixtures: frozenset[str]
-    subject_kind: str = "trade"  # "trade" (single-agent) | "client" (Supervisor fan-out)
-    subject_id: str = ""  # the client id when subject_kind == "client"
+    subject_kind: str = "trade"  # "trade" | "client" (Supervisor fan-out) | "wire" (Phase B)
+    subject_id: str = ""  # the client id for "client"; the wire id for "wire"
 
     @staticmethod
     def load(path: Path) -> Scenario:
         raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        trades = (raw.get("plant") or {}).get("trades") or []
+        plant = raw.get("plant") or {}
+        trades = plant.get("trades") or []
         failed = [t for t in trades if t.get("status") == "FAILED"]
         first = (failed or trades)[0] if trades else {}
         trade_id = str(first.get("id", "")) if trades else ""
         expect = raw.get("expect") or {}
-        subject_kind = "client" if expect.get("subject") == "client" else "trade"
-        subject_id = str(first.get("client", "")) if subject_kind == "client" else trade_id
+        subject = expect.get("subject")
+        subject_kind = subject if subject in ("client", "wire") else "trade"
+        if subject_kind == "client":
+            subject_id = str(first.get("client", ""))
+        elif subject_kind == "wire":
+            subject_id = str((plant.get("wires") or [{}])[0].get("id", ""))
+        else:
+            subject_id = trade_id
         fixtures = {
             m for ref in expect.get("required_evidence", []) or [] for m in _CN.findall(str(ref))
         }
@@ -135,9 +143,11 @@ class ScenarioResult:
 
 
 async def _run_subject(sc: Scenario, counter: CountingModelClient) -> Finding:
-    """Dispatch to the single-trade path or the Supervisor, per the scenario's subject."""
+    """Dispatch to the single-trade path, the Supervisor, or the Wire specialist."""
     if sc.subject_kind == "client":
         return await investigate_client(sc.subject_id, client=counter, scenario_id=sc.sid)
+    if sc.subject_kind == "wire":
+        return await investigate_wire(sc.subject_id, client=counter, scenario_id=sc.sid)
     return await investigate(sc.trade_id, client=counter, scenario_id=sc.sid)
 
 

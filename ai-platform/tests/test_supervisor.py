@@ -137,6 +137,15 @@ async def test_open_loans_empty_when_no_failed_trade_names_an_account() -> None:
     assert await supervisor._open_loans([{"trade_id": "T1"}]) == []
 
 
+async def test_held_wires_discovered_for_a_client() -> None:
+    """`_held_wires` pulls the client's HELD wires from the seeded `wire` store — HF-201
+    has W300915 and W300917 held."""
+    wires = await supervisor._held_wires("HF-201")
+    assert {w["wire_id"] for w in wires} == {"W300915", "W300917"}
+    assert all(w["status"] == "HELD" for w in wires)
+    assert await supervisor._held_wires("NOBODY") == []
+
+
 def test_fan_out_applies_the_domain_hard_rule_to_a_sub_finding() -> None:
     """The Supervisor calls `run_specialist` directly, so `_apply_domain_rule` must run the
     per-domain `_enforce_*` that the `investigate_*` entry points apply. LN-5002's recall
@@ -185,6 +194,40 @@ async def test_decompose_input_carries_open_loans(monkeypatch: pytest.MonkeyPatc
     )
     assert "Open stock loans" in seen["content"]
     assert "LN-5001" in seen["content"]
+
+
+async def test_decompose_input_carries_held_wires(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: dict[str, str] = {}
+
+    async def _capture(client: Any, **kw: Any) -> Any:
+        seen["content"] = kw["messages"][0]["content"]
+        from agent_core.schemas.subtask import DecomposePlan
+
+        return DecomposePlan(subtasks=[]), ModelResponse(text="{}")
+
+    monkeypatch.setattr(supervisor, "complete_structured_traced", _capture)
+    await supervisor._decompose(
+        FakeModelClient([]),
+        "investigate HF-201",
+        "HF-201",
+        [],
+        [],
+        [
+            {
+                "wire_id": "W300917",
+                "client_id": "HF-201",
+                "account_id": "ACCT-201",
+                "currency": "USD",
+                "amount": 3_100_000,
+                "beneficiary": "Orion Freight Co",
+                "beneficiary_account": "BEN-777",
+                "hold_reason": "NEW_BENEFICIARY",
+                "value_date": "2026-09-06",
+            }
+        ],
+    )
+    assert "Held outgoing wires" in seen["content"]
+    assert "W300917" in seen["content"]
 
 
 # --- allowlist -------------------------------------------------------------------

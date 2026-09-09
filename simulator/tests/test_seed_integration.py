@@ -138,6 +138,39 @@ def test_prime_finance_planter_handlers_are_idempotent(conn: Connection) -> None
     )
 
 
+def test_baseline_populates_the_wire_tables(conn: Connection) -> None:
+    baseline.populate(conn)
+    held = conn.execute(text("select count(*) from wires where status = 'HELD'")).scalar_one()
+    assert held == 5, "baseline seeds the five held wires (Sc. 7 / 13-16 + one spare)"
+    hit = conn.execute(
+        text("select status from wire_screening where client_id = 'HF-205'")
+    ).scalar_one()
+    assert hit == "HIT"
+    bal = conn.execute(
+        text(
+            "select available from wire_balances where account_id = 'ACCT-206' and currency = 'USD'"
+        )
+    ).scalar_one()
+    assert bal == 1_200_000
+
+
+def test_wire_scenarios_plant_their_wire(conn: Connection) -> None:
+    baseline.populate(conn)
+    for f, wid, rc in [
+        ("013_wire_new_beneficiary.yaml", "W300917", "NEW_BENEFICIARY"),
+        ("015_wire_screening_hit.yaml", "W300920", "SCREENING"),
+    ]:
+        planter.plant(conn, Scenario.load(SCENARIOS / f))
+        hold = conn.execute(
+            text("select hold_reason from wires where wire_id = :w"), {"w": wid}
+        ).scalar_one()
+        assert hold == rc
+    hit = conn.execute(
+        text("select status from wire_screening where client_id = 'HF-205'")
+    ).scalar_one()
+    assert hit == "HIT"
+
+
 def test_scenario_30_plants_an_open_loan_and_a_settlement_fail(conn: Connection) -> None:
     baseline.populate(conn)
     planter.plant(conn, Scenario.load(SCENARIOS / "030_mixed_domain_client.yaml"))

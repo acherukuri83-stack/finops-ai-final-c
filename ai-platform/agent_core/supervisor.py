@@ -68,12 +68,15 @@ async def investigate_client(
 
         failed = await _failed_trades(client_id)
         loans = await _open_loans(failed)
-        subtasks = await _decompose(client, ask, client_id, failed, loans)
+        held_wires = await _held_wires(client_id)
+        subtasks = await _decompose(client, ask, client_id, failed, loans, held_wires)
         if not subtasks:
             finding = Finding(
                 subject=SubjectRef(type="client", id=client_id),
                 outcome=Outcome.INSUFFICIENT_EVIDENCE,
-                confidence_basis=f"no FAILED trades or open stock loans found for {client_id}",
+                confidence_basis=(
+                    f"no FAILED trades, open stock loans, or held wires found for {client_id}"
+                ),
                 trace_id=trace_id,
             )
             set_attrs(root, {"outcome": finding.outcome})
@@ -151,17 +154,38 @@ async def _open_loans(failed: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+async def _held_wires(client_id: str) -> list[dict[str, Any]]:
+    """Held outgoing wires for the client — so the Supervisor can raise a `wire` sub-task
+    the way it does for a settlement fail or an open loan."""
+    with span(
+        "wire.list_wires",
+        "tool",
+        agent="supervisor",
+        **{"tool.server": "wire", "tool.name": "list_wires", "tool.access": "read"},
+    ) as current:
+        async with open_session(servers={"wire"}) as tools:
+            rows = await tools.call("wire", "list_wires", client_id=client_id, status="HELD")
+        out = [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
+        set_attrs(current, {"tool.ok": True, "payload.out": _clip(out)})
+    return out
+
+
 async def _decompose(
     client: ModelClient,
     request: str,
     client_id: str,
     failed: list[dict[str, Any]],
     loans: list[dict[str, Any]] | None = None,
+    held_wires: list[dict[str, Any]] | None = None,
 ) -> list[SubTask]:
     system = "\n\n".join(
         [prompts.load("system/domain_framing"), prompts.load("supervisor/decompose")]
     )
-    catalog = _format_failed(client_id, failed) + _format_loans(loans or [])
+    catalog = (
+        _format_failed(client_id, failed)
+        + _format_loans(loans or [])
+        + _format_wires(held_wires or [])
+    )
     with span("decompose", "agent", agent="supervisor", step="decompose") as current:
         plan, resp = await complete_structured_traced(
             client,
@@ -482,6 +506,20 @@ def _format_loans(loans: list[dict[str, Any]]) -> str:
             f"- {ln.get('loan_id')}: {ln.get('qty')} {ln.get('security_id')} out to "
             f"{ln.get('counterparty')} account={ln.get('account_id')} "
             f"rate_bps={ln.get('rate_bps')} return_needed_by={ln.get('return_needed_by')}"
+        )
+    return "\n".join(lines)
+
+
+def _format_wires(wires: list[dict[str, Any]]) -> str:
+    if not wires:
+        return ""
+    lines = ["\n\nHeld outgoing wires for the client:"]
+    for w in wires:
+        lines.append(
+            f"- {w.get('wire_id')}: {w.get('amount')} {w.get('currency')} to "
+            f"{w.get('beneficiary')} ({w.get('beneficiary_account')}) "
+            f"account={w.get('account_id')} hold_reason={w.get('hold_reason')} "
+            f"value_date={w.get('value_date')}"
         )
     return "\n".join(lines)
 

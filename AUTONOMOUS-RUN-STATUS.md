@@ -35,11 +35,12 @@ agent work. #32 was the first Knowledge PR, re-opened as #33 after a rebase.)
 
 `docs/backlog.md` opens with a **Status** line. Every deferred-depth item is shipped or
 **closed-as-accepted** (search `Closed (2026-09-09)` for each rationale). The optional
-**Wires** module now has a merged core slice (PR #37): `mcp_servers/wire/` + the Wire
-specialist + the four maker/checker/cutoff/screening hard rules + `POST /investigate
-{wire_id}` + `tests/test_wire.py` (Sc. 7 / 13–16); deferred parts (seeded wire table +
-planter, wire corpus, portal `WIRE_REVIEWER` release flow, `_held_wires` discovery) are in
-`docs/backlog.md`. What remains, by explicit owner decision and not a gap:
+**Wires** module is built: PR #37 (core slice — Wire specialist + `wire` server + the four
+maker/checker/cutoff/screening hard rules + `POST /investigate {wire_id}` +
+`tests/test_wire.py`), and PR #38 (seeded Postgres + a `simulator` planter for `wire`, the
+Sc. 7 / 13–16 `subject: wire` YAMLs + `evals/harness.py` dispatch, `supervisor._held_wires`
+discovery). Still deferred (in `docs/backlog.md`): a wire corpus; the portal
+`WIRE_REVIEWER` release flow. What remains project-wide, by owner decision and not a gap:
 
 1. **End-of-project eval sweep** — a full `workflow_dispatch` run + refreshed
    `evals/SCORECARD.md`. Paused for C+ during the build; the record stays Phase A 8/9.
