@@ -149,6 +149,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/diagnose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Diagnose
+         * @description Developer Agent — incident mode. Diagnose a platform fault (failing job / degraded
+         *     service): find the causing change, the blast radius, and revert-vs-fix-forward, and
+         *     propose a change ticket + rerun for a human to approve.
+         */
+        post: operations["post_diagnose_diagnose_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -309,6 +331,13 @@ export interface components {
              */
             role: string;
         };
+        /** DiagnoseRequest */
+        DiagnoseRequest: {
+            /** Subject Id */
+            subject_id: string;
+            /** Request */
+            request?: string | null;
+        };
         /**
          * Event
          * @description A thing that happened in the estate. `id` is set by the bus on publish.
@@ -402,6 +431,13 @@ export interface components {
             planning_turns: number;
             /** Sub Findings */
             sub_findings?: components["schemas"]["Finding"][];
+            /** Blast Radius */
+            blast_radius?: components["schemas"]["SubjectRef"][];
+            /**
+             * Fix Strategy
+             * @default
+             */
+            fix_strategy: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1080,6 +1116,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["InvestigateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finding"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_diagnose_diagnose_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnoseRequest"];
             };
         };
         responses: {

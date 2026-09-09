@@ -58,3 +58,6 @@ class Finding(BaseModel):
     planning_turns: int = 1  # how many planner turns ran — >1 means a re-plan happened
     # Phase C: a Supervisor's per-specialist findings; [] for single-agent runs
     sub_findings: list[Finding] = Field(default_factory=list)
+    # Phase E: Developer Agent incident mode — what the platform fault affected, and how to fix
+    blast_radius: list[SubjectRef] = Field(default_factory=list)
+    fix_strategy: str = ""  # "" | "revert" | "fix_forward"

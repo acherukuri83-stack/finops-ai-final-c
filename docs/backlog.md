@@ -87,3 +87,27 @@ Ideas that are out of the current phase's scope. Append; don't build.
 - Phase D: `outbox_events` DDL is defined in **two** places — `platform_api/store.py`
   (authoritative) and `simulator/simulator/events.py` (`ensure_outbox`, idempotent). Keep
   the column list in sync by hand, same as `simulator/tables.py` mirrors the Flyway schema.
+- Phase E core slice (2026-09-09, PR TBD): shipped **incident mode only**. Deferred, all
+  from `docs/agent-plan.md` Phases 11–12:
+  - **verification mode** — derive `Expectation[]` from an applied change ticket, re-check
+    every diagnosis signal, compute delta, hand residual subjects to the right business
+    agent via the Supervisor, write an `INC-3xxx` back on success; on failure report and
+    re-enter incident mode with the failed hypothesis excluded (no autonomous 2nd fix).
+  - **PR-review mode** — `repo` + `ci` MCP servers (`get_pull_request` / `get_diff` /
+    `get_source` / `open_pull_request` draft / `post_review`; `run_static_analysis` /
+    `run_security_scan` / `get_test_coverage` / `run_tests` / `run_eval`), diff-surface
+    classification → targeted standards retrieval, `Review` schema, code rules (write tool
+    w/o `approval_id` ⇒ BLOCKER; new action not in an allowlist ⇒ MAJOR; model call on an
+    unscrubbed field ⇒ BLOCKER). `open_pull_request` / `post_review` are already on the
+    `developer` allowlist; the servers are not built.
+  - **eval-authoring mode** — SOP section → scenario YAML + `expect:` + fixtures →
+    baseline `run_eval` → draft PR labelled `authored_by: agent` (blocked from merge
+    without a human reviewer).
+  - **Supervisor hand-off** — `agent_core/supervisor.py` should route to
+    `developer.investigate_incident` when every business sub-finding is
+    `INSUFFICIENT_EVIDENCE`. Today `investigate_incident` is only reachable via
+    `POST /diagnose`.
+  - **standards corpus** — `docs/standards/` indexed for review-mode retrieval.
+  - `platform` server data is Python fixtures in `mcp_servers/platform/store.py` (not the
+    simulator / Postgres) — fine for the slice; a fuller Phase E may move it to a seeded
+    table with a `simulator` planter, like the enterprise tier.

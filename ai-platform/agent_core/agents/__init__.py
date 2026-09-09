@@ -7,7 +7,7 @@ policy allowlist, budget). `agent_core/loop.py` keeps the single-trade entry poi
 """
 
 from agent_core.agents.base import SpecialistSpec, run_specialist
-from agent_core.agents.registry import KNOWLEDGE, RISK_CLIENT, SETTLEMENT, spec_for
+from agent_core.agents.registry import DEVELOPER, KNOWLEDGE, RISK_CLIENT, SETTLEMENT, spec_for
 
 __all__ = [
     "SpecialistSpec",
@@ -15,5 +15,6 @@ __all__ = [
     "SETTLEMENT",
     "RISK_CLIENT",
     "KNOWLEDGE",
+    "DEVELOPER",
     "spec_for",
 ]

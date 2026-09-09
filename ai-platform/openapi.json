@@ -343,6 +343,45 @@
         }
       }
     },
+    "/diagnose": {
+      "post": {
+        "summary": "Post Diagnose",
+        "description": "Developer Agent \u2014 incident mode. Diagnose a platform fault (failing job / degraded\nservice): find the causing change, the blast radius, and revert-vs-fix-forward, and\npropose a change ticket + rerun for a human to approve.",
+        "operationId": "post_diagnose_diagnose_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnoseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events": {
       "post": {
         "summary": "Publish Event",
@@ -747,6 +786,30 @@
         ],
         "title": "DecideRequest"
       },
+      "DiagnoseRequest": {
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "request": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id"
+        ],
+        "title": "DiagnoseRequest"
+      },
       "Event": {
         "properties": {
           "id": {
@@ -919,6 +982,18 @@
             },
             "type": "array",
             "title": "Sub Findings"
+          },
+          "blast_radius": {
+            "items": {
+              "$ref": "#/components/schemas/SubjectRef"
+            },
+            "type": "array",
+            "title": "Blast Radius"
+          },
+          "fix_strategy": {
+            "type": "string",
+            "title": "Fix Strategy",
+            "default": ""
           }
         },
         "type": "object",

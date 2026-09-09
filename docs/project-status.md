@@ -331,12 +331,13 @@ needs process-global fault injection):
   usage limit + spend alert
 - Polish, README, demo script
 
-**Mainline after A:** ~~C supervisor + specialist agents~~ (done 2026-09-09, PRs #14/#16 —
-Supervisor + Settlement/Risk-Client/Knowledge specialists, per-agent allowlists, client
-Scenario 11) → ~~D event-driven auto-casing~~ (in progress — outbox bus + in-process
-consumer + dedup + urgency; `make emit`) → **E Developer Agent** → F prime-finance
-domains → G hardening. **Wires (B) is an optional module** — depends only on A, nothing in
-C–G depends on it. See [`phase-breakdown.md`](phase-breakdown.md).
+**Mainline after A:** ~~C supervisor + specialists~~ (2026-09-09, #14/#16) → ~~D
+event-driven~~ (2026-09-09, #18 — outbox bus + in-process consumer + dedup + urgency;
+`make emit`) → **E Developer Agent** (in progress — incident mode: `platform` MCP server,
+`investigate_incident`, revert/fix-forward hard rule, `POST /diagnose`, Engineering tab;
+verification / review / eval-authoring modes deferred) → F prime-finance domains → G
+hardening. **Wires (B) is an optional module** — depends only on A. See
+[`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 

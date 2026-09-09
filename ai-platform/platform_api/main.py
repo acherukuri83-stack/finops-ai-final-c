@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
+from agent_core.developer import investigate_incident
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
 from agent_core.supervisor import investigate_client
@@ -102,6 +103,19 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
     if req.trade_id:
         return await investigate(req.trade_id)
     raise HTTPException(status_code=422, detail="provide trade_id or client_id")
+
+
+class DiagnoseRequest(BaseModel):
+    subject_id: str  # a job id (job-4471) or a service name
+    request: str | None = None
+
+
+@app.post("/diagnose")
+async def post_diagnose(req: DiagnoseRequest) -> Finding:
+    """Developer Agent — incident mode. Diagnose a platform fault (failing job / degraded
+    service): find the causing change, the blast radius, and revert-vs-fix-forward, and
+    propose a change ticket + rerun for a human to approve."""
+    return await investigate_incident(req.subject_id, request=req.request)
 
 
 @app.post("/events")

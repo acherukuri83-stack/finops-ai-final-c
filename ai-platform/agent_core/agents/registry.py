@@ -46,7 +46,20 @@ KNOWLEDGE = SpecialistSpec(
     required_tools=frozenset(),
 )
 
-_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE)}
+# Phase E — the Developer Agent, incident mode. Reasons about the *system*, not a client:
+# scope is `platform` + `ops` (logs) + read-only `trade` (blast radius). No client / account
+# / wire scope. Allowlist has NO deploy / merge / approve / config-write (a test asserts).
+DEVELOPER = SpecialistSpec(
+    name="developer",
+    planner_prompt="planner/incident",
+    synthesis_prompt="synthesis/incident",
+    tool_servers=frozenset({"platform", "ops", "trade"}),
+    allowlist_key="developer",
+    subject_type="job",
+    required_tools=frozenset({("platform", "get_job_runs"), ("platform", "get_deployments")}),
+)
+
+_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER)}
 
 
 def spec_for(name: str) -> SpecialistSpec:

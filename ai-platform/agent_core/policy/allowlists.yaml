@@ -20,6 +20,16 @@ supervisor:            # decomposes, correlates, opens the case — proposes not
   - create_case
   - update_case
 
+# Phase E — the Developer Agent (incident mode). NO deploy / merge / approve / config-write
+# action exists as a tool, and none is on this list (tests/test_developer.py asserts).
+developer:
+  - open_change_ticket
+  - rerun_job
+  - replay_message
+  - open_pull_request     # draft only — review/eval-authoring modes (deferred)
+  - post_review           #   ''
+  - escalate
+
 # Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
 # as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:
