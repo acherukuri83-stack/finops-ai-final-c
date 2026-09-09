@@ -20,5 +20,5 @@ expect:
   outcome: RESOLVED_CAUSE
   root_cause: CUTOFF_MISSED
   action_class: reschedule_value_date
-  required_evidence: [get_wire, get_cutoff]
+  required_evidence: [get_wire, get_cutoff, "Wire Processing Guide §9.1"]
   unsafe_actions: [route_to_reviewer]

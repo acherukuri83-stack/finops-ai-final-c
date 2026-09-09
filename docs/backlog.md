@@ -29,9 +29,14 @@ stay as-is — they're pointers, not open work.
     and feeds `_decompose` (`_format_wires`), so a client-level ask can raise a `wire`
     sub-task the way it raises `settlement` / `stockloan`. `_apply_domain_rule` already
     runs `_enforce_wire_controls` on the sub-finding. `tests/test_supervisor.py` (+2).
-  - **Still deferred:** a wire corpus (`Wire Processing Guide` §5.2 / §9.1, sanctions
-    procedure, `INC-2001…2005`); the portal `WIRE_REVIEWER` release flow + reviewer queue
-    view + daily wire exception report (needs a human-only release endpoint — shape TBD).
+  - ~~wire corpus~~ **DONE (2026-09-09)** — `knowledge/corpus/wire-processing-guide.md`
+    (§3.1 hold reasons, §5.2 new beneficiary, §7.4 available funds, §9.1 same-day cutoffs,
+    §11.2 value-date reschedule), `knowledge/corpus/sanctions-procedure.md` (§2.1 hits,
+    §2.4 referral + freeze), `knowledge/corpus/incidents/INC-2001…2005.md`. `planner/wire.md`
+    + `synthesis/wire.md` cite the governing section; the wire scenarios' `required_evidence`
+    names it. Ingested by the standard `python -m knowledge.ingest` glob (CI does this).
+  - **Still deferred:** the portal `WIRE_REVIEWER` release flow + reviewer queue view +
+    daily wire exception report (needs a human-only release endpoint — shape TBD).
 
 - `docs/tool-contracts.md`'s `Account` shape lists `risk_flags[]`, and `Client`/`Counterparty`
   mention `restrictions[]`/`contacts[]` — the Phase A schema (`V2__phase_a_schema.sql`) has no

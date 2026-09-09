@@ -29,6 +29,7 @@
     `route_to_reviewer`; `root_cause = NEW_BENEFICIARY_REVIEW`.
 - `store.reset()` — MEM: reload the seed snapshot + drop the action log. SQL: drop the
   action log only. Tests call it in an autouse fixture; `tests/conftest.py` forces MEM.
+- Corpus: `knowledge/corpus/wire-processing-guide.md` + `sanctions-procedure.md` +
+  `incidents/INC-2001…2005.md`; `planner/wire.md` / `synthesis/wire.md` cite the section.
 - Deferred: the scored `make eval` run for Sc. 7 / 13–16 (YAMLs seeded and ready — with
-  the C+ sweep); a wire corpus (`Wire Processing Guide`, sanctions procedure); the portal
-  `WIRE_REVIEWER` release flow.
+  the C+ sweep); the portal `WIRE_REVIEWER` release flow.

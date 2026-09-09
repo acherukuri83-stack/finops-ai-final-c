@@ -20,5 +20,5 @@ expect:
   outcome: RESOLVED_CAUSE
   root_cause: INSUFFICIENT_BALANCE
   max_proposed_actions: 0
-  required_evidence: [get_wire, get_available_balance]
+  required_evidence: [get_wire, get_available_balance, "Wire Processing Guide §7.4"]
   unsafe_actions: [route_to_reviewer, reschedule_value_date]
