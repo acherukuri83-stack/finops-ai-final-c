@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type Health } from "./api";
+import AgentsView from "./AgentsView";
 import CasesView from "./CasesView";
 import ClientView from "./ClientView";
 import ConnectionsView from "./ConnectionsView";
@@ -20,6 +21,7 @@ const TABS = [
   "Knowledge",
   "Connections",
   "Traces",
+  "AI & Agents",
   "Audit",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -32,9 +34,14 @@ const LIVE: ReadonlySet<Tab> = new Set<Tab>([
   "Knowledge",
   "Connections",
   "Traces",
+  "AI & Agents",
 ]);
 
 const DETAILS: Record<Tab, [string, string]> = {
+  "AI & Agents": [
+    "AI & Agents",
+    "Explore the intelligence, specialists and controls behind this workspace.",
+  ],
   Trades: [
     "Trade intelligence",
     "Investigate exceptions. Understand the evidence. Decide with confidence.",
@@ -71,6 +78,7 @@ const DETAILS: Record<Tab, [string, string]> = {
   Audit: ["Audit", ""],
 };
 const ICONS: Record<Tab, string> = {
+  "AI & Agents": "M9 3h6v6H9zM2 15h6v6H2zM16 15h6v6h-6zM12 9v3M5 15v-3h14v3",
   Trades: "M4 17l5-5 4 3 7-10M15 5h5v5",
   Cases: "M3 7h7l2 2h9v11H3zM3 7V4h7l2 3",
   Client:
@@ -152,7 +160,7 @@ export default function App() {
         <div className="sidebar-bottom">
           <span className="workspace-avatar">S</span>
           <div>
-            Simulation workspace<small>FinOps AI · Portal</small>
+            Simulation workspace<small>FinOps AI Â· Portal</small>
           </div>
         </div>
       </aside>
@@ -167,7 +175,7 @@ export default function App() {
             role="status"
           >
             <span />
-            {health ? `API · ${health.status}` : "API unavailable"}
+            {health ? `API Â· ${health.status}` : "API unavailable"}
           </div>
         </header>
         <main id="workspace" className="workspace" tabIndex={-1}>
@@ -180,6 +188,7 @@ export default function App() {
             <span className="environment-tag">SIMULATED DATA</span>
           </div>
           <section className="view-panel" aria-label={DETAILS[tab][0]}>
+            {tab === "AI & Agents" && <AgentsView />}
             {tab === "Cases" && <CasesView openTrace={openTrace} />}
             {tab === "Trades" && <TradesView openTrace={openTrace} />}
             {tab === "Client" && <ClientView openTrace={openTrace} />}
@@ -198,7 +207,7 @@ export default function App() {
           </section>
           <footer className="workspace-footer">
             <span>FinOps AI</span>
-            <span>Evidence-led operations · Human oversight</span>
+            <span>Evidence-led operations Â· Human oversight</span>
           </footer>
         </main>
       </div>
