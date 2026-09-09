@@ -10,6 +10,7 @@ import PrimeFinanceView from "./PrimeFinanceView";
 import TracesView from "./TracesView";
 import TradesView from "./TradesView";
 import "./styles.css";
+import "./workspaces.css";
 
 const TABS = [
   "Cases",
@@ -160,7 +161,7 @@ export default function App() {
         <div className="sidebar-bottom">
           <span className="workspace-avatar">S</span>
           <div>
-            Simulation workspace<small>FinOps AI Â· Portal</small>
+            Simulation workspace<small>FinOps AI · Portal</small>
           </div>
         </div>
       </aside>
@@ -175,7 +176,7 @@ export default function App() {
             role="status"
           >
             <span />
-            {health ? `API Â· ${health.status}` : "API unavailable"}
+            {health ? `API · ${health.status}` : "API unavailable"}
           </div>
         </header>
         <main id="workspace" className="workspace" tabIndex={-1}>
@@ -207,7 +208,7 @@ export default function App() {
           </section>
           <footer className="workspace-footer">
             <span>FinOps AI</span>
-            <span>Evidence-led operations Â· Human oversight</span>
+            <span>Evidence-led operations · Human oversight</span>
           </footer>
         </main>
       </div>
