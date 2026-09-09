@@ -19,12 +19,10 @@ const TABS = [
   "Prime Finance",
   "Wire Review",
   "Engineering",
-  "Settlements",
   "Knowledge",
   "Connections",
   "Traces",
   "AI & Agents",
-  "Audit",
   "Cases",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -82,8 +80,6 @@ const DETAILS: Record<Tab, [string, string]> = {
     "Agent observability",
     "Follow the reasoning, tool calls and evidence across an investigation.",
   ],
-  Settlements: ["Settlements", ""],
-  Audit: ["Audit", ""],
 };
 const ICONS: Record<Tab, string> = {
   "AI & Agents": "M9 3h6v6H9zM2 15h6v6H2zM16 15h6v6h-6zM12 9v3M5 15v-3h14v3",
@@ -98,8 +94,6 @@ const ICONS: Record<Tab, string> = {
     "M12 5v16M12 5C8 2 4 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-2-1-6-2-10 1",
   Connections: "M8 12h8M8 8V4H2v6h6M16 14v6h6v-6h-6M5 10v7h11",
   Traces: "M2 12h4l3-8 6 16 3-8h4",
-  Settlements: "M4 7h16l-4-4M20 17H4l4 4",
-  Audit: "M5 3h14v18H5zM8 8h8M8 12h8M8 16h5",
 };
 
 export type OpenTrace = (traceId: string, spanId?: string) => void;
