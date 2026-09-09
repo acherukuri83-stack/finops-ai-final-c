@@ -55,13 +55,15 @@ async def complete_structured_traced[T: BaseModel](
         f"{json.dumps(schema.model_json_schema())}"
     )
     last_err: Exception | None = None
-    for _ in range(2):
+    for attempt in range(2):
         resp = await client.complete(
             model=model, system=instruction, messages=messages, max_tokens=max_tokens
         )
         raw = resp.text.strip().removeprefix("```json").removesuffix("```").strip()
         try:
-            return schema.model_validate_json(raw), resp
+            parsed = schema.model_validate_json(raw)
+            _schema_validation_span("ok", attempt)  # retries used == attempt index
+            return parsed, resp
         except Exception as e:  # noqa: BLE001
             last_err = e
             messages = [
@@ -69,7 +71,29 @@ async def complete_structured_traced[T: BaseModel](
                 {"role": "assistant", "content": resp.text},
                 {"role": "user", "content": f"Invalid: {e}. Return only valid JSON."},
             ]
+    _schema_validation_span("failed", 2)
     raise ValueError(f"structured output failed validation twice: {last_err}")
+
+
+def _schema_validation_span(result: str, retries: int) -> None:
+    """The `schema_validation` guardrail span (docs/standards/observability.md). Emitted
+    here rather than from every caller; `agent_core.spans` is imported lazily so
+    `model_client` stays free of that dependency at module load."""
+    try:
+        from agent_core.spans import span
+
+        with span(
+            "guardrail",
+            "guardrail",
+            **{
+                "guardrail.name": "schema_validation",
+                "guardrail.result": result,
+                "guardrail.count": retries,
+            },
+        ):
+            pass
+    except Exception:  # noqa: BLE001 — a tracing failure must never break a model call
+        pass
 
 
 async def complete_structured[T: BaseModel](

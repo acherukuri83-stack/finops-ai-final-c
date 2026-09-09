@@ -73,3 +73,25 @@ async def test_transport_error_retries_then_unavailable() -> None:
     assert sum(hits) == 2
     assert result["code"] == "UPSTREAM_UNAVAILABLE"
     assert result["retryable"] is True
+
+
+async def test_last_retries_reports_the_in_call_retry_count() -> None:
+    calls: list[int] = []
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(200 if len(calls) > 1 else 503, json={"ok": True})
+
+    client = HttpEnterpriseClient("http://enterprise.test", transport=httpx.MockTransport(handler))
+    await client.get_json("get_trade", "/trades/T1")
+    assert _enterprise.last_retries() == 1  # one 503, one retry, then 200
+
+    # a clean call resets it
+    calls.clear()
+
+    def ok(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    client2 = HttpEnterpriseClient("http://enterprise.test", transport=httpx.MockTransport(ok))
+    await client2.get_json("get_trade", "/trades/T2")
+    assert _enterprise.last_retries() == 0

@@ -62,3 +62,58 @@ async def test_real_model_hello() -> None:
         schema=Hello,
     )
     assert out.greeting.lower().startswith("hello") and out.n == 3
+
+
+def _span_capture() -> object:
+    from opentelemetry import trace as _t
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exp = InMemorySpanExporter()
+    prov = _t.get_tracer_provider()
+    if not isinstance(prov, TracerProvider):
+        prov = TracerProvider()
+        _t.set_tracer_provider(prov)
+    prov.add_span_processor(SimpleSpanProcessor(exp))
+    exp.clear()
+    return exp
+
+
+def _schema_spans(exp: object) -> list[dict[str, object]]:
+    return [
+        {"result": a.get("finops.guardrail.result"), "count": a.get("finops.guardrail.count")}
+        for s in exp.get_finished_spans()  # type: ignore[attr-defined]
+        if (a := (s.attributes or {})).get("finops.guardrail.name") == "schema_validation"
+    ]
+
+
+async def test_schema_validation_span_on_a_clean_call() -> None:
+    exp = _span_capture()
+    fake = FakeModelClient([ModelResponse(text='{"greeting": "hi", "n": 1}')])
+    await complete_structured(
+        fake, model="x", system="s", messages=[{"role": "user", "content": "go"}], schema=Hello
+    )
+    spans = _schema_spans(exp)
+    assert spans and spans[-1] == {"result": "ok", "count": 0}
+
+
+async def test_schema_validation_span_counts_a_retry() -> None:
+    exp = _span_capture()
+    fake = FakeModelClient(
+        [ModelResponse(text="not json"), ModelResponse(text='{"greeting": "hi", "n": 2}')]
+    )
+    await complete_structured(
+        fake, model="x", system="s", messages=[{"role": "user", "content": "go"}], schema=Hello
+    )
+    assert _schema_spans(exp)[-1] == {"result": "ok", "count": 1}
+
+
+async def test_schema_validation_span_on_double_failure() -> None:
+    exp = _span_capture()
+    fake = FakeModelClient([ModelResponse(text="bad"), ModelResponse(text="also bad")])
+    with pytest.raises(ValueError, match="failed validation twice"):
+        await complete_structured(
+            fake, model="x", system="s", messages=[{"role": "user", "content": "go"}], schema=Hello
+        )
+    assert _schema_spans(exp)[-1] == {"result": "failed", "count": 2}

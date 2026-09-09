@@ -22,6 +22,7 @@ Common: `finops.trace.id`, `finops.case.id?`, `finops.scenario.id?` (eval runs).
 - Synthesis spans carry the Finding's `rejected_alternatives` in the payload.
 - A Supervisor run (Phase C) is one trace: each specialist dispatch runs inside a `delegation` span, so every specialist's `agent` / `tool` / `policy` spans share the client trace id.
 - An event-triggered investigation (Phase D) has the `event` span as its trace root; the `investigate` / `investigate_client` span nests under it, so the trace shows the trigger.
+- (Phase G) `complete_structured_traced` emits the `schema_validation` guardrail span on every structured-output call (`finops.guardrail.count` = retries used, `result` = ok/failed). `finops.tool.retries` on a `tool` span is the in-call retry count of the last enterprise request (`mcp_servers._enterprise.last_retries()`, a `ContextVar`); 0 for in-process fixture servers.
 - No span payload contains raw PII (see security §7). `platform_api/trace_store.scrub()`
   runs over every stored payload — emails, 9+-digit runs, and person-name keys
   (`updated_by`, `set_by`, `decided_by`, …) are replaced; the count is stamped on the span
