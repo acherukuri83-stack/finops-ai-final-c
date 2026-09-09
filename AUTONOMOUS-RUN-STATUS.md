@@ -50,8 +50,11 @@ routes a `wire` HELD event → `investigate_wire`; `simulator.events.emit_wire_h
    `evals/SCORECARD.md`. Paused for C+ during the build; the record stays Phase A 8/9.
    Known items for that sweep: Sc. 11 / Sc. 30 `groups` scoring, Sc. 8 evidence-citation,
    the wire scenarios (Sc. 7 / 13–16).
-2. **`docs/deploy-aws.md`** — an AWS deploy write-up (ECS Fargate / RDS / MSK). A doc,
-   not functionality; on the roadmap "because it's on the resume".
+
+`docs/deploy-aws.md` was written (2026-09-09, PR #46) — RDS 16 + pgvector, ECS Fargate
+(enterprise then ai-platform), S3 + CloudFront for the portal, one ALB; the outbox bus
+needs no broker (MSK only for `EVENT_BUS=kafka`). So the eval sweep is the only remaining
+item, and it is a validation run, not a build.
 
 ## Notes / deviations
 
