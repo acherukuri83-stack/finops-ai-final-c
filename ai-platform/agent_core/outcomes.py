@@ -31,12 +31,18 @@ class Observation:
     result: Any  # a success dict/list, or an ErrorEnvelope dict
 
 
-def classify(finding: Finding, observations: list[Observation]) -> Finding:
+def classify(
+    finding: Finding,
+    observations: list[Observation],
+    *,
+    required: frozenset[tuple[str, str]] | None = None,
+) -> Finding:
+    req = required if required is not None else frozenset(_REQUIRED)
     degraded = sorted(
         {
             f"{o.step.server}.{o.step.tool}"
             for o in observations
-            if (o.step.server, o.step.tool) in _REQUIRED and is_error(o.result)
+            if (o.step.server, o.step.tool) in req and is_error(o.result)
         }
     )
     if degraded:

@@ -33,6 +33,7 @@ class ProposedAction(BaseModel):
     impact: list[SubjectRef] = Field(default_factory=list)
     reversible: bool = True
     approval_id: str | None = None  # set by the loop after case.propose_action registers it
+    proposed_by: str = ""  # which specialist proposed it (Phase C); "" for single-agent runs
 
 
 class RejectedAlternative(BaseModel):
