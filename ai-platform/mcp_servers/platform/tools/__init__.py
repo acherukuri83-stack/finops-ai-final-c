@@ -77,6 +77,19 @@ async def get_source(ref: str) -> Any:
     }
 
 
+async def get_incident(incident_id: str = "") -> Any:
+    """A platform incident written by verification (symptom / cause / fix / verification), or all of them if `incident_id` is omitted."""
+    if not incident_id:
+        return store.incidents()
+    row = store.get_incident(incident_id)
+    return row or {
+        "code": "NOT_FOUND",
+        "message": f"no incident {incident_id}",
+        "retryable": False,
+        "tool": "get_incident",
+    }
+
+
 async def open_change_ticket(kind: str, target: str, summary: str, approval_id: str) -> Any:
     """Open a change ticket (`kind`: revert | fix_forward | rerun; `target`: a deployment_id or job_id). Requires an APPROVED approval_id. Does NOT deploy — a human executes the ticket."""
     denied = check_approval("open_change_ticket", target, approval_id)

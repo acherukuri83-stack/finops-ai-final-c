@@ -47,6 +47,7 @@ from mcp_servers.platform.server import mcp as platform_mcp
 from mcp_servers.platform.tools import (
     diff_config,
     get_deployments,
+    get_incident,
     get_job_runs,
     get_platform_logs,
     get_service_health,
@@ -153,6 +154,7 @@ SERVERS: dict[str, ServerSpec] = {
                 get_topic_lag,
                 get_platform_logs,
                 get_source,
+                get_incident,
                 open_change_ticket,
                 rerun_job,
                 replay_message,
@@ -201,6 +203,7 @@ LIST_TOOLS = frozenset(
         "get_deployments",
         "diff_config",
         "get_platform_logs",
+        "get_incident",
         "list_loans",
         "get_rerate_history",
     }

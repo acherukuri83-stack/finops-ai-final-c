@@ -46,6 +46,7 @@ EXPECTED_TOOLS = {
         "get_topic_lag",
         "get_platform_logs",
         "get_source",
+        "get_incident",
         "open_change_ticket",
         "rerun_job",
         "replay_message",

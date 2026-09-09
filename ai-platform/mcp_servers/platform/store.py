@@ -131,17 +131,27 @@ _SOURCE: dict[str, dict[str, Any]] = {
     },
 }
 
-# --- mutable: change tickets ------------------------------------------------
+# --- mutable: change tickets, applied effects, incidents -------------------
 
 _CHANGE_TICKETS: list[dict[str, Any]] = []
+_INCIDENTS: list[dict[str, Any]] = []
+_RESIDUAL_TRADES: list[str] = []
+_EXTRA_JOB_RUNS: list[dict[str, Any]] = []  # a SUCCEEDED rerun, after a fix is applied
+_LAG_OVERRIDE: dict[str, int] = {}  # topic -> new lag, after a fix is applied
 _SEQ = 0
+_INC_SEQ = 3011  # verification-written incidents start at INC-3012 (docs/agent-plan.md Sc. 22)
 
 
 def reset() -> None:
-    """Tests: clear the mutable change-ticket table."""
-    global _SEQ
+    """Tests: clear the mutable tables and any applied-change effects."""
+    global _SEQ, _INC_SEQ
     _CHANGE_TICKETS.clear()
+    _INCIDENTS.clear()
+    _RESIDUAL_TRADES.clear()
+    _EXTRA_JOB_RUNS.clear()
+    _LAG_OVERRIDE.clear()
     _SEQ = 0
+    _INC_SEQ = 3011
 
 
 def services() -> list[dict[str, Any]]:
@@ -154,7 +164,8 @@ def service_health(service: str) -> dict[str, Any] | None:
 
 
 def job_runs(name: str | None) -> list[dict[str, Any]]:
-    return [dict(r) for r in _JOB_RUNS if name is None or r["name"] == name]
+    rows = _EXTRA_JOB_RUNS + _JOB_RUNS  # extras first == newest first
+    return [dict(r) for r in rows if name is None or r["name"] == name]
 
 
 def deployments(service: str | None) -> list[dict[str, Any]]:
@@ -168,7 +179,12 @@ def config_diff(deployment_id: str) -> list[dict[str, Any]] | None:
 
 def topic_lag(topic: str) -> dict[str, Any] | None:
     row = _TOPIC_LAG.get(topic)
-    return dict(row) if row else None
+    if row is None:
+        return None
+    row = dict(row)
+    if topic in _LAG_OVERRIDE:
+        row["lag"] = _LAG_OVERRIDE[topic]
+    return row
 
 
 def platform_logs(job_id: str | None) -> list[dict[str, Any]]:
@@ -197,3 +213,63 @@ def add_change_ticket(kind: str, target: str, summary: str, approval_id: str) ->
 
 def change_tickets() -> list[dict[str, Any]]:
     return [dict(t) for t in _CHANGE_TICKETS]
+
+
+def get_change_ticket(ticket_id: str) -> dict[str, Any] | None:
+    return next((dict(t) for t in _CHANGE_TICKETS if t["ticket_id"] == ticket_id), None)
+
+
+def apply_change_ticket(ticket_id: str) -> dict[str, Any] | None:
+    """Simulate a human executing an approved change ticket. The effect is deterministic
+    from the ticket's target so verification has all three paths to check:
+      - a `revert` of dep-88 (the real cause) fully clears the incident;
+      - a `fix_forward` on dep-88 clears the signals but leaves one residual trade;
+      - anything else does nothing (the fix missed).
+    """
+    ticket = next((t for t in _CHANGE_TICKETS if t["ticket_id"] == ticket_id), None)
+    if ticket is None:
+        return None
+    ticket["status"] = "APPLIED"
+    if ticket["target"] == "dep-88" and ticket["kind"] in ("revert", "fix_forward"):
+        _EXTRA_JOB_RUNS.insert(
+            0,
+            {
+                "job_id": "job-4471b",
+                "name": "settlement-batch",
+                "started_at": "2026-09-06T09:00:00",
+                "finished_at": "2026-09-06T09:03:00",
+                "result": "SUCCEEDED",
+                "exit_code": 0,
+                "trigger": "manual",
+            },
+        )
+        _LAG_OVERRIDE["settlement.events"] = 0
+        _RESIDUAL_TRADES[:] = [] if ticket["kind"] == "revert" else ["T100301"]
+    return dict(ticket)
+
+
+def residual_trades() -> list[str]:
+    return list(_RESIDUAL_TRADES)
+
+
+def create_incident(symptom: str, cause: str, fix: str, verification: str) -> dict[str, Any]:
+    global _INC_SEQ
+    _INC_SEQ += 1
+    inc = {
+        "incident_id": f"INC-{_INC_SEQ}",
+        "symptom": symptom,
+        "cause": cause,
+        "fix": fix,
+        "verification": verification,
+        "status": "CLOSED",
+    }
+    _INCIDENTS.append(inc)
+    return dict(inc)
+
+
+def incidents() -> list[dict[str, Any]]:
+    return [dict(i) for i in _INCIDENTS]
+
+
+def get_incident(incident_id: str) -> dict[str, Any] | None:
+    return next((dict(i) for i in _INCIDENTS if i["incident_id"] == incident_id), None)

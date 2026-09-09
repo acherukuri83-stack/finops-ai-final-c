@@ -70,6 +70,7 @@ export const api = {
   investigateClient: (clientId: string) =>
     postJSON<Finding>("/investigate", { client_id: clientId }),
   diagnose: (subjectId: string) => postJSON<Finding>("/diagnose", { subject_id: subjectId }),
+  verify: (ticketId: string) => postJSON<Finding>("/verify", { ticket_id: ticketId }),
   knowledge: (q: string) => getJSON<KnowledgeHit[]>(`/knowledge?q=${encodeURIComponent(q)}`),
   cases: () => getJSON<CaseRow[]>("/cases"),
   case: (id: string) => getJSON<CaseDetail>(`/cases/${encodeURIComponent(id)}`),

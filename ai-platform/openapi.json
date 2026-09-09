@@ -382,6 +382,45 @@
         }
       }
     },
+    "/verify": {
+      "post": {
+        "summary": "Post Verify",
+        "description": "Developer Agent \u2014 verification mode. Apply a change ticket, re-check the signals\nthe diagnosis used, hand residual trades to Settlement, and write an incident on a\nclean fix. On failure it reports \u2014 it never proposes a second fix.",
+        "operationId": "post_verify_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events": {
       "post": {
         "summary": "Publish Event",
@@ -1918,6 +1957,19 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyRequest": {
+        "properties": {
+          "ticket_id": {
+            "type": "string",
+            "title": "Ticket Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ticket_id"
+        ],
+        "title": "VerifyRequest"
       }
     }
   }
