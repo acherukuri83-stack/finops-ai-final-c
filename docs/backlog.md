@@ -2,6 +2,14 @@
 
 Ideas that are out of the current phase's scope. Append; don't build.
 
+**Status (2026-09-09): the deferred-depth backlog is closed.** Every mainline A–G phase
+has a merged core slice plus its deferred depth, either shipped or closed-as-accepted with
+a rationale inline below (search `Closed (2026-09-09)`). Two things remain by explicit
+owner decision, neither a gap: the end-of-project `workflow_dispatch` eval sweep +
+refreshed `evals/SCORECARD.md` (paused for C+ during the build; the record stays Phase A
+8/9), and the optional **Wires** module (roadmap says it may be skipped). Older
+`revisit-if-a-scenario-needs-it` notes below stay as-is — they're pointers, not open work.
+
 - `docs/tool-contracts.md`'s `Account` shape lists `risk_flags[]`, and `Client`/`Counterparty`
   mention `restrictions[]`/`contacts[]` — the Phase A schema (`V2__phase_a_schema.sql`) has no
   risk-flag or counterparty-contact tables, and restrictions are only modeled at the account
@@ -55,6 +63,16 @@ Ideas that are out of the current phase's scope. Append; don't build.
     `agents/base.py::_run_step` stamps `finops.tool.retries` on every `tool` span (0 for
     in-process fixture servers, which don't go through `_request`).
     `tests/test_mcp_errors.py` (+1).
+  - **trace replay / diff "polish"** — **Closed (2026-09-09) — no concrete item.** The
+    mechanism ships (`POST /traces/{id}/replay`, `GET /traces/diff`, portal Traces tab).
+    "Polish" was never specified; reopen with a specific defect or want.
+  - **Bedrock model-client swap** — **Closed (2026-09-09) — out of scope for the build.**
+    `ModelClient` is an interface; a Bedrock impl is a deployment choice that needs AWS
+    infra + creds + an owner decision, not a code gap. Reopen when a Bedrock deployment is
+    actually on the table.
+  - **memory loop** (agent writing back learned facts) — **Closed (2026-09-09) — research
+    direction, not a build item.** Nothing in A–G depends on it. Reopen as its own scoped
+    proposal if pursued.
 - Build-phase policy (2026-09): the CI `eval` workflow is **manual-dispatch only** — the
   `pull_request` path trigger was removed to stop ~$2/35-min real-model runs firing on
   every PR (and every no-op re-push) during active development. This reverses the W3
@@ -71,8 +89,9 @@ Ideas that are out of the current phase's scope. Append; don't build.
 - Sc. 8 (duplicate_trade): the `synthesis/finding.md` DUPLICATE_SUSPECT branch now names
   `{kind: log, ref: search_logs}` as required evidence (PR #11) — on the live deploy the
   agent calls `search_logs` 3× but omitted it from `evidence`, which is the one ref
-  holding Sc. 8 at 2/3. **Not yet eval-validated** (run was cancelled). Confirm 9/9 on the
-  next manual sweep; if still 8/9, the earlier hill-climb notes above apply.
+  holding Sc. 8 at 2/3. **Blocked on the end-of-project eval sweep** (no sweeps for C+
+  during the build — owner decision). This is a known item for that sweep, not open
+  deferred depth: confirm 9/9 then; if still 8/9, the earlier hill-climb notes above apply.
 - ~~Phase C PR 2 (Supervisor): the **Knowledge specialist is registered but not
   dispatched**~~ **DONE (2026-09-09)** — `agents/base.py::run_knowledge`: a degenerate
   runner (fixed `ops.search_knowledge` + `ops.find_incidents`, no planner, no model call,
@@ -123,20 +142,28 @@ Ideas that are out of the current phase's scope. Append; don't build.
     `AuthoredScenario` (planted-chain YAML + `expect:` block + `ci.run_eval` baseline),
     labelled `authored_by: agent` — which PR-review mode (`review._code_rules`) already
     forces `REQUEST_CHANGES` on until a human signs off. `tests/test_eval_authoring.py` (7).
-    **Deferred:** the model-driven "from any SOP section" version (this slice is a fixed
-    3-code template map); it does not open the draft PR itself (`open_pull_request` is
+    **Closed (2026-09-09) — accepted as-is:** the fixed 3-code template map covers every
+    failure code the eval suite actually exercises. A model-driven "from any SOP section"
+    version is a **feature**, not a gap — it would add model calls + a validation surface
+    for marginal coverage; reopen if a new failure code needs authoring and no template
+    fits. It does not open the draft PR itself by design (`open_pull_request` is
     approval-gated — a human raises it from the artifact).
   - ~~Supervisor hand-off~~ **BOUNDED VERSION DONE (2026-09-09)** —
     `supervisor._recommend_incident_review`: when *every* dispatched sub-finding is
     `INSUFFICIENT_EVIDENCE`, the client `Finding` gets an `open_questions` note
     recommending `POST /diagnose` with the suspected job / service.
-    `tests/test_supervisor.py` (+2). **Still deferred — auto-dispatch:** the Supervisor
-    does not itself call `developer.investigate_incident`, because "which platform
-    subject" (which job id / which service) has no safe default to synthesise — a human
-    picks it from the recommendation. Resolving that (e.g. the Supervisor inspecting
-    recent failed job runs / degraded `/connections` health to name a subject) is the
-    open product question.
-  - **standards corpus** — `docs/standards/` indexed for review-mode retrieval.
+    `tests/test_supervisor.py` (+2). **Closed (2026-09-09) — the recommendation is the
+    resolution:** full auto-dispatch (the Supervisor calling `developer.investigate_incident`
+    itself) has no safe default for "which platform subject" — synthesising a job id /
+    service the client's sub-findings never named would violate rule 7 (never invent ids).
+    The bounded note hands a human the exact next step. Reopen only with a concrete design
+    for deriving the subject (e.g. from recent failed job runs / degraded `/connections`
+    health) that a human still confirms.
+  - ~~standards corpus~~ **Closed (2026-09-09) — accepted as-is:** `agent_core/review.py`
+    cites `docs/standards/*.md` sections directly (`security.md §4.1` etc.) from code
+    rules. Indexing them in pgvector for retrieval would add a dependency, a failure mode,
+    and latency for no accuracy gain — the section refs are fixed, not discovered. Reopen
+    if review mode ever needs to *find* an unknown-in-advance section.
   - `platform` server data is Python fixtures in `mcp_servers/platform/store.py` (not the
     simulator / Postgres) — fine for the slice; a fuller Phase E may move it to a seeded
     table with a `simulator` planter, like the enterprise tier.
@@ -167,15 +194,15 @@ Ideas that are out of the current phase's scope. Append; don't build.
     for the unit suite) and a SQL mode over seeded Postgres. 14 platform-tier tables
     (`CREATE TABLE IF NOT EXISTS`, no Flyway), mirrored in `simulator/simulator/finance_tables.py`
     + populated by `simulator/simulator/finance_baseline.py` on `make seed`. New `loans` /
-    `lending` planter keys. `supervisor._open_loans` discovers a client's open loans from
-    the accounts its FAILED trades touch and feeds them to `_decompose`. **Still deferred:**
-    (a) `planter.py` handlers for `margin` / `corpactions` / `cash` — land with a scenario
-    that plants them (Sc. 30 only needs `loans` / `lending`); (b) the domain **hard rules**
-    (`_enforce_recall_window` etc.) run in the per-domain `investigate_*` entry points, not
-    in `run_specialist`, so the Supervisor fan-out currently bypasses them — a `stockloan`
-    sub-finding under the Supervisor is not recall-window-checked. Sc. 30 is built so the
-    un-enforced answer is already correct; fixing the fan-out to apply the rule is its own
-    change.
+    `lending` planter keys; **`margin_calls` / `ca_events` / `ca_entitlements` /
+    `cash_breaks` planter keys added too (2026-09-09)** — exercised by
+    `simulator/tests/test_seed_integration.py::test_prime_finance_planter_handlers_are_idempotent`.
+    `supervisor._open_loans` discovers a client's open loans from the accounts its FAILED
+    trades touch and feeds them to `_decompose`. The Supervisor fan-out now runs the
+    per-domain hard rule on each sub-finding — `supervisor._apply_domain_rule` calls
+    `_enforce_recall_window` / `_enforce_call_window` / `_enforce_funding_cutoff` /
+    `_enforce_record_date` after `run_specialist` (fixed 2026-09-09; `tests/test_supervisor.py`
+    +2). All items on this line are done.
   - ~~Scenario 30~~ **SEEDED (2026-09-09)** — `simulator/scenarios/030_mixed_domain_client.yaml`:
     HF101 with one `COUNTERPARTY_SSI_MISMATCH` trade + one open loan `LN-5001`, `expect:`
     with two `groups`. Discovery + correlation covered by `tests/test_supervisor.py` and
@@ -188,5 +215,8 @@ Ideas that are out of the current phase's scope. Append; don't build.
     cash_break_id}` or `POST /corpaction {event_id, account_id}`) → the shared `Finding`
     renderer (outcome / root cause / proposed / rejected / open questions / trace link).
     `api.primeFinance(kind, id)` + `api.corpaction(eventId, accountId)` in `api.ts`.
-  - `market` / `position` are on the `stockloan` spec's scope but the slice's fixtures /
-    tests don't exercise a price move or a real position lookup.
+  - `market` / `position` are on the `stockloan` spec's scope but no test exercises a
+    price move or a real position lookup. **Closed (2026-09-09) — test depth, not a gap:**
+    the scope wiring is asserted by `tests/test_mcp_contract.py`; the planner can reach
+    both servers. A scenario that turns on a buy-in cost or a delivery shortfall would add
+    the coverage — reopen with that scenario, not on its own.

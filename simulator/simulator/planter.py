@@ -18,7 +18,14 @@ from typing import Any
 
 from sqlalchemy import Connection, delete, text
 
-from simulator.finance_tables import lending_availability, stock_loans
+from simulator.finance_tables import (
+    ca_entitlements,
+    ca_events,
+    cash_breaks,
+    lending_availability,
+    margin_calls,
+    stock_loans,
+)
 from simulator.scenario import Scenario
 from simulator.tables import (
     affirmations,
@@ -280,6 +287,91 @@ def _plant_lending(conn: Connection, rows: list[dict[str, Any]]) -> None:
         )
 
 
+def _plant_margin_calls(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    call_ids = {r["id"] for r in rows}
+    conn.execute(delete(margin_calls).where(margin_calls.c.call_id.in_(call_ids)))
+    conn.execute(
+        margin_calls.insert(),
+        [
+            {
+                "call_id": r["id"],
+                "account_id": r["account"],
+                "issued": _parse_date(r["issued"]) if r.get("issued") else None,
+                "due_by": _parse_date(r["due_by"]) if r.get("due_by") else None,
+                "amount": r["amount"],
+                "reason": r.get("reason", "PRICE_MOVE"),
+                "status": r.get("status", "OPEN"),
+            }
+            for r in rows
+        ],
+    )
+
+
+def _plant_ca_events(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    event_ids = {r["id"] for r in rows}
+    conn.execute(delete(ca_events).where(ca_events.c.event_id.in_(event_ids)))
+    conn.execute(
+        ca_events.insert(),
+        [
+            {
+                "event_id": r["id"],
+                "security_id": r["security"],
+                "type": r["type"],
+                "record_date": _parse_date(r["record_date"]) if r.get("record_date") else None,
+                "pay_date": _parse_date(r["pay_date"]) if r.get("pay_date") else None,
+                "gross_rate": r.get("gross_rate", 0.0),
+                "elective": r.get("elective", False),
+                "election_deadline": (
+                    _parse_date(r["election_deadline"]) if r.get("election_deadline") else None
+                ),
+            }
+            for r in rows
+        ],
+    )
+
+
+def _plant_ca_entitlements(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    for r in rows:
+        conn.execute(
+            delete(ca_entitlements).where(
+                (ca_entitlements.c.account_id == r["account"])
+                & (ca_entitlements.c.event_id == r["event"])
+            )
+        )
+        conn.execute(
+            ca_entitlements.insert().values(
+                account_id=r["account"],
+                event_id=r["event"],
+                record_date_qty=r["record_date_qty"],
+                held_qty=r["held_qty"],
+                lent_qty=r["lent_qty"],
+                gross_entitlement=r.get("gross_entitlement", 0.0),
+            )
+        )
+
+
+def _plant_cash_breaks(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    break_ids = {r["id"] for r in rows}
+    conn.execute(delete(cash_breaks).where(cash_breaks.c.break_id.in_(break_ids)))
+    conn.execute(
+        cash_breaks.insert(),
+        [
+            {
+                "break_id": r["id"],
+                "account_id": r["account"],
+                "currency": r["currency"],
+                "projected_close": r["projected_close"],
+                "min_buffer": r.get("min_buffer", 0),
+                "funding_cutoff": _parse_dt(r["funding_cutoff"])
+                if r.get("funding_cutoff")
+                else None,
+                "driver": r.get("driver", ""),
+            }
+            for r in rows
+        ],
+    )
+
+
 def _plant_incidents(conn: Connection, ids: list[str]) -> None:
     conn.execute(delete(incidents).where(incidents.c.incident_id.in_(ids)))
     conn.execute(
@@ -308,6 +400,10 @@ HANDLERS: dict[str, Callable[[Connection, Any], None]] = {
     "securities": _plant_securities,
     "loans": _plant_loans,
     "lending": _plant_lending,
+    "margin_calls": _plant_margin_calls,
+    "ca_events": _plant_ca_events,
+    "ca_entitlements": _plant_ca_entitlements,
+    "cash_breaks": _plant_cash_breaks,
     "logs": _plant_logs,
     "incidents": _plant_incidents,
     "corpus_fixtures": _plant_corpus_fixtures,
@@ -333,6 +429,10 @@ def plant(conn: Connection, scenario: Scenario) -> None:
         "restrictions",
         "loans",
         "lending",
+        "margin_calls",
+        "ca_events",
+        "ca_entitlements",
+        "cash_breaks",
         "logs",
         "incidents",
         "corpus_fixtures",

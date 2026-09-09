@@ -73,6 +73,71 @@ def test_baseline_populates_the_prime_finance_tables(conn: Connection) -> None:
         assert n == 1, f"{tbl} missing {val} after baseline"
 
 
+def test_prime_finance_planter_handlers_are_idempotent(conn: Connection) -> None:
+    """The margin / corpactions / cash plant handlers land with a scenario that needs
+    them; exercise each directly here (delete-then-insert, safe to re-run)."""
+    baseline.populate(conn)
+    block = {
+        "margin_calls": [
+            {
+                "id": "MC-TEST",
+                "account": "ACC-88213",
+                "issued": "2026-09-05",
+                "due_by": "2026-09-06",
+                "amount": 9_000_000,
+            }
+        ],
+        "ca_events": [
+            {
+                "id": "CA-TEST",
+                "security": "AAPL",
+                "type": "CASH_DIVIDEND",
+                "record_date": "2026-09-01",
+                "pay_date": "2026-09-10",
+                "gross_rate": 0.3,
+            }
+        ],
+        "ca_entitlements": [
+            {
+                "account": "ACC-88213",
+                "event": "CA-TEST",
+                "record_date_qty": 5000,
+                "held_qty": 1000,
+                "lent_qty": 4000,
+            }
+        ],
+        "cash_breaks": [
+            {
+                "id": "CB-TEST",
+                "account": "ACC-88213",
+                "currency": "GBP",
+                "projected_close": -3_000_000,
+                "funding_cutoff": "2026-09-06T16:00",
+            }
+        ],
+    }
+    for _ in range(2):  # idempotent
+        for key, rows in block.items():
+            planter.HANDLERS[key](conn, rows)
+
+    assert (
+        conn.execute(text("select amount from margin_calls where call_id = 'MC-TEST'")).scalar_one()
+        == 9_000_000
+    )
+    assert (
+        conn.execute(
+            text("select lent_qty from ca_entitlements where event_id = 'CA-TEST'")
+        ).scalar_one()
+        == 4000
+    )
+    assert (
+        conn.execute(
+            text("select currency from cash_breaks where break_id = 'CB-TEST'")
+        ).scalar_one()
+        == "GBP"
+    )
+
+
 def test_scenario_30_plants_an_open_loan_and_a_settlement_fail(conn: Connection) -> None:
     baseline.populate(conn)
     planter.plant(conn, Scenario.load(SCENARIOS / "030_mixed_domain_client.yaml"))
