@@ -43,6 +43,19 @@ from mcp_servers.market.server import mcp as market_mcp
 from mcp_servers.market.tools import get_price
 from mcp_servers.ops.server import mcp as ops_mcp
 from mcp_servers.ops.tools import find_incidents, search_knowledge, search_logs
+from mcp_servers.platform.server import mcp as platform_mcp
+from mcp_servers.platform.tools import (
+    diff_config,
+    get_deployments,
+    get_job_runs,
+    get_platform_logs,
+    get_service_health,
+    get_source,
+    get_topic_lag,
+    open_change_ticket,
+    replay_message,
+    rerun_job,
+)
 from mcp_servers.position.server import mcp as position_mcp
 from mcp_servers.position.tools import get_borrow_availability, get_position
 from mcp_servers.reference.server import mcp as reference_mcp
@@ -61,7 +74,16 @@ _ToolFn = Callable[..., Awaitable[Any]]
 
 # access tier per tool (docs/tool-contracts.md). `write` needs an APPROVED approval_id in
 # the tool; `write*` is agent-allowed bookkeeping (the `case` server).
-WRITE_TOOLS = frozenset({"resubmit_settlement", "cancel_trade", "update_ssi"})
+WRITE_TOOLS = frozenset(
+    {
+        "resubmit_settlement",
+        "cancel_trade",
+        "update_ssi",
+        "open_change_ticket",
+        "rerun_job",
+        "replay_message",
+    }
+)
 GOV_TOOLS = frozenset({"create_case", "update_case", "propose_action", "log_audit"})
 
 
@@ -107,6 +129,23 @@ SERVERS: dict[str, ServerSpec] = {
         ServerSpec("compliance", compliance_mcp, [get_restrictions, get_screening_result]),
         ServerSpec("ops", ops_mcp, [search_logs, search_knowledge, find_incidents]),
         ServerSpec(
+            "platform",
+            platform_mcp,
+            [
+                get_service_health,
+                get_job_runs,
+                get_deployments,
+                diff_config,
+                get_topic_lag,
+                get_platform_logs,
+                get_source,
+                open_change_ticket,
+                rerun_job,
+                replay_message,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -129,6 +168,10 @@ LIST_TOOLS = frozenset(
         "search_logs",
         "search_knowledge",
         "find_incidents",
+        "get_job_runs",
+        "get_deployments",
+        "diff_config",
+        "get_platform_logs",
     }
 )
 
