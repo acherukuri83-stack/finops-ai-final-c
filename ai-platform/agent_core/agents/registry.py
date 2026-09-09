@@ -59,7 +59,20 @@ DEVELOPER = SpecialistSpec(
     required_tools=frozenset({("platform", "get_job_runs"), ("platform", "get_deployments")}),
 )
 
-_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER)}
+# Phase F (core slice) — the StockLoan specialist. Scope: its own book + `market` +
+# read-only `position` (to see the delivery it must cover) + `ops`. The recall-window
+# rule (recall vs buy-in) is code, in `agent_core/stockloan.py`.
+STOCKLOAN = SpecialistSpec(
+    name="stockloan",
+    planner_prompt="planner/stockloan",
+    synthesis_prompt="synthesis/stockloan",
+    tool_servers=frozenset({"stockloan", "market", "position", "ops"}),
+    allowlist_key="stockloan",
+    subject_type="loan",
+    required_tools=frozenset({("stockloan", "get_loan")}),
+)
+
+_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN)}
 
 
 def spec_for(name: str) -> SpecialistSpec:

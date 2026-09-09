@@ -30,6 +30,14 @@ developer:
   - post_review           #   ''
   - escalate
 
+# Phase F (core slice) — the StockLoan specialist. Proposals only, approval-gated; no
+# override of a risk decision. The recall-window rule (recall vs buy-in) is code.
+stockloan:
+  - initiate_recall
+  - rerate_loan
+  - book_buy_in
+  - escalate
+
 # Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
 # as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:

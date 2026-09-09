@@ -450,6 +450,8 @@ export interface components {
             trade_id?: string | null;
             /** Client Id */
             client_id?: string | null;
+            /** Loan Id */
+            loan_id?: string | null;
         };
         /** KnowledgeHit */
         KnowledgeHit: {
