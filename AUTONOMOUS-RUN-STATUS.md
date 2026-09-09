@@ -1,7 +1,11 @@
 # Autonomous run — status
 
-Unattended session, 2026-09-09. Task: finish the FinOps AI mainline, then pick up deferred
-phase depth. **No blockers.** `main` @ `f2f130c`.
+Unattended session, 2026-09-09. Task: finish the FinOps AI mainline (A→G), then work
+through the deferred phase-depth backlog. **No blockers.** `main` @ `c812dac`.
+
+Local gate at the last merge: `pytest -m "not eval and not contract"` = **131 passed**;
+`ruff` / `mypy` clean (ai-platform); portal `lint` / `tsc` / `build` clean. No eval
+sweeps (owner decision — the `SCORECARD.md` on record stays Phase A 8/9).
 
 ## Merged this run (all CI `verify` green before merge)
 
@@ -12,43 +16,85 @@ phase depth. **No blockers.** `main` @ `f2f130c`.
 | #19 | E core | Developer Agent **incident mode**: `platform` MCP server, `investigate_incident`, revert/fix-forward hard rule, `POST /diagnose`, Engineering tab |
 | #20 | F core | **StockLoan** specialist: `stockloan` MCP server, `investigate_loan`, recall-vs-buy-in hard rule, `POST /investigate {loan_id}`, Supervisor `stockloan` sub-task |
 | #21 | G item | Real `trace_store.scrub()` (emails / ids / person-keys) + `finops.pii.redactions` on the span |
-| #22 | E depth | Developer Agent **verification mode**: `verify_change(ticket_id)` — apply, re-check job/lag, residual → Settlement (`sub_finding`), write retrievable `INC-3xxx`; failed fix reports + no second fix. `POST /verify`, `platform.get_incident`, Engineering verify input |
-| #23 | F depth | **Scenario 30** — Supervisor correlates a `settlement` + `stockloan` sub-finding into one mixed-domain client answer (unit-tested; scored YAML waits on loan seeding) |
+| #22 | E depth | Developer Agent **verification mode**: `verify_change(ticket_id)`, residual → Settlement (`sub_finding`), retrievable `INC-3xxx`; failed fix reports + no second fix. `POST /verify` |
+| #23 | F depth | **Scenario 30** mechanism — Supervisor correlates `settlement` + `stockloan` into one mixed-domain client answer (unit-tested) |
+| #24 | E depth | Developer Agent **PR-review mode**: `repo` + `ci` fixture servers, `Review` schema, `review_pr`, code BLOCKER rules, `POST /review`, Engineering review input |
+| #25 | G item | `schema_validation` guardrail span (from `complete_structured_traced`) + `finops.tool.retries` (from `_enterprise.last_retries()`) |
+| #26 / #27 / #28 | F depth | **Margin**, **CorpActions**, **Cash** specialists — one fixture server + spec + entry point + hard rule + Supervisor sub-task each. All four prime-finance domains shipped. |
+| #29 | E depth | Developer Agent **eval-authoring mode**: `author_scenario(failure_code)` → planted-chain YAML + `expect:` + baseline, `authored_by: agent` (which review mode blocks). `POST /author-scenario` |
+| #30 | F + E depth | **Prime Finance portal tab** (`PrimeFinanceView.tsx`, one tab / four domains) + **bounded Supervisor→Developer hand-off** (`_recommend_incident_review`: all-`INSUFFICIENT_EVIDENCE` → an `open_questions` note recommending `POST /diagnose`; recommendation only) |
+| #33 | C depth | **Knowledge specialist wired** — `run_knowledge` (degenerate: fixed retrieval, no planner/model, proposes nothing) routed by the Supervisor; `_business()` keeps it out of outcome reconciliation; `decompose.md` rewritten for all seven agents (also fixed the margin/corpactions/cash prompt gap) |
 
-Local `pytest -m "not eval and not contract"` = **93 passed** at the last merge; `ruff`/`mypy` clean (ai-platform + simulator); portal `lint`/`tsc`/`build` clean.
+(PRs #31, #32: #31 was a portal styling PR the account owner merged mid-run — no conflict
+with the agent work; #32 was the first Knowledge PR, closed and re-opened as #33 after a
+clean rebase onto #31.)
 
-## Deferred per phase (also in `docs/backlog.md`)
+## Mainline status
 
-**E — Developer Agent**
-- PR-review mode: `repo` + `ci` MCP servers, `Review` schema, BLOCKER rules (`open_pull_request` / `post_review` are already on the `developer` allowlist; servers unbuilt)
-- eval-authoring mode
-- Supervisor → `developer.investigate_incident` hand-off when every business sub-finding is `INSUFFICIENT_EVIDENCE` — **left as a product-design open item**: no clean way to derive the incident subject (job/service) from client-level sub-findings without more design. Today the developer path is reachable via `POST /diagnose` and `verify_change`'s residual hand-off goes the other way (developer → Settlement).
-- standards corpus indexed for review retrieval
+**A (done) · C · D · E · F · G — every mainline phase has a merged, CI-green core slice
+plus most of the deferred depth.** Root `CLAUDE.md` "Current phase" =
+"filling in deferred phase depth, item by item".
 
-**F — Prime finance**
-- Margin & collateral, corporate actions, cash domains (one server + specialist + allowlist + hard rules each)
-- seeded table + `simulator` planter for stock loan, replacing `mcp_servers/stockloan/store.py` fixtures — unlocks a **scored** Scenario 30 (`investigate_client` could then discover the loan; today `supervisor._failed_trades` only queries `find_trades`)
-- portal Stock Loan tab (`investigate_loan` is API-only)
+## Still deferred (also in `docs/backlog.md`) — and why each was left
 
-**G — Hardening**
-- `schema_validation` guardrail span — needs `complete_structured_traced` to return an attempt count so callers (not `model_client.py`) emit the span
-- `finops.tool.retries` — thread the retry count out of `_enterprise._request`
-- trace replay/diff polish, Bedrock swap, memory loop (untouched)
+**Needs the account owner / a product call — did NOT attempt unattended:**
 
-**Project-wide**
-- Full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` — paused for C+ by owner decision; the record stays the Phase A 8/9. Accepted risk: a model-behaviour regression in any specialist / the Supervisor won't surface until that sweep.
-- Phase B (Wires) — optional module, unbuilt.
+1. **F — seeded tables + `simulator` planter for the four prime-finance domains**,
+   replacing the in-process `mcp_servers/*/store.py` fixtures. This is the largest
+   remaining item: a cross-tier change (enterprise Java schema + Flyway + `simulator`
+   planter + rewiring four fixture stores) whose DB-backed tests **cannot be validated
+   locally** (they hang without Postgres; CI runs them). Unlocks a *scored* Scenario 30
+   (so `investigate_client` can *discover* a loan the way it discovers failed trades —
+   today `supervisor._failed_trades` only queries `find_trades`). Left for an attended
+   session.
+2. **E — standards corpus in pgvector for PR-review retrieval.** Owner was leaning
+   "acceptable as is" — `review.py` cites `docs/standards/*.md` sections directly rather
+   than retrieving them. Needs an owner decision to build or to formally close; not mine
+   to decide unilaterally.
+3. **E — auto-dispatch** of the Developer Agent on all-`INSUFFICIENT_EVIDENCE`. The
+   *bounded recommendation* shipped in #30; auto-dispatch is still blocked on the open
+   product question of how the Supervisor names the incident subject (which job id / which
+   service) with no safe default. Documented in `docs/backlog.md` + `CLAUDE.md`.
+
+**Genuine follow-ups / low value — not blocking:**
+
+4. **E — eval-authoring's model-driven "from any SOP section" mode** (the fixed
+   3-template version is shipped).
+5. **G — trace replay/diff polish; Bedrock model-client swap; the memory loop.** No
+   concrete spec; Bedrock needs infra + a decision.
+6. **F — `market` / `position` are on the `stockloan` spec's scope but no test exercises
+   a price move or a real position lookup** (the scope wiring is covered by
+   `test_mcp_contract.py`; this is test *depth*, not a gap).
+7. **Sc. 8 (duplicate_trade) hill-climb** — blocked: needs `make eval` runs, and eval
+   sweeps are paused for C+ by owner decision.
+8. **Project-wide** — the full `workflow_dispatch` eval sweep + refreshed
+   `evals/SCORECARD.md`, deferred to end-of-project by owner decision. Accepted risk: a
+   model-behaviour regression in any specialist / the Supervisor won't surface until then.
+9. **Phase B (Wires)** — the optional module, unbuilt (depends only on A; nothing in
+   C–G depends on it).
 
 ## Notes / deviations
 
-- `ScheduleWakeup` (the `/loop` self-pacing tool) is blocked by the environment's classifier, so this ran as one continuous in-session loop rather than scheduled wake-ups. No functional impact.
-- E/F `platform` and `stockloan` servers are **in-process Python fixtures** (`store.py`), following the `case`-server precedent — no Java, no Flyway, no simulator planter. Fine for a reviewable slice; a fuller phase moves them to seeded tables (noted above).
-- PII scrub is a span **attribute** (`finops.pii.redactions`), not a separate `guardrail` span, because the scrub runs inside `PostgresSpanProcessor.on_end` and emitting a span there would recurse. `docs/standards/observability.md` documents this.
-- Hard rules added as code (not prompt), matching ADR-0002's pattern: `developer._enforce_fix_strategy` (revert vs fix-forward on `release_note`), `stockloan._enforce_recall_window` (recall vs buy-in on the notice window).
+- `ScheduleWakeup` (the `/loop` self-pacer) is blocked by the environment classifier, so
+  this ran as one continuous in-session loop. No functional impact.
+- After a rebase, `git push --force` / `--force-with-lease` are blocked, so a rebased
+  branch is re-pushed under a fresh name and the old PR closed (see #32 → #33).
+- E/F domain servers (`platform`, `stockloan`, `margin`, `corpactions`, `cash`, `repo`,
+  `ci`) are **in-process Python fixture stores**, following the `case`-server precedent —
+  no Java / Flyway / simulator planter (item 1 above is the fuller version).
+- Hard rules are code, not prompt (ADR-0002 pattern): `_enforce_fix_strategy`,
+  `_enforce_recall_window`, `_enforce_call_window`, `_enforce_record_date`,
+  `_enforce_funding_cutoff`.
 
 ## Exact next step
 
-Nothing is blocked. To continue, pick one deferred item above, read its `docs/phase-breakdown.md` section + the relevant nested `CLAUDE.md`, bump the root `CLAUDE.md` "Current phase" line, and implement it as its own PR following the established patterns. Remaining high-leverage items:
-- **E PR-review mode** — the `repo` + `ci` in-process fixture servers + `Review` schema + the code BLOCKER rules (write tool w/o `approval_id`, action not in an allowlist, model call on an unscrubbed field). Self-contained; follows the `platform`/`stockloan` server pattern.
-- **F — one more prime-finance domain** (Margin is the natural next), same shape as StockLoan.
-- **G — `schema_validation` guardrail span + `finops.tool.retries`** — both need small `model_client` / `_enterprise` plumbing changes (return an attempt count; thread the retry count out).
+Nothing is blocked; the run stopped because the remaining backlog items are either
+owner-decisions (items 1–3), specless follow-ups (4–5), or eval-gated (7–8) — none are
+safe "self-contained, locally-verifiable" unattended work.
+
+To resume: pick a deferred item, read its `docs/phase-breakdown.md` section + the relevant
+nested `CLAUDE.md`, bump the root `CLAUDE.md` line, implement it as its own PR following
+the established patterns (in-process fixture servers, hard rules in code, per-agent
+allowlists, `run_specialist` / `run_knowledge`). The highest-leverage attended item is
+**#1 — seeded prime-finance tables + planter** (unlocks the scored Scenario 30 and moves
+all four domains onto real data).
