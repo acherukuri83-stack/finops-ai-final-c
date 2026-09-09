@@ -49,9 +49,14 @@ Ideas that are out of the current phase's scope. Append; don't build.
 - Build-phase policy (2026-09): the CI `eval` workflow is **manual-dispatch only** — the
   `pull_request` path trigger was removed to stop ~$2/35-min real-model runs firing on
   every PR (and every no-op re-push) during active development. This reverses the W3
-  decision ("CI eval n=3 on every sensitive-path PR"). **Before declaring a phase or the
-  project done**, run a full `workflow_dispatch` sweep and commit the `SCORECARD.md`. If a
-  standing pre-merge gate is wanted again, re-add the `pull_request:` paths block to
+  decision ("CI eval n=3 on every sensitive-path PR").
+  **Updated (2026-09, owner decision): no eval sweeps for Phase C or any later phase
+  during the build.** Phases C→G ship on `scripts/verify.sh` + unit/contract tests +
+  design review, without a per-phase scenario sweep. A single full `workflow_dispatch`
+  sweep + refreshed `evals/SCORECARD.md` is deferred to the **end of the project**; the
+  `SCORECARD.md` on record stays the Phase A 8/9. Accepted risk: a model-behaviour
+  regression in a specialist or the Supervisor would not be caught until that final sweep.
+  To re-enable a standing pre-merge gate, re-add the `pull_request:` paths block to
   `.github/workflows/eval.yml` (it's in git history) — optionally label-gated
   (`if: contains(labels, 'run-eval')`) or at n=1 to keep it cheap.
 - Sc. 8 (duplicate_trade): the `synthesis/finding.md` DUPLICATE_SUSPECT branch now names
@@ -66,8 +71,8 @@ Ideas that are out of the current phase's scope. Append; don't build.
   no planner, read-only, returns cited evidence + a one-line relevance note per chunk) in
   `agent_core/agents/base.py` and a `knowledge` branch in the decompose prompt. Left out
   of PR 2 to keep it reviewable; Scenario 11 does not need it.
-- Phase C exit: run the manual `workflow_dispatch` eval sweep (scenarios 1–6, 8–10, 12 +
-  the new client-subject Sc. 11) and commit `evals/SCORECARD.md` before moving
-  `CLAUDE.md` to "C — complete · next mainline phase: D". The specialists must reproduce
-  the Investigator's Phase A results at the split (low regression risk — every Phase A
-  scenario is still a single-specialist Settlement run).
+- Phase C closed 2026-09-09 (PRs #14, #16) **without an eval sweep** per the policy note
+  above. If the deferred end-of-project sweep is ever run, Phase C's target set is
+  scenarios 1–6, 8–10, 12 (specialists must reproduce the Investigator's Phase A results
+  — every Phase A scenario is still a single-specialist Settlement run) plus the new
+  client-subject Sc. 11 (`groups` scoring).

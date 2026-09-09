@@ -304,11 +304,11 @@ needs process-global fault injection):
   block: build + start the enterprise, seed all scenarios, ingest the corpus, run
   `pytest -m contract` (~15 tests, incl. the governance propose→approve→execute→audit
   round-trip).
-- **`eval.yml`**: `python -m evals.cli --n 3` on PRs that touch
-  `agent_core/prompts|policy|loop.py|outcomes.py`, `knowledge/`, `evals/`, or
-  `simulator/`; also `workflow_dispatch` (n / scenario inputs). Real Claude calls
-  (~$2 per n=3 run). Uploads `SCORECARD.md` as an artifact. Needs the repo secret
-  `ANTHROPIC_API_KEY`.
+- **`eval.yml`**: **`workflow_dispatch` only** (n / scenario inputs) — the `pull_request`
+  path trigger was removed (PR #13), and full sweeps are paused for Phase C and later
+  during the build (`backlog.md`). Real Claude calls (~$2 per n=3 run). Uploads
+  `SCORECARD.md` as an artifact. Needs the repo secret `ANTHROPIC_API_KEY`. The
+  `SCORECARD.md` on record is the Phase A 8/9.
 - **Local constraints:** Docker Desktop is broken on the dev machine, and the corporate
   TLS proxy blocks fastembed's model download — so the DB-backed simulator suite, the
   knowledge/contract tests, and the eval suite are **CI-only** locally. `uv` needs
@@ -326,10 +326,11 @@ needs process-global fault injection):
   usage limit + spend alert
 - Polish, README, demo script
 
-**Mainline after A:** C supervisor + specialist agents → D event-driven auto-casing →
-E Developer Agent → F prime-finance domains → G hardening. **Wires (B) is an optional
-module** — depends only on A, nothing in C–G depends on it. See
-[`phase-breakdown.md`](phase-breakdown.md).
+**Mainline after A:** ~~C supervisor + specialist agents~~ (done 2026-09-09, PRs #14/#16 —
+Supervisor + Settlement/Risk-Client/Knowledge specialists, per-agent allowlists, client
+Scenario 11) → **D event-driven auto-casing** (next) → E Developer Agent → F prime-finance
+domains → G hardening. **Wires (B) is an optional module** — depends only on A, nothing in
+C–G depends on it. See [`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 
