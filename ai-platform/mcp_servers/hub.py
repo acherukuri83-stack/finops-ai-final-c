@@ -47,6 +47,17 @@ from mcp_servers.counterparty.tools import (
     get_counterparty_ssi,
 )
 from mcp_servers.errors import is_error
+from mcp_servers.margin.server import mcp as margin_mcp
+from mcp_servers.margin.tools import (
+    escalate_margin,
+    get_collateral,
+    get_eligibility,
+    get_margin_call,
+    get_margin_status,
+    list_margin_calls,
+    post_collateral,
+    substitute_collateral,
+)
 from mcp_servers.market.server import mcp as market_mcp
 from mcp_servers.market.tools import get_price
 from mcp_servers.ops.server import mcp as ops_mcp
@@ -112,6 +123,9 @@ WRITE_TOOLS = frozenset(
         "initiate_recall",
         "rerate_loan",
         "book_buy_in",
+        "post_collateral",
+        "substitute_collateral",
+        "escalate_margin",
         "open_pull_request",
         "post_review",
     }
@@ -205,6 +219,21 @@ SERVERS: dict[str, ServerSpec] = {
             [run_static_analysis, run_security_scan, get_test_coverage, run_tests, run_eval],
         ),
         ServerSpec(
+            "margin",
+            margin_mcp,
+            [
+                get_margin_call,
+                list_margin_calls,
+                get_margin_status,
+                get_collateral,
+                get_eligibility,
+                post_collateral,
+                substitute_collateral,
+                escalate_margin,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -236,6 +265,8 @@ LIST_TOOLS = frozenset(
         "run_security_scan",
         "list_loans",
         "get_rerate_history",
+        "list_margin_calls",
+        "get_collateral",
     }
 )
 

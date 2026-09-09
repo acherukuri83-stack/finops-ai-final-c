@@ -2,18 +2,23 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: filling in deferred phase depth (E verification mode just landed)
+## Current phase: filling in deferred phase depth, item by item
 
-Every mainline phase has a merged core slice (A + C full; D full; **E / F / G as reviewable slices**), and deferred depth is being picked up item by item. **Just done: E verification mode** — `agent_core/developer.py::verify_change(ticket_id)` applies a change ticket (`platform` store `apply_change_ticket` simulates the effect deterministically from the ticket target), re-checks the diagnosis signals (job run, topic lag), hands residual trades to the Settlement specialist as `sub_findings`, and writes a retrievable `INC-3xxx` on a clean fix; a fix that did not work reports FAILED and says to re-enter incident mode — **never a second autonomous fix**. `POST /verify`; `platform.get_incident` read tool; Engineering tab gained a verify input.
+Every mainline phase A–G has a merged core slice; deferred depth is being picked up one PR at a time (each: read `docs/backlog.md` + `docs/phase-breakdown.md`, follow the established patterns — in-process fixture MCP servers, hard rules in code, per-agent allowlists, `run_specialist`).
 
-Also done: **Scenario 30 mechanism** — the Supervisor correlating a `settlement` + `stockloan` sub-finding into one mixed-domain client answer, exercised in `tests/test_supervisor.py` (a scored YAML waits on stock-loan data being seeded so `investigate_client` can discover the loan).
+**Landed so far in this pass:**
+- **E verification mode** — `developer.verify_change(ticket_id)`: apply → re-check job/lag → residual trade to Settlement (`sub_finding`) → write retrievable `INC-3xxx`; a failed fix reports FAILED, proposes nothing. `POST /verify`, `platform.get_incident`.
+- **E PR-review mode** — `repo` + `ci` fixture servers, `Review` schema, `agent_core/review.py` (surface classification + deterministic checks + platform hard rules as code: write tool w/o `approval_id` → BLOCKER `security.md §4.1`; new `action_type` off every allowlist → MAJOR §5; PII into a model call → BLOCKER §7; `authored_by: agent` scenario → needs a human). `POST /review`. No `approve_pr` / `merge_pr` tool.
+- **F Margin domain** — `margin` server + `MARGIN` spec + `agent_core/margin.py::investigate_margin_call`; **meet-vs-close-out hard rule in code** (`_enforce_call_window` on `due_by`). `POST /investigate {margin_call_id}`; Supervisor `margin` sub-task.
+- **G obs** — `schema_validation` guardrail span (from `complete_structured_traced`) + `finops.tool.retries` (from `_enterprise.last_retries()`).
+- **Sc. 30 mechanism** — Supervisor correlates `settlement` + `stockloan` sub-findings into one mixed-domain client answer (unit-tested).
 
-Also done: **E PR-review mode** — `repo` + `ci` in-process fixture MCP servers, `Review` schema, `agent_core/review.py` (surface classification + deterministic checks + the platform hard rules as code: write tool w/o `approval_id` → BLOCKER `security.md §4.1`, new `action_type` off every allowlist → MAJOR §5, PII into a model call → BLOCKER §7, `authored_by: agent` scenario → needs a human). `POST /review`; Engineering-tab "Review a PR" input. No `approve_pr` / `merge_pr` tool exists.
-
-Remaining depth (`docs/backlog.md`, any order):
-- **E** — eval-authoring mode; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE` (product-design open item — no clean incident-subject); standards corpus in pgvector (review cites the `docs/standards/*.md` §s directly for now).
-- **F** — Margin / CorpActions / Cash domains; a seeded table + `simulator` planter for stock loan (unlocks a scored Sc. 30); portal Stock Loan tab.
-- **G** — `schema_validation` guardrail span; `finops.tool.retries` emission; trace replay/diff polish; Bedrock swap; memory loop.
+**Still deferred (`docs/backlog.md`, any order):**
+- **E** — eval-authoring mode; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE` (product-design open item — no clean incident-subject); standards corpus in pgvector.
+- **F** — CorpActions / Cash domains; seeded table + `simulator` planter for stock loan (unlocks a scored Sc. 30); one shared portal "Prime Finance" tab (loan / margin / corpactions / cash).
+- **G** — trace replay/diff polish; Bedrock swap; memory loop.
+- **B (Wires)** — optional module, unbuilt.
+- **Project-wide** — full `workflow_dispatch` eval sweep + refreshed `SCORECARD.md` (paused for C+ by owner decision; record stays Phase A 8/9).
 - **B (Wires)** — the optional module (unbuilt; depends only on A).
 - **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` (paused for C+ during the build by owner decision; the record stays the Phase A 8/9).
 

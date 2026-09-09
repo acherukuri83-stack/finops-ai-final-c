@@ -498,6 +498,8 @@ export interface components {
             client_id?: string | null;
             /** Loan Id */
             loan_id?: string | null;
+            /** Margin Call Id */
+            margin_call_id?: string | null;
         };
         /** KnowledgeHit */
         KnowledgeHit: {
