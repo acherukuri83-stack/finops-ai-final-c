@@ -549,3 +549,133 @@ h1 {
     transition: none !important;
   }
 }
+
+/* Search and investigation workspace */
+.trade-toolbar {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.trade-toolbar label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: #64718b;
+}
+.trade-toolbar .trade-search {
+  flex: 1;
+  min-width: 200px;
+}
+.trade-toolbar input {
+  width: 100%;
+}
+.trade-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 12px;
+  color: #65728a;
+}
+.trade-pagination > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.trade-empty {
+  padding: 32px;
+  text-align: center;
+  color: #6b7890;
+}
+.investigation-drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  margin: 0;
+  width: min(640px, 100%);
+  max-width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid #dce2ed;
+  background: #fff;
+  color: #25324a;
+  box-shadow: -12px 0 60px #111b2e25;
+  overflow: auto;
+}
+.investigation-drawer::backdrop {
+  background: #101b2e66;
+  backdrop-filter: blur(3px);
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e6eaf2;
+  background: #f8f9fd;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.drawer-header h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+.drawer-body {
+  padding: 24px 28px;
+  overflow-wrap: anywhere;
+}
+.drawer-body h3 {
+  margin: 20px 0 10px;
+}
+.drawer-body dl {
+  background: #f8f9fc;
+  padding: 16px;
+  border-radius: 10px;
+}
+.drawer-body dd {
+  min-width: 0;
+}
+.drawer-hint {
+  color: #78849a;
+  font-size: 12px;
+}
+.investigation-progress {
+  border: 1px solid #dcd8fa;
+  border-radius: 10px;
+  padding: 18px;
+  margin-top: 18px;
+  background: #f7f5ff;
+  font-size: 13px;
+}
+.investigation-progress p {
+  margin: 8px 0;
+}
+.investigation-error {
+  color: #a62d40;
+  background: #fff0f2;
+  border-radius: 8px;
+  padding: 12px;
+}
+@media (max-width: 700px) {
+  .trade-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .drawer-header,
+  .drawer-body {
+    padding: 20px;
+  }
+  .trade-toolbar label {
+    flex: 1;
+  }
+}
+body:has(.investigation-drawer[open]) {
+  overflow: hidden;
+}

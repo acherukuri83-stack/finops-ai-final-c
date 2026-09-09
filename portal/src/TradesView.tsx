@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { OpenTrace } from "./App";
 import { api, type Finding, type TradeRow } from "./api";
 
@@ -15,6 +15,55 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
   const [selected, setSelected] = useState<TradeRow | null>(null);
   const [finding, setFinding] = useState<Finding | null>(null);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState("trade");
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const request = useRef(0);
+  const pageSize = 25;
+
+  useEffect(
+    () => () => {
+      request.current += 1;
+    },
+    [],
+  );
+
+  const filtered = (rows ?? [])
+    .filter(
+      (trade) =>
+        (!status || (trade.status ?? "UNKNOWN") === status) &&
+        [trade.trade_id, trade.client_id, trade.security_id].some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
+        ),
+    )
+    .sort((a, b) =>
+      sort === "date"
+        ? String(a.settle_date ?? "").localeCompare(
+            String(b.settle_date ?? ""),
+          ) || a.trade_id.localeCompare(b.trade_id)
+        : sort === "quantity"
+          ? Number(b.qty ?? 0) - Number(a.qty ?? 0) ||
+            a.trade_id.localeCompare(b.trade_id)
+          : a.trade_id.localeCompare(b.trade_id),
+    );
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pages);
+  const visible = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  function closeDrawer() {
+    request.current += 1;
+    setBusy(false);
+    dialog.current?.close();
+  }
 
   useEffect(() => {
     api
@@ -24,25 +73,41 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
   }, []);
 
   async function open(id: string) {
+    const token = ++request.current;
+    setSelected(rows?.find((trade) => trade.trade_id === id) ?? null);
     setFinding(null);
-    setError(null);
+    setDetailError(null);
+    setBusy(false);
+    setLoadingDetail(true);
+    dialog.current?.showModal();
     try {
-      setSelected(await api.trade(id));
+      const trade = await api.trade(id);
+      if (request.current === token) setSelected(trade);
     } catch (e) {
-      setError((e as Error).message);
+      if (request.current === token) setDetailError((e as Error).message);
+    } finally {
+      if (request.current === token) setLoadingDetail(false);
     }
   }
 
   async function runInvestigation(id: string) {
+    const token = ++request.current;
     setBusy(true);
-    setError(null);
+    setDetailError(null);
+    setFinding(null);
     try {
-      setFinding(await api.investigate(id));
+      const result = await api.investigate(id);
+      if (request.current === token) setFinding(result);
     } catch (e) {
-      setError((e as Error).message);
+      if (request.current === token) setDetailError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (request.current === token) setBusy(false);
     }
+  }
+
+  function viewTrace(id: string) {
+    closeDrawer();
+    openTrace(id);
   }
 
   if (error) return <p style={{ color: "#b00" }}>Error: {error}</p>;
@@ -77,6 +142,68 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
         stale) · <span style={mono}>T100261</span> (compliance hold) ·{" "}
         <span style={mono}>T100270</span> (short position)
       </p>
+      <div className="trade-toolbar">
+        <label className="trade-search">
+          Search trades
+          <input
+            type="search"
+            placeholder="Trade, client or security ID"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(1);
+            }}
+          />
+        </label>
+        <label>
+          Status
+          <select
+            aria-label="Status"
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All statuses</option>
+            {[
+              ...new Set(
+                (rows ?? []).map((trade) => trade.status ?? "UNKNOWN"),
+              ),
+            ]
+              .sort()
+              .map((value) => (
+                <option key={value}>{value}</option>
+              ))}
+          </select>
+        </label>
+        <label>
+          Sort by
+          <select
+            aria-label="Sort by"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="trade">Trade ID</option>
+            <option value="date">Settlement date</option>
+            <option value="quantity">Quantity: high to low</option>
+          </select>
+        </label>
+        {(query || status) && (
+          <button
+            onClick={() => {
+              setQuery("");
+              setStatus("");
+              setPage(1);
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
       <div className="trade-layout">
         <div className="table-scroll">
           <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
@@ -101,7 +228,7 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((t) => (
+              {visible.map((t) => (
                 <tr
                   key={t.trade_id}
                   onClick={() => open(t.trade_id)}
@@ -138,151 +265,245 @@ export default function TradesView({ openTrace }: { openTrace: OpenTrace }) {
                   <td style={{ ...cell, ...mono }}>{t.settle_date}</td>
                 </tr>
               ))}
+              {visible.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="trade-empty">
+                      <strong>No matching trades</strong>
+                      <p>Try another ID or clear your filters.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
-        {selected && (
-          <div className="trade-detail">
-            <h3 style={{ marginTop: 0 }}>
-              <span style={mono}>{selected.trade_id}</span>
-            </h3>
-            <dl
-              style={{
-                display: "grid",
-                gridTemplateColumns: "auto 1fr",
-                gap: "4px 12px",
-              }}
-            >
-              {Object.entries(selected).map(([k, v]) => (
-                <div key={k} style={{ display: "contents" }}>
-                  <dt style={{ color: "#888" }}>{k}</dt>
-                  <dd style={{ margin: 0, ...mono }}>{String(v)}</dd>
-                </div>
-              ))}
-            </dl>
+        <dialog
+          ref={dialog}
+          className="investigation-drawer"
+          aria-labelledby="investigation-title"
+          onCancel={closeDrawer}
+        >
+          <header className="drawer-header">
+            <div>
+              <p className="eyebrow">INVESTIGATION WORKSPACE</p>
+              <h2 id="investigation-title">
+                {selected?.trade_id ?? "Trade details"}
+              </h2>
+            </div>
             <button
-              onClick={() => runInvestigation(selected.trade_id)}
-              disabled={busy}
-              style={{ marginTop: 12 }}
+              autoFocus
+              onClick={closeDrawer}
+              aria-label="Close investigation"
             >
-              {busy ? "Investigating…" : "Investigate"}
+              Close
             </button>
-            {finding && (
-              <div
+          </header>
+          {selected && (
+            <div className="drawer-body">
+              <h3>Trade details</h3>
+              {loadingDetail && <p role="status">Loading trade details…</p>}
+              {detailError && (
+                <p role="alert" className="investigation-error">
+                  Request failed: {detailError}. You can retry the investigation
+                  or close and reopen this trade.
+                </p>
+              )}
+              <dl
                 style={{
-                  marginTop: 12,
-                  padding: 12,
-                  background: "#f7f7f7",
-                  borderRadius: 6,
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr",
+                  gap: "4px 12px",
                 }}
               >
-                <div>
-                  outcome <b>{finding.outcome}</b>
-                  {finding.root_cause ? (
-                    <>
-                      {" "}
-                      · root cause <b style={mono}>{finding.root_cause}</b>
-                    </>
+                {Object.entries(selected).map(([k, v]) => (
+                  <div key={k} style={{ display: "contents" }}>
+                    <dt style={{ color: "#888" }}>{k}</dt>
+                    <dd style={{ margin: 0, ...mono }}>{String(v)}</dd>
+                  </div>
+                ))}
+              </dl>
+              <button
+                onClick={() => runInvestigation(selected.trade_id)}
+                disabled={busy || loadingDetail}
+                style={{ marginTop: 12 }}
+              >
+                {busy
+                  ? "Investigation running…"
+                  : finding
+                    ? "Run again"
+                    : "Investigate trade"}
+              </button>
+              {busy && (
+                <div className="investigation-progress" role="status">
+                  <strong>Investigation running</strong>
+                  <p>
+                    Waiting for the agent’s findings. Individual steps will be
+                    available in the completed trace.
+                  </p>
+                  <small>
+                    Closing this drawer does not cancel the server
+                    investigation.
+                  </small>
+                </div>
+              )}
+              {!finding && !busy && (
+                <p className="drawer-hint">
+                  Run an investigation to review the root cause, supporting
+                  evidence and proposed actions.
+                </p>
+              )}
+              {finding && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    background: "#f7f7f7",
+                    borderRadius: 6,
+                  }}
+                >
+                  <div>
+                    <h3>Findings</h3>
+                    <span className="status-badge">{finding.outcome}</span>
+                    {finding.root_cause ? (
+                      <>
+                        {" "}
+                        · root cause <b style={mono}>{finding.root_cause}</b>
+                      </>
+                    ) : null}
+                  </div>
+
+                  {finding.confidence_basis ? (
+                    <div style={{ color: "#555", marginTop: 4 }}>
+                      {finding.confidence_basis}
+                    </div>
                   ) : null}
-                </div>
 
-                {finding.confidence_basis ? (
-                  <div style={{ color: "#555", marginTop: 4 }}>
-                    {finding.confidence_basis}
-                  </div>
-                ) : null}
-
-                {finding.proposed_actions &&
-                  finding.proposed_actions.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <b>Proposed</b>
-                      {finding.proposed_actions.map((a, i) => (
-                        <div key={i}>
-                          <span style={mono}>{a.action_type}</span> —{" "}
-                          {a.rationale}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                {finding.rejected_alternatives &&
-                  finding.rejected_alternatives.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <b>Rejected</b>
-                      {finding.rejected_alternatives.map((r, i) => (
-                        <div key={i}>
-                          <span style={mono}>{r.action_type}</span> — {r.reason}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                {finding.evidence && finding.evidence.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    <b>Evidence</b>
-                    {finding.evidence.map((e, i) => (
-                      <div key={i} style={{ color: e.cited ? "#111" : "#999" }}>
-                        [{e.kind}]{" "}
-                        {finding.trace_id ? (
-                          <button
-                            onClick={() => openTrace(finding.trace_id!)}
-                            style={{
-                              ...mono,
-                              border: "none",
-                              background: "none",
-                              padding: 0,
-                              color: "#1a48c4",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {e.ref}
-                          </button>
-                        ) : (
-                          <span style={mono}>{e.ref}</span>
-                        )}
-                        {e.cited ? "" : " (retrieved, not cited)"}
+                  {finding.proposed_actions &&
+                    finding.proposed_actions.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <h3>Proposed actions</h3>
+                        <p className="drawer-hint">
+                          Proposals only. Review approvals in Cases before
+                          execution.
+                        </p>
+                        {finding.proposed_actions.map((a, i) => (
+                          <div key={i}>
+                            <span style={mono}>{a.action_type}</span> —{" "}
+                            {a.rationale}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                {finding.checked && finding.checked.length > 0 && (
-                  <div style={{ marginTop: 8, color: "#555" }}>
-                    checked: {finding.checked.join(", ")}
-                  </div>
-                )}
-                {finding.degraded_tools &&
-                  finding.degraded_tools.length > 0 && (
-                    <div style={{ marginTop: 8, color: "#a5670f" }}>
-                      degraded: {finding.degraded_tools.join(", ")}
+                  {finding.rejected_alternatives &&
+                    finding.rejected_alternatives.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <h3>Rejected alternatives</h3>
+                        {finding.rejected_alternatives.map((r, i) => (
+                          <div key={i}>
+                            <span style={mono}>{r.action_type}</span> —{" "}
+                            {r.reason}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  {finding.evidence && finding.evidence.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <h3>Evidence</h3>
+                      {finding.evidence.map((e, i) => (
+                        <div
+                          key={i}
+                          style={{ color: e.cited ? "#111" : "#999" }}
+                        >
+                          [{e.kind}]{" "}
+                          {finding.trace_id ? (
+                            <button
+                              onClick={() => viewTrace(finding.trace_id!)}
+                              style={{
+                                ...mono,
+                                border: "none",
+                                background: "none",
+                                padding: 0,
+                                color: "#1a48c4",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {e.ref}
+                            </button>
+                          ) : (
+                            <span style={mono}>{e.ref}</span>
+                          )}
+                          {e.cited ? "" : " (retrieved, not cited)"}
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                <div style={{ color: "#888", marginTop: 8, ...mono }}>
-                  trace{" "}
-                  {finding.trace_id ? (
-                    <button
-                      onClick={() => openTrace(finding.trace_id!)}
-                      style={{
-                        ...mono,
-                        border: "none",
-                        background: "none",
-                        padding: 0,
-                        color: "#1a48c4",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {finding.trace_id}
-                    </button>
-                  ) : (
-                    "—"
+                  {finding.checked && finding.checked.length > 0 && (
+                    <div style={{ marginTop: 8, color: "#555" }}>
+                      checked: {finding.checked.join(", ")}
+                    </div>
                   )}
+                  {finding.degraded_tools &&
+                    finding.degraded_tools.length > 0 && (
+                      <div style={{ marginTop: 8, color: "#a5670f" }}>
+                        degraded: {finding.degraded_tools.join(", ")}
+                      </div>
+                    )}
+
+                  <div style={{ color: "#888", marginTop: 8, ...mono }}>
+                    trace{" "}
+                    {finding.trace_id ? (
+                      <button
+                        onClick={() => viewTrace(finding.trace_id!)}
+                        style={{
+                          ...mono,
+                          border: "none",
+                          background: "none",
+                          padding: 0,
+                          color: "#1a48c4",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {finding.trace_id}
+                      </button>
+                    ) : (
+                      "—"
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </dialog>
+      </div>
+      <div className="trade-pagination">
+        <span role="status">
+          {filtered.length === 0
+            ? "0"
+            : `${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, filtered.length)}`}{" "}
+          of {filtered.length} trades
+        </span>
+        <div>
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setPage(currentPage - 1)}
+          >
+            Previous
+          </button>
+          <span>
+            Page {currentPage} of {pages}
+          </span>
+          <button
+            disabled={currentPage === pages}
+            onClick={() => setPage(currentPage + 1)}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
