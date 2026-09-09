@@ -22,6 +22,16 @@ from mcp.types import TextContent
 
 from mcp_servers.case.server import mcp as case_mcp
 from mcp_servers.case.tools import create_case, get_approval, log_audit, propose_action, update_case
+from mcp_servers.cash.server import mcp as cash_mcp
+from mcp_servers.cash.tools import (
+    arrange_funding,
+    escalate_cash,
+    get_cash_break,
+    get_facility,
+    get_funding_ladder,
+    list_cash_breaks,
+    move_cash,
+)
 from mcp_servers.ci.server import mcp as ci_mcp
 from mcp_servers.ci.tools import (
     get_test_coverage,
@@ -139,6 +149,9 @@ WRITE_TOOLS = frozenset(
         "submit_election",
         "raise_claim",
         "escalate_ca",
+        "arrange_funding",
+        "move_cash",
+        "escalate_cash",
         "open_pull_request",
         "post_review",
     }
@@ -261,6 +274,20 @@ SERVERS: dict[str, ServerSpec] = {
             "read+write",
         ),
         ServerSpec(
+            "cash",
+            cash_mcp,
+            [
+                get_cash_break,
+                list_cash_breaks,
+                get_funding_ladder,
+                get_facility,
+                arrange_funding,
+                move_cash,
+                escalate_cash,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -295,6 +322,8 @@ LIST_TOOLS = frozenset(
         "list_margin_calls",
         "get_collateral",
         "list_ca_events",
+        "list_cash_breaks",
+        "get_funding_ladder",
     }
 )
 

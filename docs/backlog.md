@@ -140,8 +140,12 @@ Ideas that are out of the current phase's scope. Append; don't build.
     code** (`_enforce_record_date`: cash dividend on a lent slice → `raise_claim` on the
     borrower; elective event past its deadline → `escalate_ca`), `POST /corpaction`,
     Supervisor `corpactions` sub-task. `tests/test_corpactions.py` (5).
-  - **cash** domain — its own MCP server + specialist + allowlist + prompts + hard rules
-    (funding ladders, intraday projections), same shape (`docs/agent-plan.md` Phase 13).
+  - ~~cash~~ **DONE (2026-09-09)** — `mcp_servers/cash/` (breaks / funding ladders /
+    facilities), `CASH` spec, `agent_core/cash.py::investigate_cash_break`,
+    `planner/cash.md` + `synthesis/cash.md`, **fund-vs-escalate hard rule in code**
+    (`_enforce_funding_cutoff` on the currency `funding_cutoff`), `POST /investigate
+    {cash_break_id}`, Supervisor `cash` sub-task. `tests/test_cash.py` (5). **All four
+    prime-finance domains are now shipped** (stockloan / margin / corpactions / cash).
   - **Seeded data + simulator planter** for stock loan (loans/recalls against real
     positions), replacing the fixture store — like the enterprise tier.
   - ~~Scenario 30~~ **mechanism DONE (2026-09-09)** — the Supervisor correlating a

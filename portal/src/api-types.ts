@@ -528,6 +528,8 @@ export interface components {
             loan_id?: string | null;
             /** Margin Call Id */
             margin_call_id?: string | null;
+            /** Cash Break Id */
+            cash_break_id?: string | null;
         };
         /** KnowledgeHit */
         KnowledgeHit: {

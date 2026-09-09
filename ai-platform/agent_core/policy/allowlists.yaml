@@ -54,6 +54,14 @@ corpactions:
   - escalate_ca
   - escalate
 
+# Phase F - the Cash specialist. Proposals only, approval-gated. Fund vs escalate is
+# decided in code against the currency funding cutoff.
+cash:
+  - arrange_funding
+  - move_cash
+  - escalate_cash
+  - escalate
+
 # Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
 # as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:

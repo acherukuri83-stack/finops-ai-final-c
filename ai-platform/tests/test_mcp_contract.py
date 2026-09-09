@@ -88,6 +88,15 @@ EXPECTED_TOOLS = {
         "raise_claim",
         "escalate_ca",
     },
+    "cash": {
+        "get_cash_break",
+        "list_cash_breaks",
+        "get_funding_ladder",
+        "get_facility",
+        "arrange_funding",
+        "move_cash",
+        "escalate_cash",
+    },
     "case": {"create_case", "update_case", "propose_action", "get_approval", "log_audit"},
 }
 EXPECTED_ACCESS = {
@@ -97,6 +106,9 @@ EXPECTED_ACCESS = {
     "submit_election": "write",
     "raise_claim": "write",
     "escalate_ca": "write",
+    "arrange_funding": "write",
+    "move_cash": "write",
+    "escalate_cash": "write",
     "open_pull_request": "write",
     "post_review": "write",
     "resubmit_settlement": "write",
