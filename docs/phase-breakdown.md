@@ -122,7 +122,8 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 
 | | |
 |---|---|
-| **Scope in** | One domain at a time: stock loan → margin & collateral → corporate actions → cash |
+| **Core slice built (2026-09-09)** | **Stock Loan only.** `stockloan` MCP server (in-process, fixture-backed): reads (`get_loan` / `list_loans` / `get_recall` / `get_rerate_history` / `get_lending_availability`) + approval-gated writes (`initiate_recall` / `rerate_loan` / `book_buy_in`). `agent_core/stockloan.py::investigate_loan`, `stockloan` allowlist, `planner/stockloan.md` + `synthesis/stockloan.md`, **recall-vs-buy-in hard rule in code** (`_enforce_recall_window` on `RECALL_NOTICE_DAYS` before `return_needed_by`). `POST /investigate {loan_id}`; Supervisor `_decompose` + prompt extended for a `stockloan` sub-task (loan subject). **Deferred** (`docs/backlog.md`): seeded table + simulator planter (Python fixtures for now), Margin / CorpActions / Cash, mixed-client Sc. 30, portal affordance. |
+| **Scope in (full)** | One domain at a time: stock loan → margin & collateral → corporate actions → cash |
 | **Agents** | **StockLoan** (loans, recalls, returns, rerates, availability) · **Margin** (calls, eligibility, haircuts, shortfall) · **CorpActions** (events, entitlements, elections, claims on loaned positions) · **Cash** (balances, projections, funding ladders). Each: own scope, allowlist, corpus slice; hard rules in code (recall deadlines, call windows, record-date logic); proposals only |
 | **MCP servers** | `stockloan`, `margin`, `corpactions`, `cash` — each read + 1–2 approval-gated writes |
 | **Simulated data** | Loans and recalls against positions; price moves driving margin; corporate-action calendar; cash ladders |

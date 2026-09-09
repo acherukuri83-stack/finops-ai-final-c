@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from agent_core.developer import investigate_incident
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
+from agent_core.stockloan import investigate_loan
 from agent_core.supervisor import investigate_client
 from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
@@ -72,6 +73,7 @@ app.include_router(traces_router)
 class InvestigateRequest(BaseModel):
     trade_id: str | None = None
     client_id: str | None = None  # Phase C: a client-level ask fans out via the Supervisor
+    loan_id: str | None = None  # Phase F: a stock-loan question -> the StockLoan specialist
 
 
 class DecideRequest(BaseModel):
@@ -100,9 +102,11 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
     """
     if req.client_id:
         return await investigate_client(req.client_id)
+    if req.loan_id:
+        return await investigate_loan(req.loan_id)
     if req.trade_id:
         return await investigate(req.trade_id)
-    raise HTTPException(status_code=422, detail="provide trade_id or client_id")
+    raise HTTPException(status_code=422, detail="provide trade_id, client_id, or loan_id")
 
 
 class DiagnoseRequest(BaseModel):

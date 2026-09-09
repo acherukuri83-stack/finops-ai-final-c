@@ -111,3 +111,17 @@ Ideas that are out of the current phase's scope. Append; don't build.
   - `platform` server data is Python fixtures in `mcp_servers/platform/store.py` (not the
     simulator / Postgres) — fine for the slice; a fuller Phase E may move it to a seeded
     table with a `simulator` planter, like the enterprise tier.
+- Phase F core slice (2026-09-09, PR TBD): shipped **Stock Loan only** as in-process
+  Python fixtures (`mcp_servers/stockloan/store.py`), not a seeded table. Deferred:
+  - **Margin & collateral**, **corporate actions**, **cash** domains — each its own MCP
+    server + specialist + allowlist + prompts + hard rules (call windows, record-date
+    logic, funding ladders), one at a time (`docs/agent-plan.md` Phase 13).
+  - **Seeded data + simulator planter** for stock loan (loans/recalls against real
+    positions), replacing the fixture store — like the enterprise tier.
+  - **Scenario 30** (mixed client: settlement fail + held wire + recall → one synthesized
+    answer). The Supervisor already routes a `stockloan` sub-task; the scenario + a
+    client-run test are not built.
+  - **Portal affordance** — `investigate_loan` is reachable only via
+    `POST /investigate {loan_id}`; no Stock Loan tab.
+  - `market` / `position` are on the `stockloan` spec's scope but the slice's fixtures /
+    tests don't exercise a price move or a real position lookup.

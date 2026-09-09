@@ -143,7 +143,8 @@ async def _decompose(
         _record_usage(current, resp)
         set_attrs(current, {"payload.out": _clip([s.model_dump() for s in plan.subtasks])})
     # keep only sub-tasks we can actually route
-    return [s for s in plan.subtasks if s.subject_ids and s.agent in {"settlement", "risk_client"}]
+    routable = {"settlement", "risk_client", "stockloan"}
+    return [s for s in plan.subtasks if s.subject_ids and s.agent in routable]
 
 
 async def _dispatch(
@@ -151,7 +152,7 @@ async def _dispatch(
 ) -> list[Finding]:
     async def one(st: SubTask) -> Finding:
         spec = spec_for(st.agent)
-        subj_type = "account" if st.agent == "risk_client" else "trade"
+        subj_type = {"risk_client": "account", "stockloan": "loan"}.get(st.agent, "trade")
         subject = SubjectRef(type=subj_type, id=st.subject_ids[0])
         scoped = st.question
         if len(st.subject_ids) > 1:

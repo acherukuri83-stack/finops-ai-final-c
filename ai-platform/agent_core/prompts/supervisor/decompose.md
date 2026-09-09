@@ -6,7 +6,7 @@ allowlist. You are given the client id and the list of that client's currently F
 trades (trade id, security, side, quantity, `failure_code`, counterparty, account).
 Produce a `DecomposePlan` — a list of `SubTask`:
 
-- `agent`: one of `settlement`, `risk_client`.
+- `agent`: one of `settlement`, `risk_client`, `stockloan`.
   - **`settlement`** — a settlement-desk investigation of one or more failed trades:
     the failure code, the affirmation timeline, positions, resubmission. It reads client
     SSI to establish "our instruction is current" but **cannot** propose `update_ssi`.
@@ -15,8 +15,12 @@ Produce a `DecomposePlan` — a list of `SubTask`:
     sub-task whenever a failure looks like it could turn on *our* record being wrong —
     any `COUNTERPARTY_SSI_MISMATCH`, or an `ACCOUNT_RESTRICTED` — with the **account
     id(s)** as `subject_ids`.
+  - **`stockloan`** — securities lending: a delivery that cannot settle because the
+    shares are out on loan (recall vs buy-in), or an off-market loan rate. Raise it with
+    the **loan id(s)** as `subject_ids` when a failure names a loan or an `ON_LOAN` /
+    recall reason.
 - `subject_ids`: the trade ids for a `settlement` sub-task; the account id(s) for a
-  `risk_client` one.
+  `risk_client` one; the loan id(s) for a `stockloan` one.
 - `question`: one sentence naming exactly what this specialist should determine.
 - `budget`: tool-call budget, 6–10. Bigger clusters get more.
 

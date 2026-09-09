@@ -331,13 +331,14 @@ needs process-global fault injection):
   usage limit + spend alert
 - Polish, README, demo script
 
-**Mainline after A:** ~~C supervisor + specialists~~ (2026-09-09, #14/#16) → ~~D
-event-driven~~ (2026-09-09, #18 — outbox bus + in-process consumer + dedup + urgency;
-`make emit`) → **E Developer Agent** (in progress — incident mode: `platform` MCP server,
-`investigate_incident`, revert/fix-forward hard rule, `POST /diagnose`, Engineering tab;
-verification / review / eval-authoring modes deferred) → F prime-finance domains → G
-hardening. **Wires (B) is an optional module** — depends only on A. See
-[`phase-breakdown.md`](phase-breakdown.md).
+**Mainline after A:** ~~C supervisor~~ (#14/#16) → ~~D event-driven~~ (#18) → ~~E
+Developer Agent core slice~~ (#19 — incident mode: `platform` server,
+`investigate_incident`, revert/fix-forward hard rule, `/diagnose`, Engineering tab) →
+**F prime-finance / Stock Loan** (in progress — `stockloan` server, `investigate_loan`,
+recall-vs-buy-in hard rule, `/investigate {loan_id}`, Supervisor `stockloan` sub-task;
+Margin/CorpActions/Cash + Sc. 30 deferred) → G hardening. Each phase's verification /
+review / other-domain scope is deferred to `docs/backlog.md`. **Wires (B)** is an optional
+module. See [`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 

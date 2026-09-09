@@ -1039,6 +1039,17 @@
               }
             ],
             "title": "Client Id"
+          },
+          "loan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loan Id"
           }
         },
         "type": "object",

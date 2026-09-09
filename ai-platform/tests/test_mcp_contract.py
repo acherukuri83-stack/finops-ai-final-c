@@ -50,6 +50,16 @@ EXPECTED_TOOLS = {
         "rerun_job",
         "replay_message",
     },
+    "stockloan": {
+        "get_loan",
+        "list_loans",
+        "get_recall",
+        "get_rerate_history",
+        "get_lending_availability",
+        "initiate_recall",
+        "rerate_loan",
+        "book_buy_in",
+    },
     "case": {"create_case", "update_case", "propose_action", "get_approval", "log_audit"},
 }
 EXPECTED_ACCESS = {
@@ -59,6 +69,9 @@ EXPECTED_ACCESS = {
     "open_change_ticket": "write",
     "rerun_job": "write",
     "replay_message": "write",
+    "initiate_recall": "write",
+    "rerate_loan": "write",
+    "book_buy_in": "write",
     "create_case": "write*",
     "update_case": "write*",
     "propose_action": "write*",

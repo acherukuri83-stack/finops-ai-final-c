@@ -60,6 +60,17 @@ from mcp_servers.position.server import mcp as position_mcp
 from mcp_servers.position.tools import get_borrow_availability, get_position
 from mcp_servers.reference.server import mcp as reference_mcp
 from mcp_servers.reference.tools import get_market_calendar, get_security
+from mcp_servers.stockloan.server import mcp as stockloan_mcp
+from mcp_servers.stockloan.tools import (
+    book_buy_in,
+    get_lending_availability,
+    get_loan,
+    get_recall,
+    get_rerate_history,
+    initiate_recall,
+    list_loans,
+    rerate_loan,
+)
 from mcp_servers.trade.server import mcp as trade_mcp
 from mcp_servers.trade.tools import (
     cancel_trade,
@@ -82,6 +93,9 @@ WRITE_TOOLS = frozenset(
         "open_change_ticket",
         "rerun_job",
         "replay_message",
+        "initiate_recall",
+        "rerate_loan",
+        "book_buy_in",
     }
 )
 GOV_TOOLS = frozenset({"create_case", "update_case", "propose_action", "log_audit"})
@@ -146,6 +160,21 @@ SERVERS: dict[str, ServerSpec] = {
             "read+write",
         ),
         ServerSpec(
+            "stockloan",
+            stockloan_mcp,
+            [
+                get_loan,
+                list_loans,
+                get_recall,
+                get_rerate_history,
+                get_lending_availability,
+                initiate_recall,
+                rerate_loan,
+                book_buy_in,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -172,6 +201,8 @@ LIST_TOOLS = frozenset(
         "get_deployments",
         "diff_config",
         "get_platform_logs",
+        "list_loans",
+        "get_rerate_history",
     }
 )
 
