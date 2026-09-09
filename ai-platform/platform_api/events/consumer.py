@@ -1,10 +1,12 @@
 """The consumer: an event → a case → an investigation, with no user in the loop.
 
-- **Dedup** — a repeat of the same problem for the same subject (`Event.dedup_key`) is
-  folded into the still-open case with an audit note; it does not start a second
-  investigation.
-- **Urgency** — a `deadline` in the payload inside the 60-minute window marks the case
-  `HIGH` and records why.
+- **Routing** — a `trade` FAILED event runs `investigate`; a `wire` HELD event runs
+  `investigate_wire` (Phase B). Client subjects and other event types are `OUT_OF_SCOPE`.
+- **Dedup** — a repeat of the same problem for the same subject (`Event.dedup_key`, which
+  keys on `failure_code` for a trade or `hold_reason` for a wire) is folded into the
+  still-open case with an audit note; it does not start a second investigation.
+- **Urgency** — a `deadline` in the payload inside the 60-minute window (a wire's currency
+  cutoff, a settlement deadline) marks the case `HIGH` and records why.
 - The trace root span is the `event`; the investigation nests under it.
 
 `run_poller` is the loop the app lifespan starts; `drain_once` is the same body without
@@ -19,6 +21,7 @@ from datetime import UTC, datetime, timedelta
 from agent_core.loop import investigate
 from agent_core.reasoning.model_client import ModelClient
 from agent_core.spans import set_attrs, span
+from agent_core.wire import investigate_wire
 from platform_api import cases
 from platform_api.events.bus import Event, EventBus
 from platform_api.settings import settings
@@ -66,11 +69,15 @@ async def handle_event(event: Event, *, client: ModelClient | None = None) -> st
             "event.deadline": event.payload.get("deadline"),
         },
     ) as root:
-        if event.subject_type != "trade":
-            # wire / client subjects arrive with their own modules; nothing to run here.
+        if event.subject_type == "trade":
+            finding = await investigate(event.subject_id, client=client)
+        elif event.subject_type == "wire" and event.type == "HELD":
+            # Phase B — a held outgoing wire runs the Wire specialist (maker only).
+            finding = await investigate_wire(event.subject_id, client=client)
+        else:
+            # client subjects, and non-HELD wire events, have no module to run here.
             set_attrs(root, {"outcome": "OUT_OF_SCOPE"})
             return None
-        finding = await investigate(event.subject_id, client=client)
         set_attrs(
             root,
             {"outcome": finding.outcome, "case.id": finding.case_id, "priority": priority},

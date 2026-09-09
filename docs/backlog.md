@@ -146,10 +146,13 @@ stay as-is — they're pointers, not open work.
   adapter — `aiokafka` is not a dependency and there is no broker in CI, so it is
   unexercised. The Postgres-outbox bus is the real, tested path. To use Kafka locally:
   `pip install aiokafka`, run Redpanda (Compose), set `EVENT_BUS=kafka` + `KAFKA_BOOTSTRAP`.
-- Phase D: the consumer only routes **trade-subject FAILED settlement events**. Wire/HELD
-  events and client-subject events are `OUT_OF_SCOPE` in the consumer — they land with the
-  Wires module / a later phase. The `deadline` → HIGH-priority mechanism is built and
-  tested; the wire-cutoff scenario that exercises it end-to-end ships with Wires.
+- ~~Phase D: the consumer only routes **trade-subject FAILED settlement events**~~
+  **DONE (2026-09-09)** — `events/consumer.py::handle_event` now routes a `wire` HELD
+  event to `investigate_wire` (dedup keys on `hold_reason`; a `deadline` — typically the
+  currency cutoff — inside 60 min still marks the case HIGH). `simulator.events.emit_wire_held`
+  + `make emit WIRE=W300917 [DEADLINE=…]`. `tests/test_events.py` (+3),
+  `simulator/tests/test_events.py` (+1). **Client-subject events stay `OUT_OF_SCOPE`** in
+  the consumer (a client ask is a user action, not an estate event).
 - Phase D: `outbox_events` DDL is defined in **two** places — `platform_api/store.py`
   (authoritative) and `simulator/simulator/events.py` (`ensure_outbox`, idempotent). Keep
   the column list in sync by hand, same as `simulator/tables.py` mirrors the Flyway schema.

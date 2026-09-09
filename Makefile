@@ -12,8 +12,8 @@ migrate:
 seed: migrate
 	cd simulator && uv run python -m simulator.cli seed --scenario $(or $(SCENARIO),all)
 
-emit:  # publish a FAILED settlement event: make emit TRADE=T100245 [DEADLINE=2026-09-04T11:00:00]
-	cd simulator && uv run python -m simulator.cli emit --trade $(TRADE) $(if $(CODE),--code $(CODE),) $(if $(DEADLINE),--deadline $(DEADLINE),)
+emit:  # publish an event: make emit TRADE=T100245 [DEADLINE=…]  |  make emit WIRE=W300917 [DEADLINE=…]
+	cd simulator && uv run python -m simulator.cli emit $(if $(TRADE),--trade $(TRADE),) $(if $(WIRE),--wire $(WIRE),) $(if $(CODE),--code $(CODE),) $(if $(DEADLINE),--deadline $(DEADLINE),)
 
 ingest:
 	cd ai-platform && uv run python -m knowledge.ingest $(if $(FIXTURES),--fixtures $(FIXTURES),)

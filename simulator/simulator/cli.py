@@ -48,16 +48,26 @@ def seed(scenario: str = "all") -> None:
 
 @app.command()
 def emit(
-    trade: str = typer.Option(..., help="trade id, e.g. T100245"),
-    code: str = typer.Option("", help="failure_code (default: the trade's own)"),
+    trade: str = typer.Option("", help="trade id, e.g. T100245 (FAILED settlement event)"),
+    wire: str = typer.Option("", help="wire id, e.g. W300917 (HELD wire event)"),
+    code: str = typer.Option("", help="failure_code / hold_reason (default: the subject's own)"),
     deadline: str = typer.Option("", help="ISO-8601; inside 60 min -> HIGH priority"),
 ) -> None:
-    """Publish a FAILED settlement event for a seeded trade onto the platform outbox."""
+    """Publish a FAILED settlement event (`--trade`) or a HELD wire event (`--wire`) onto
+    the platform outbox. The in-process consumer picks it up and opens a case."""
+    if bool(trade) == bool(wire):
+        raise typer.BadParameter("pass exactly one of --trade or --wire")
     with connect() as conn:
-        key = events.emit_settlement_failed(
-            conn, trade, failure_code=code or None, deadline=deadline or None
-        )
-    typer.echo(f"[emit] FAILED {trade} -> outbox (dedup {key})")
+        if wire:
+            key = events.emit_wire_held(
+                conn, wire, hold_reason=code or None, deadline=deadline or None
+            )
+            typer.echo(f"[emit] HELD {wire} -> outbox (dedup {key})")
+        else:
+            key = events.emit_settlement_failed(
+                conn, trade, failure_code=code or None, deadline=deadline or None
+            )
+            typer.echo(f"[emit] FAILED {trade} -> outbox (dedup {key})")
 
 
 if __name__ == "__main__":
