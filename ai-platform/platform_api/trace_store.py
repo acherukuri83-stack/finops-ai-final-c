@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -109,11 +110,48 @@ def _cost(model: str, tin: int, tout: int) -> float:
     return round(tin / 1e6 * pin + tout / 1e6 * pout, 6)
 
 
-def redact(obj: Any) -> Any:
-    """Scrub PII before a payload is stored. Phase A data is fully fictional, so this is
-    the identity — the single seam a real scrubber plugs into (see docs/backlog.md).
-    """
+# Patterns for the shapes that carry identity in this domain. Deliberately conservative:
+# it scrubs what clearly matches, not everything that might be sensitive.
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_LONG_DIGITS_RE = re.compile(r"\b\d{9,}\b")  # SSN-ish / raw account numbers
+# key names whose string value is a person / free-text handle, replaced wholesale
+_PII_KEYS = frozenset(
+    {"updated_by", "set_by", "decided_by", "by", "created_by", "requested_by", "contact", "email"}
+)
+
+
+def _scrub(obj: Any, counter: list[int]) -> Any:
+    if isinstance(obj, str):
+        new, n1 = _EMAIL_RE.subn("[redacted:email]", obj)
+        new, n2 = _LONG_DIGITS_RE.subn("[redacted:id]", new)
+        counter[0] += n1 + n2
+        return new
+    if isinstance(obj, dict):
+        out: dict[str, Any] = {}
+        for k, v in obj.items():
+            if k in _PII_KEYS and isinstance(v, str) and v and v != "[redacted]":
+                counter[0] += 1
+                out[k] = "[redacted]"
+            else:
+                out[k] = _scrub(v, counter)
+        return out
+    if isinstance(obj, list):
+        return [_scrub(v, counter) for v in obj]
     return obj
+
+
+def scrub(obj: Any) -> tuple[Any, int]:
+    """Return `(scrubbed_copy, n_redactions)`. Scrubs emails, 9+-digit runs, and the
+    string value of known person-name keys (`updated_by`, `set_by`, …). Idempotent."""
+    counter = [0]
+    return _scrub(obj, counter), counter[0]
+
+
+def redact(obj: Any) -> Any:
+    """Scrub PII before a payload is stored (observability standard §"post-scrub",
+    security §7). The scrub is real; the count is surfaced on the span as
+    `finops.pii.redactions` by `record_span` (values are never stored)."""
+    return scrub(obj)[0]
 
 
 def ensure_schema() -> None:
@@ -153,6 +191,11 @@ def record_span(span: ReadableSpan) -> None:
             "status": span.status.status_code.name if span.status else "",
             "attributes": attrs,
         }
+        scrubbed_in, n_in = scrub(payload_in)
+        scrubbed_out, n_out = scrub(payload_out)
+        if n_in + n_out:
+            # counts only — the standard's `pii_scrub` guardrail, without storing values
+            row["attributes"] = {**attrs, "finops.pii.redactions": n_in + n_out}
         with store.connect() as conn:
             conn.execute(_upsert(spans, row, "span_id"))
             if payload_in is not None or payload_out is not None:
@@ -161,8 +204,8 @@ def record_span(span: ReadableSpan) -> None:
                         span_payloads,
                         {
                             "span_id": span_id,
-                            "payload_in": redact(payload_in),
-                            "payload_out": redact(payload_out),
+                            "payload_in": scrubbed_in,
+                            "payload_out": scrubbed_out,
                         },
                         "span_id",
                     )

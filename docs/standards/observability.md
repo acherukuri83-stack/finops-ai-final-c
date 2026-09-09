@@ -22,5 +22,10 @@ Common: `finops.trace.id`, `finops.case.id?`, `finops.scenario.id?` (eval runs).
 - Synthesis spans carry the Finding's `rejected_alternatives` in the payload.
 - A Supervisor run (Phase C) is one trace: each specialist dispatch runs inside a `delegation` span, so every specialist's `agent` / `tool` / `policy` spans share the client trace id.
 - An event-triggered investigation (Phase D) has the `event` span as its trace root; the `investigate` / `investigate_client` span nests under it, so the trace shows the trigger.
-- No span payload contains raw PII (see security §7).
+- No span payload contains raw PII (see security §7). `platform_api/trace_store.scrub()`
+  runs over every stored payload — emails, 9+-digit runs, and person-name keys
+  (`updated_by`, `set_by`, `decided_by`, …) are replaced; the count is stamped on the span
+  as `finops.pii.redactions` (Phase G). It is a span **attribute**, not a separate
+  `guardrail` span, because the scrub runs inside `PostgresSpanProcessor.on_end` and
+  emitting a span there would recurse.
 - Traces are immutable once a case is closed.

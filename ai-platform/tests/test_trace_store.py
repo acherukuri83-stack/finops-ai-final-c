@@ -13,9 +13,29 @@ from platform_api import store, trace_store
 from platform_api.settings import settings
 
 
-def test_redact_is_identity() -> None:
-    obj = {"account": "ACC-88213", "note": "nothing secret here"}
-    assert trace_store.redact(obj) is obj
+def test_scrub_redacts_emails_ids_and_person_keys_and_counts() -> None:
+    obj = {
+        "account": "ACC-88213",  # domain id — kept
+        "updated_by": "ops.jsmith",  # person key — redacted
+        "note": "raise with a.patel@example.com about SSN 123456789",
+        "nested": [{"decided_by": "r.lee", "n": 42}],
+    }
+    scrubbed, n = trace_store.scrub(obj)
+    assert n == 4  # updated_by, email, 9-digit run, decided_by
+    assert scrubbed["account"] == "ACC-88213"
+    assert scrubbed["updated_by"] == "[redacted]"
+    assert "@example.com" not in scrubbed["note"] and "[redacted:email]" in scrubbed["note"]
+    assert "123456789" not in scrubbed["note"]
+    assert scrubbed["nested"][0] == {"decided_by": "[redacted]", "n": 42}
+    # idempotent: a second pass finds nothing
+    assert trace_store.scrub(scrubbed)[1] == 0
+
+
+def test_redact_returns_the_scrubbed_copy() -> None:
+    obj = {"contact": "d.patel", "clean": "no pii"}
+    out = trace_store.redact(obj)
+    assert out == {"contact": "[redacted]", "clean": "no pii"}
+    assert obj["contact"] == "d.patel"  # original untouched
 
 
 def test_cost_uses_the_model_price_table() -> None:
