@@ -40,7 +40,7 @@ the four maker/checker/cutoff/screening hard rules + `POST /investigate {wire_id
 `tests/test_wire.py`), PR #40 (seeded Postgres + a `simulator` planter for `wire`, the
 Sc. 7 / 13–16 `subject: wire` YAMLs + `evals/harness.py` dispatch, `supervisor._held_wires`
 discovery), PR #41 (the wire corpus — `Wire Processing Guide`, `Sanctions Procedure`,
-`INC-2001…2005`), and PR #42 (the portal `WIRE_REVIEWER` release flow — `GET /wire/queue` ·
+`INC-2001…2005`), and PR #44 (the portal `WIRE_REVIEWER` release flow — `GET /wire/queue` ·
 `GET /wire/exceptions` · role-gated `POST /wire/release`; `WireReviewView.tsx`; still no
 `release_wire` agent tool). What remains project-wide, by owner decision and not a gap:
 
