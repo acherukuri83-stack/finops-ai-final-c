@@ -37,15 +37,25 @@ Ideas that are out of the current phase's scope. Append; don't build.
   the worst run's Finding on failure): check what `ops.search_knowledge` returns for the
   duplicate case and whether the log line is being cited. Every other scenario passes
   n=3 (Sc. 12 excluded — needs process-global FAULT_INJECT).
-- W4 (Trace screen): `span_payload` is stored **unredacted** — `platform_api/trace_store.redact()`
-  is an identity seam. Phase A data is entirely fictional so nothing leaks, but the
-  observability standard's "payloads stored post-scrub" line and the `pii_scrub` guardrail
-  span are unmet. Phase G: implement `redact()` (drop/obfuscate emails, names, account
-  numbers on the way into `span_payloads`) and emit a `guardrail` span reporting the
-  redaction count. Same PR should add the `schema_validation` guardrail span from
-  `complete_structured_traced`'s retry path (kept out of W4 to keep `model_client.py`
-  dependency-free). `finops.tool.retries` is also not emitted — thread the retry count
-  out of `mcp_servers/_enterprise._request` when it's wired.
+- ~~W4: `span_payload` stored unredacted — `trace_store.redact()` is an identity seam.~~
+  **Done (Phase G, 2026-09-09):** `trace_store.scrub()` / `redact()` is a real recursive
+  scrubber (emails, 9+-digit runs, person-name keys); `record_span` stamps
+  `finops.pii.redactions` (count only). Realised as a span **attribute**, not a separate
+  `guardrail` span — the scrub runs inside `PostgresSpanProcessor.on_end` and emitting a
+  span there would recurse.
+- Still open from that entry (Phase G, later passes):
+  - **`schema_validation` guardrail span** — `complete_structured_traced` retries JSON
+    validation up to twice and reports neither the attempt count nor a span. Add it
+    without pulling `agent_core.spans` into `model_client.py`: have
+    `complete_structured_traced` return `(obj, resp, attempts)` and let the callers in
+    `agent_core/agents/base.py` (`_plan`, `_synthesize`) + `guardrails/input_classification.py`
+    + `agent_core/supervisor.py` emit a `guardrail` span (`name = schema_validation`,
+    `result`, `count = attempts - 1`).
+  - **`finops.tool.retries`** — `_enterprise._request` retries a 5xx / transport error
+    once but the count is local. Thread it out (a `retries` field on the returned dict, or
+    a contextvar the tool span reads) and set it in `agents/base.py::_run_step`. Today
+    `_run_step` could stamp a constant `0` to satisfy the "attribute present" letter of
+    the standard, but the real per-call value needs this plumbing.
 - Build-phase policy (2026-09): the CI `eval` workflow is **manual-dispatch only** — the
   `pull_request` path trigger was removed to stop ~$2/35-min real-model runs firing on
   every PR (and every no-op re-push) during active development. This reverses the W3

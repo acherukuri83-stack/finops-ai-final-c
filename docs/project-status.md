@@ -334,11 +334,13 @@ needs process-global fault injection):
 **Mainline after A:** ~~C supervisor~~ (#14/#16) → ~~D event-driven~~ (#18) → ~~E
 Developer Agent core slice~~ (#19 — incident mode: `platform` server,
 `investigate_incident`, revert/fix-forward hard rule, `/diagnose`, Engineering tab) →
-**F prime-finance / Stock Loan** (in progress — `stockloan` server, `investigate_loan`,
-recall-vs-buy-in hard rule, `/investigate {loan_id}`, Supervisor `stockloan` sub-task;
-Margin/CorpActions/Cash + Sc. 30 deferred) → G hardening. Each phase's verification /
-review / other-domain scope is deferred to `docs/backlog.md`. **Wires (B)** is an optional
-module. See [`phase-breakdown.md`](phase-breakdown.md).
+~~F prime-finance / Stock Loan core slice~~ (#20 — `stockloan` server,
+`investigate_loan`, recall-vs-buy-in hard rule, `/investigate {loan_id}`, Supervisor
+`stockloan` sub-task) → **G hardening** (in progress — trace PII scrub is real
+(`trace_store.scrub`) with `finops.pii.redactions` on the span; `schema_validation` span
+and `finops.tool.retries` still open). Each phase's verification / review / other-domain
+scope is deferred to `docs/backlog.md`. **Wires (B)** is an optional module. See
+[`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 
