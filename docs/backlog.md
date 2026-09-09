@@ -130,9 +130,12 @@ Ideas that are out of the current phase's scope. Append; don't build.
     logic, funding ladders), one at a time (`docs/agent-plan.md` Phase 13).
   - **Seeded data + simulator planter** for stock loan (loans/recalls against real
     positions), replacing the fixture store — like the enterprise tier.
-  - **Scenario 30** (mixed client: settlement fail + held wire + recall → one synthesized
-    answer). The Supervisor already routes a `stockloan` sub-task; the scenario + a
-    client-run test are not built.
+  - ~~Scenario 30~~ **mechanism DONE (2026-09-09)** — the Supervisor correlating a
+    `settlement` + `stockloan` sub-finding into one mixed-domain client answer is exercised
+    by `tests/test_supervisor.py::test_correlates_a_mixed_domain_client` (+ the re-policy
+    drop test). A **scored** Sc. 30 YAML still waits on stock-loan data being seeded so
+    `investigate_client` can *discover* the loan the way it discovers failed trades (today
+    `supervisor._failed_trades` only queries `find_trades`). Wires are out (optional module).
   - **Portal affordance** — `investigate_loan` is reachable only via
     `POST /investigate {loan_id}`; no Stock Loan tab.
   - `market` / `position` are on the `stockloan` spec's scope but the slice's fixtures /

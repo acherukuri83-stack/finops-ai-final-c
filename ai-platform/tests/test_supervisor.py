@@ -70,6 +70,25 @@ def _settlement_sub(
     )
 
 
+def _stockloan_sub(
+    *, loan_id: str, root_cause: str = "RECALL_REQUIRED", action: str = "initiate_recall"
+) -> Finding:
+    return Finding(
+        subject=SubjectRef(type="loan", id=loan_id),
+        outcome=Outcome.RESOLVED_CAUSE,
+        root_cause=root_cause,
+        evidence=[EvidenceRef(kind="tool", ref="get_loan", cited=True)],
+        proposed_actions=[
+            ProposedAction(
+                action_type=action,
+                rationale="account short to settle; shares out on loan",
+                impact=[SubjectRef(type="loan", id=loan_id)],
+                proposed_by="stockloan",
+            )
+        ],
+    )
+
+
 @pytest.fixture
 def _stub_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _no_trades(_client_id: str) -> list[dict[str, Any]]:
@@ -220,3 +239,88 @@ async def test_grouped_action_is_repoliced_against_the_proposing_specialist(
 
     assert [a.action_type for a in finding.proposed_actions] == []
     assert any("update_ssi" in q and "settlement allowlist" in q for q in finding.open_questions)
+
+
+# --- Scenario 30: mixed-domain client (settlement + stock loan) ---------------
+
+
+async def test_correlates_a_mixed_domain_client(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sc. 30 (wire-free): one client with a settlement fail and a stock-loan recall.
+    The Supervisor dispatches a `settlement` and a `stockloan` sub-task and synthesizes
+    one client answer carrying both domains' actions."""
+    subs = [
+        _settlement_sub(subjects=["T1"], root_cause="COUNTERPARTY_INSTRUCTION_STALE"),
+        _stockloan_sub(loan_id="LN-5001"),
+    ]
+    _install_dispatch(monkeypatch, subs)
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose(
+                    {"agent": "settlement", "subject_ids": ["T1"], "question": "settlement fail?"},
+                    {"agent": "stockloan", "subject_ids": ["LN-5001"], "question": "recall?"},
+                )
+            ),
+            ModelResponse(
+                text=_client_finding(
+                    proposed_actions=[
+                        {
+                            "action_type": "resubmit_settlement",
+                            "rationale": "cpty re-affirms",
+                            "impact": [{"type": "trade", "id": "T1"}],
+                            "proposed_by": "settlement",
+                        },
+                        {
+                            "action_type": "initiate_recall",
+                            "rationale": "shares out on LN-5001, needed to settle",
+                            "impact": [{"type": "loan", "id": "LN-5001"}],
+                            "proposed_by": "stockloan",
+                        },
+                    ]
+                )
+            ),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    assert {sf.subject.type for sf in finding.sub_findings} == {"trade", "loan"}
+    kept = {a.action_type for a in finding.proposed_actions}
+    assert kept == {"resubmit_settlement", "initiate_recall"}  # both survive re-policy
+    # the known-actions registry sees both sub-proposals carried forward
+    assert not any("not carried" in q for q in finding.open_questions)
+
+
+async def test_mixed_client_drops_a_stockloan_action_settlement_cannot_own(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # synthesis tags a `book_buy_in` as Settlement's — Settlement has no such action.
+    _install_dispatch(monkeypatch, [_stockloan_sub(loan_id="LN-5002", action="book_buy_in")])
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose(
+                    {"agent": "stockloan", "subject_ids": ["LN-5002"], "question": "buy-in?"}
+                )
+            ),
+            ModelResponse(
+                text=_client_finding(
+                    proposed_actions=[
+                        {
+                            "action_type": "book_buy_in",
+                            "rationale": "recall window missed",
+                            "impact": [{"type": "loan", "id": "LN-5002"}],
+                            "proposed_by": "settlement",
+                        }
+                    ]
+                )
+            ),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    assert [a.action_type for a in finding.proposed_actions] == []
+    assert any("book_buy_in" in q and "settlement allowlist" in q for q in finding.open_questions)
