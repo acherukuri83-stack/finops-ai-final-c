@@ -143,7 +143,7 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 |---|---|
 | **Trace replay & diff** | Re-run a request against current data; diff two traces (model swap, prompt change) — the principled answer to "which model?" |
 | **Model swap** | Bedrock `ModelClient`; per-step routing shown in the diff |
-| **AWS path** | `docs/deploy-aws.md` (ECS Fargate, RDS, MSK) — documented because it's on the resume |
+| **AWS path** | **`docs/deploy-aws.md` written (2026-09-09)** — the four workloads on RDS 16 + pgvector, ECS Fargate (enterprise then ai-platform), S3 + CloudFront for the portal, one ALB; outbox events need no broker (MSK only for `EVENT_BUS=kafka`); ADOT → X-Ray optional; a console/CLI checklist plus Copilot / Terraform boundaries |
 | **Memory loop** | Closed-case → incident indexing across all domains |
 | **Guardrail depth** | PII scrubbing on logs before model calls, with counts in the guardrail span |
 

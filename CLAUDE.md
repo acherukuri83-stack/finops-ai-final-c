@@ -25,6 +25,7 @@ Every mainline phase A–G has a merged core slice **and** its deferred depth �
 - **B Wire corpus** — `knowledge/corpus/wire-processing-guide.md` (§3.1 / §5.2 / §7.4 / §9.1 / §11.2), `knowledge/corpus/sanctions-procedure.md` (§2.1 / §2.4), `knowledge/corpus/incidents/INC-2001…2005.md`. `planner/wire.md` + `synthesis/wire.md` + the wire scenarios cite the governing section.
 - **B Wire review flow** — `GET /wire/queue`, `GET /wire/exceptions`, role-gated `POST /wire/release {wire_id, released_by, role}` in `platform_api/main.py` (403 unless `WIRE_REVIEWER`); `wire.store.release_wire` / `exceptions`; `FinanceStore.update`. `portal/src/WireReviewView.tsx` — a **Wire Review** tab: reviewer queue + Release button + the exception report. No `release_wire` agent tool.
 - **B Wire event route** — `events/consumer.py` routes a `wire` HELD event → `investigate_wire` (dedup on `hold_reason`, cutoff `deadline` → HIGH). `simulator.events.emit_wire_held` + `make emit WIRE=…`.
+- **G AWS deploy doc** — `docs/deploy-aws.md`: the four workloads on RDS 16 + pgvector / ECS Fargate / S3 + CloudFront / one ALB; outbox events need no broker; a console+CLI checklist + Copilot / Terraform boundaries. The counterpart to `docs/deploy-railway.md`.
 
 **Still deferred (`docs/backlog.md`):**
 - **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`, deferred to the **end of the project** (paused for C+ during the build; the record stays the Phase A 8/9). This is the final validation gate, not deferred depth.
