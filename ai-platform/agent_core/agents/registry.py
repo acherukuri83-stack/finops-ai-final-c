@@ -97,9 +97,30 @@ CORPACTIONS = SpecialistSpec(
     required_tools=frozenset({("corpactions", "get_ca_event")}),
 )
 
+# Phase F — the Cash specialist. Scope: its own book + `market` (FX) + `ops`. The
+# funding-cutoff rule (fund vs escalate) is code, in `agent_core/cash.py`.
+CASH = SpecialistSpec(
+    name="cash",
+    planner_prompt="planner/cash",
+    synthesis_prompt="synthesis/cash",
+    tool_servers=frozenset({"cash", "market", "ops"}),
+    allowlist_key="cash",
+    subject_type="cash_break",
+    required_tools=frozenset({("cash", "get_cash_break")}),
+)
+
 _BY_NAME = {
     s.name: s
-    for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN, MARGIN, CORPACTIONS)
+    for s in (
+        SETTLEMENT,
+        RISK_CLIENT,
+        KNOWLEDGE,
+        DEVELOPER,
+        STOCKLOAN,
+        MARGIN,
+        CORPACTIONS,
+        CASH,
+    )
 }
 
 

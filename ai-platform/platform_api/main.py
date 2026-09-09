@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
+from agent_core.cash import investigate_cash_break
 from agent_core.corpactions import investigate_ca_event
 from agent_core.developer import investigate_incident, verify_change
 from agent_core.loop import investigate
@@ -79,6 +80,7 @@ class InvestigateRequest(BaseModel):
     client_id: str | None = None  # Phase C: a client-level ask fans out via the Supervisor
     loan_id: str | None = None  # Phase F: a stock-loan question -> the StockLoan specialist
     margin_call_id: str | None = None  # Phase F: a margin call -> the Margin specialist
+    cash_break_id: str | None = None  # Phase F: a projected cash break -> the Cash specialist
 
 
 class DecideRequest(BaseModel):
@@ -111,10 +113,13 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
         return await investigate_loan(req.loan_id)
     if req.margin_call_id:
         return await investigate_margin_call(req.margin_call_id)
+    if req.cash_break_id:
+        return await investigate_cash_break(req.cash_break_id)
     if req.trade_id:
         return await investigate(req.trade_id)
     raise HTTPException(
-        status_code=422, detail="provide trade_id, client_id, loan_id, or margin_call_id"
+        status_code=422,
+        detail="provide trade_id, client_id, loan_id, margin_call_id, or cash_break_id",
     )
 
 

@@ -8,6 +8,7 @@ policy allowlist, budget). `agent_core/loop.py` keeps the single-trade entry poi
 
 from agent_core.agents.base import SpecialistSpec, run_specialist
 from agent_core.agents.registry import (
+    CASH,
     CORPACTIONS,
     DEVELOPER,
     KNOWLEDGE,
@@ -28,5 +29,6 @@ __all__ = [
     "STOCKLOAN",
     "MARGIN",
     "CORPACTIONS",
+    "CASH",
     "spec_for",
 ]

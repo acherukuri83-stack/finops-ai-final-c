@@ -1196,6 +1196,17 @@
               }
             ],
             "title": "Margin Call Id"
+          },
+          "cash_break_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Break Id"
           }
         },
         "type": "object",
