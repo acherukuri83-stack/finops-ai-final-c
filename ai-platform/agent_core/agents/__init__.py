@@ -6,7 +6,7 @@ policy allowlist, budget). `agent_core/loop.py` keeps the single-trade entry poi
 `agent_core/supervisor.py` (Phase C PR 2) fans out across specialists.
 """
 
-from agent_core.agents.base import SpecialistSpec, run_specialist
+from agent_core.agents.base import SpecialistSpec, run_knowledge, run_specialist
 from agent_core.agents.registry import (
     CASH,
     CORPACTIONS,
@@ -22,6 +22,7 @@ from agent_core.agents.registry import (
 __all__ = [
     "SpecialistSpec",
     "run_specialist",
+    "run_knowledge",
     "SETTLEMENT",
     "RISK_CLIENT",
     "KNOWLEDGE",

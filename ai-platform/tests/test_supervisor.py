@@ -89,6 +89,17 @@ def _stockloan_sub(
     )
 
 
+def _knowledge_sub(*, about: str = "T1") -> Finding:
+    """A retrieval-only sub-finding — the shape `run_knowledge` returns."""
+    return Finding(
+        subject=SubjectRef(type="knowledge", id=about),
+        outcome=Outcome.RESOLVED_CAUSE,
+        evidence=[EvidenceRef(kind="knowledge", ref="Settlement Handbook §8.4", cited=True)],
+        checked=["Settlement Handbook §8.4 — re-affirm with the cpty; do not overwrite SSI"],
+        confidence_basis="retrieval-only: 1 SOP section(s), 0 past incident(s)",
+    )
+
+
 @pytest.fixture
 def _stub_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     async def _no_trades(_client_id: str) -> list[dict[str, Any]]:
@@ -223,6 +234,82 @@ async def test_all_insufficient_recommends_a_platform_incident_review(
     assert "Not auto-dispatched" in rec[0]
     # it is a note, not an action
     assert not any(a.action_type == "diagnose" for a in finding.proposed_actions)
+
+
+async def test_knowledge_subtask_is_routable_and_stays_background(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A `knowledge` sub-finding is retrieval-only: it carries no action, does not drive
+    the client outcome, and is excluded from the all-INSUFFICIENT incident recommendation.
+    Here the one business specialist resolved, so the client resolves — Knowledge neither
+    helps nor blocks that."""
+    subs = [
+        _settlement_sub(subjects=["T1"], root_cause="COUNTERPARTY_INSTRUCTION_STALE"),
+        _knowledge_sub(about="T1"),
+    ]
+    _install_dispatch(monkeypatch, subs)
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose(
+                    {"agent": "settlement", "subject_ids": ["T1"], "question": "why fail?"},
+                    {
+                        "agent": "knowledge",
+                        "subject_ids": ["T1"],
+                        "question": "what does the SOP say?",
+                    },
+                )
+            ),
+            ModelResponse(
+                text=_client_finding(
+                    proposed_actions=[
+                        {
+                            "action_type": "resubmit_settlement",
+                            "rationale": "cpty re-affirms",
+                            "impact": [{"type": "trade", "id": "T1"}],
+                            "proposed_by": "settlement",
+                        }
+                    ]
+                )
+            ),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    assert {sf.subject.type for sf in finding.sub_findings} == {"trade", "knowledge"}
+    assert [a.action_type for a in finding.proposed_actions] == ["resubmit_settlement"]
+    assert finding.outcome is Outcome.RESOLVED_CAUSE
+    assert not any("POST /diagnose" in q for q in finding.open_questions)
+
+
+async def test_knowledge_does_not_mask_an_all_insufficient_business_result(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # settlement came back empty; only the knowledge lookup "resolved". The incident
+    # recommendation must still fire, and the client outcome must not read RESOLVED.
+    subs = [
+        Finding(
+            subject=SubjectRef(type="trade", id="T1"),
+            outcome=Outcome.INSUFFICIENT_EVIDENCE,
+            confidence_basis="no failure_code",
+        ),
+        _knowledge_sub(about="T1"),
+    ]
+    _install_dispatch(monkeypatch, subs)
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose({"agent": "settlement", "subject_ids": ["T1"], "question": "q"})
+            ),
+            ModelResponse(text=_client_finding(outcome="INSUFFICIENT_EVIDENCE")),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    assert finding.outcome is Outcome.INSUFFICIENT_EVIDENCE
+    assert any("POST /diagnose" in q for q in finding.open_questions)
 
 
 async def test_mixed_outcomes_do_not_trigger_the_incident_recommendation(

@@ -17,7 +17,7 @@ from agent_core import policy, prompts
 from agent_core.outcomes import Observation, classify
 from agent_core.reasoning.model_client import ModelClient, ModelResponse, complete_structured_traced
 from agent_core.reasoning.model_router import Step, model_for
-from agent_core.schemas.finding import Finding, Outcome, SubjectRef
+from agent_core.schemas.finding import EvidenceRef, Finding, Outcome, SubjectRef
 from agent_core.schemas.plan import Plan, PlanStep
 from agent_core.spans import set_attrs, span
 from mcp_servers import _enterprise
@@ -101,6 +101,73 @@ async def run_specialist(
     if open_case:
         _persist_trace(finding, spec, trace_id, request, subject, scenario_id)
     return finding
+
+
+async def run_knowledge(
+    spec: SpecialistSpec,
+    *,
+    subject: SubjectRef,
+    request: str,
+    client: ModelClient | None = None,  # unused — Knowledge does not call the model
+    scenario_id: str | None = None,
+    open_case: bool = False,  # unused — Knowledge proposes nothing, so there is no case
+) -> Finding:
+    """The degenerate Knowledge runner: no planner, no model call, no writes.
+
+    A fixed `ops.search_knowledge` + `ops.find_incidents` pass over the request, returned
+    as cited `evidence` with a one-line relevance note per chunk in `checked`. `knowledge`'s
+    allowlist is empty, so it proposes nothing and opens no case; the Supervisor treats a
+    `subject.type == "knowledge"` sub-finding as background, not a domain outcome.
+    """
+    del client, open_case
+    with span(spec.name, "agent", agent=spec.name, **{"scenario.id": scenario_id}) as root:
+        trace_id = format(root.get_span_context().trace_id, "032x")
+        async with open_session(servers={"ops"}) as tools:
+            docs = await _knowledge_lookup(spec, tools, "search_knowledge", request, k=5)
+            incidents = await _knowledge_lookup(spec, tools, "find_incidents", request, k=3)
+
+        evidence: list[EvidenceRef] = []
+        notes: list[str] = []
+        for d in docs:
+            sec = str(d.get("section") or "").strip()
+            ref = (f"{d.get('doc')} §{sec}" if sec else str(d.get("doc") or "SOP")).strip()
+            evidence.append(EvidenceRef(kind="knowledge", ref=ref, cited=True))
+            gist = str(d.get("title") or d.get("text") or "").strip().replace("\n", " ")
+            notes.append(f"{ref} — {gist[:140]}")
+        for i in incidents:
+            iid = str(i.get("incident_id") or "incident")
+            evidence.append(EvidenceRef(kind="incident", ref=iid, cited=True))
+            summary = str(i.get("summary") or "").strip().replace("\n", " ")
+            notes.append(f"{iid}: {summary[:120]} (root_cause={i.get('root_cause')})")
+
+        finding = Finding(
+            subject=subject,
+            outcome=Outcome.RESOLVED_CAUSE if evidence else Outcome.INSUFFICIENT_EVIDENCE,
+            evidence=evidence,
+            checked=notes,
+            confidence_basis=(
+                f"retrieval-only: {len(docs)} SOP section(s), {len(incidents)} past incident(s)"
+                if evidence
+                else "retrieval-only: nothing in the corpus matched"
+            ),
+            trace_id=trace_id,
+        )
+        set_attrs(root, {"outcome": finding.outcome, "evidence": len(evidence)})
+    return finding
+
+
+async def _knowledge_lookup(
+    spec: SpecialistSpec, tools: Tools, tool: str, query: str, *, k: int
+) -> list[dict[str, Any]]:
+    with span(
+        f"ops.{tool}",
+        "retrieval",
+        agent=spec.name,
+        **{"retrieval.query": query, "retrieval.k": k},
+    ) as current:
+        result = await tools.call("ops", tool, query=query, k=k)
+        set_attrs(current, {"retrieval.results": _summarise_retrieval(result)})
+    return [r for r in result if isinstance(r, dict)] if isinstance(result, list) else []
 
 
 # --- case + trace bookkeeping ------------------------------------------------
