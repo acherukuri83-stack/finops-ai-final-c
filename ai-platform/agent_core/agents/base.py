@@ -20,6 +20,7 @@ from agent_core.reasoning.model_router import Step, model_for
 from agent_core.schemas.finding import Finding, Outcome, SubjectRef
 from agent_core.schemas.plan import Plan, PlanStep
 from agent_core.spans import set_attrs, span
+from mcp_servers import _enterprise
 from mcp_servers.errors import is_error
 from mcp_servers.hub import Tools, open_session, tool_access
 from platform_api import cases, trace_store
@@ -222,7 +223,10 @@ async def _run_step(spec: SpecialistSpec, tools: Tools, step: PlanStep) -> Any:
         if is_retrieval:
             set_attrs(current, {"retrieval.results": _summarise_retrieval(result)})
         else:
-            set_attrs(current, {"tool.ok": not is_error(result)})
+            set_attrs(
+                current,
+                {"tool.ok": not is_error(result), "tool.retries": _enterprise.last_retries()},
+            )
             if is_error(result):
                 set_attrs(current, {"tool.retryable": bool(result.get("retryable"))})
         if is_error(result):

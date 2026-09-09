@@ -14,6 +14,7 @@ from __future__ import annotations
 import functools
 import os
 from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from typing import Any, Protocol, cast
 
 import httpx
@@ -22,6 +23,14 @@ from mcp_servers.errors import ErrorEnvelope, from_http, unavailable
 from platform_api.settings import settings
 
 _RETRYABLE_EXC = (httpx.TransportError,)
+
+# in-call retries the *last* enterprise request used — read back by the tool span in
+# `agent_core/agents/base._run_step` (observability standard `finops.tool.retries`).
+_last_retries: ContextVar[int] = ContextVar("enterprise_last_retries", default=0)
+
+
+def last_retries() -> int:
+    return _last_retries.get()
 
 
 class EnterpriseError(Exception):
@@ -69,7 +78,10 @@ class HttpEnterpriseClient:
     ) -> Any:
         clean = {k: v for k, v in (params or {}).items() if v is not None}
         last_exc: Exception | None = None
+        _last_retries.set(0)
         for attempt in (0, 1):
+            if attempt:
+                _last_retries.set(attempt)
             try:
                 resp = await self._client.request(method, path, params=clean, json=body)
             except _RETRYABLE_EXC as exc:
