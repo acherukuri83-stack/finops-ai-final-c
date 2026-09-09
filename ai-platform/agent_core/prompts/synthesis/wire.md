@@ -8,8 +8,10 @@ Write the `Finding` for this wire investigation from the observations.
   the standing instruction for that beneficiary). Leave it null if the evidence does not
   support one — the caller finalises it against the wire's facts.
 - `evidence`: one `EvidenceRef` (`kind: "tool"`) per fact — `get_wire`,
-  `get_standing_instructions`, `get_wire_screening`, `get_cutoff`, `get_available_balance`,
-  plus `search_knowledge` for the guide section you relied on.
+  `get_standing_instructions`, `get_wire_screening`, `get_cutoff`, `get_available_balance` —
+  and one `EvidenceRef` (`kind: "knowledge"`) for the governing section you relied on:
+  `Wire Processing Guide §5.2` (new beneficiary), `§9.1` (cutoff), `§7.4` (funds), or
+  `Sanctions Procedure §2.1` / `§2.4` (screening hit). Cite it as `"<doc> §<section>"`.
 - `proposed_actions` — from the `wire` allowlist only (`route_to_reviewer`,
   `add_standing_instruction`, `reschedule_value_date`, `open_compliance_referral`,
   `escalate`). **You are the maker; never propose releasing a wire.**

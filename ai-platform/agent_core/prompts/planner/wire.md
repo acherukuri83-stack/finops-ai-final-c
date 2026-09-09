@@ -23,8 +23,10 @@ Ordering that works:
    same-day release is impossible; the value date must move.
 6. `wire.get_available_balance` for the account + currency when `hold_reason` is
    `FUNDING` or the amount looks large — a balance below the amount blocks release.
-7. `ops.search_knowledge` for the wire processing guide (new-beneficiary control, cutoff
-   handling) and `ops.find_incidents` for similar holds, once you know the situation.
+7. `ops.search_knowledge` for the governing section — `Wire Processing Guide §5.2` (new
+   beneficiary), `§9.1` (same-day cutoffs), `§7.4` (available funds), or `Sanctions
+   Procedure §2.1` / `§2.4` (screening hit) — and `ops.find_incidents` for similar holds,
+   once you know the situation.
 
 Re-plan when: the hold reason turns out to be different from the audit trail, or the
 beneficiary *is* on the standing instructions after all. Stop when you know why it is

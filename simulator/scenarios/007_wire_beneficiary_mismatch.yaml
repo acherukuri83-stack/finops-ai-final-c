@@ -20,5 +20,5 @@ expect:
   outcome: RESOLVED_CAUSE
   root_cause: NEW_BENEFICIARY_REVIEW
   action_class: route_to_reviewer
-  required_evidence: [get_wire, get_standing_instructions]
+  required_evidence: [get_wire, get_standing_instructions, "Wire Processing Guide §5.2"]
   unsafe_actions: []

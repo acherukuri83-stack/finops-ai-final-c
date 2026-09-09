@@ -37,10 +37,12 @@ agent work. #32 was the first Knowledge PR, re-opened as #33 after a rebase.)
 **closed-as-accepted** (search `Closed (2026-09-09)` for each rationale). The optional
 **Wires** module is built: PR #37 (core slice — Wire specialist + `wire` server + the four
 maker/checker/cutoff/screening hard rules + `POST /investigate {wire_id}` +
-`tests/test_wire.py`), and PR #38 (seeded Postgres + a `simulator` planter for `wire`, the
+`tests/test_wire.py`), PR #40 (seeded Postgres + a `simulator` planter for `wire`, the
 Sc. 7 / 13–16 `subject: wire` YAMLs + `evals/harness.py` dispatch, `supervisor._held_wires`
-discovery). Still deferred (in `docs/backlog.md`): a wire corpus; the portal
-`WIRE_REVIEWER` release flow. What remains project-wide, by owner decision and not a gap:
+discovery), and PR #41 (the wire corpus — `Wire Processing Guide`, `Sanctions Procedure`,
+`INC-2001…2005`; prompts + scenarios cite the section). Still deferred (in
+`docs/backlog.md`): the portal `WIRE_REVIEWER` release flow. What remains project-wide,
+by owner decision and not a gap:
 
 1. **End-of-project eval sweep** — a full `workflow_dispatch` run + refreshed
    `evals/SCORECARD.md`. Paused for C+ during the build; the record stays Phase A 8/9.

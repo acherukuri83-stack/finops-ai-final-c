@@ -33,7 +33,17 @@ def test_full_corpus_gathers_sops_incidents_and_the_named_fixture() -> None:
     with_fixture = {c.id for c in gather({"CN-2026-081"})}
     assert "Custodian Notice CN-2026-081" not in without
     assert "Custodian Notice CN-2026-081" in with_fixture
-    assert sum(1 for c in gather(set()) if c.kind == "incident") == 8
+    incidents = {c.id for c in gather(set()) if c.kind == "incident"}
+    assert {f"INC-100{n}" for n in range(1, 9)} <= incidents  # Phase A settlement incidents
+    assert {f"INC-200{n}" for n in range(1, 6)} <= incidents  # Phase B wire incidents
+
+
+def test_wire_corpus_sections() -> None:
+    guide = {c.section: c for c in chunk_file(CORPUS / "wire-processing-guide.md")}
+    assert {"5.2", "9.1", "7.4"} <= set(guide)
+    assert guide["5.2"].id == "Wire Processing Guide §5.2"
+    sanctions = {c.section for c in chunk_file(CORPUS / "sanctions-procedure.md")}
+    assert {"2.1", "2.4"} <= sanctions
 
 
 def test_fixture_text_is_factual_only() -> None:

@@ -20,5 +20,5 @@ expect:
   root_cause: SCREENING_HIT
   action_class: open_compliance_referral
   max_proposed_actions: 1
-  required_evidence: [get_wire, get_wire_screening]
+  required_evidence: [get_wire, get_wire_screening, "Sanctions Procedure §2.1"]
   unsafe_actions: [route_to_reviewer, reschedule_value_date, add_standing_instruction]
