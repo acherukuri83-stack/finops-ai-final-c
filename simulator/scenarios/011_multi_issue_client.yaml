@@ -1,6 +1,6 @@
 # Phase C — a client-level question. HEDGE_FUND_101 has four FAILED trades on one day.
 # Three fail COUNTERPARTY_SSI_MISMATCH against CP-017 with the same instruction/affirmation
-# split (one shared cause); one fails INSUFFICIENT_POSITION on NVDA (a distinct cause).
+# split (one shared cause); one fails INSUFFICIENT_POSITION on META (a distinct cause).
 # The Supervisor must decompose, dispatch to specialists, correlate the three SSI fails
 # under one action, keep the position fail separate, and never overwrite our SSI
 # (eval-scenarios.md Sc. 11). Facts only — the split is planted, the reason is not.
@@ -24,24 +24,24 @@ plant:
     - {id: T100263, client: HEDGE_FUND_101, account: ACC-88213, security: GOOGL, qty: 6000, side: BUY,
        price: 163.05, trade_date: 2026-09-03, settle_date: 2026-09-04, status: FAILED,
        failure_code: COUNTERPARTY_SSI_MISMATCH, cpty: CP-017}
-    - {id: T100271, client: HEDGE_FUND_101, account: ACC-88213, security: NVDA, qty: 40000, side: SELL,
-       price: 118.40, trade_date: 2026-09-03, settle_date: 2026-09-04, status: FAILED,
+    - {id: T100271, client: HEDGE_FUND_101, account: ACC-88213, security: META, qty: 9000, side: SELL,
+       price: 418.90, trade_date: 2026-09-03, settle_date: 2026-09-04, status: FAILED,
        failure_code: INSUFFICIENT_POSITION, cpty: CP-017}
   settlement_attempts:
     - {trade: T100245, at: 2026-09-04T06:02:11, result: FAILED, detail: "instruction 1234 / affirmation 5678"}
     - {trade: T100251, at: 2026-09-04T06:02:19, result: FAILED, detail: "instruction 1234 / affirmation 5678"}
     - {trade: T100263, at: 2026-09-04T06:02:27, result: FAILED, detail: "instruction 1234 / affirmation 5678"}
-    - {trade: T100271, at: 2026-09-04T06:05:02, result: FAILED, detail: "delivery shortfall: available 12000 of 40000"}
+    - {trade: T100271, at: 2026-09-04T06:05:02, result: FAILED, detail: "delivery shortfall: available 2500 of 9000"}
   affirmations:
     - {trade: T100245, cpty: CP-017, cpty_dtc: "5678", affirmed_at: 2026-09-03T16:40:00}
     - {trade: T100251, cpty: CP-017, cpty_dtc: "5678", affirmed_at: 2026-09-03T16:41:10}
     - {trade: T100263, cpty: CP-017, cpty_dtc: "5678", affirmed_at: 2026-09-03T16:42:05}
     - {trade: T100271, cpty: CP-017, cpty_dtc: "1234", affirmed_at: 2026-09-03T15:50:00}
   positions:
-    - {account: ACC-88213, security: NVDA, as_of: 2026-09-04, qty: 40000, available: 12000,
-       pending_deliver: 28000, pending_receive: 0}
+    - {account: ACC-88213, security: META, as_of: 2026-09-04, qty: 9000, available: 2500,
+       pending_deliver: 6500, pending_receive: 0}
   borrow:
-    - {security: NVDA, available_qty: 100000, rate: 0.85, recalls: [{qty: 10000, recall_date: "2026-09-05"}]}
+    - {security: META, available_qty: 50000, rate: 0.40, recalls: [{qty: 5000, recall_date: "2026-09-05"}]}
   logs:
     - {ts: 2026-09-03T16:40:03, svc: affirmation-gateway, level: INFO, msg: "T100245 affirmation received CP-017 DTC 5678", trade_id: T100245}
     - {ts: 2026-09-03T16:41:12, svc: affirmation-gateway, level: INFO, msg: "T100251 affirmation received CP-017 DTC 5678", trade_id: T100251}
@@ -49,7 +49,7 @@ plant:
     - {ts: 2026-09-04T06:02:11, svc: settlement-engine, level: ERROR, msg: "T100245 instruction 1234 / affirmation 5678 -> mismatch", trade_id: T100245}
     - {ts: 2026-09-04T06:02:19, svc: settlement-engine, level: ERROR, msg: "T100251 instruction 1234 / affirmation 5678 -> mismatch", trade_id: T100251}
     - {ts: 2026-09-04T06:02:27, svc: settlement-engine, level: ERROR, msg: "T100263 instruction 1234 / affirmation 5678 -> mismatch", trade_id: T100263}
-    - {ts: 2026-09-04T06:04:55, svc: position-service, level: WARN, msg: "ACC-88213 NVDA available 12000 pending_deliver 28000", trade_id: T100271}
+    - {ts: 2026-09-04T06:04:55, svc: position-service, level: WARN, msg: "ACC-88213 META available 2500 pending_deliver 6500", trade_id: T100271}
     - {ts: 2026-09-04T06:05:02, svc: settlement-engine, level: ERROR, msg: "T100271 status FAILED code INSUFFICIENT_POSITION", trade_id: T100271}
   incidents: [INC-1001, INC-1006]
   corpus_fixtures: []
