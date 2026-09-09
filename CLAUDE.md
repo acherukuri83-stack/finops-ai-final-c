@@ -2,9 +2,9 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: C — supervisor & specialists (in progress)
+## Current phase: C — complete · next mainline phase: D
 
-Phase A is shipped and deployed (single Investigator, trade mode: the simulated bank, the MCP layer, the agent + knowledge, governance, the n=3 eval harness at 8/9, the Agent Trace screen, live on Railway). **Phase C is now in progress** — split the Investigator into a Supervisor + specialists (Settlement · Risk/Client · Knowledge), each structurally scoped by tool set and policy allowlist. Read the "Phase C — Supervisor and specialists" section of `docs/phase-breakdown.md` and `ai-platform/agent_core/agents/CLAUDE.md` first. Still out of scope until their phase: Developer Agent, events, prime-finance. Wires (B) is an optional module. When Phase C completes, bump this line to "C — complete · next mainline phase: D".
+Phase A is shipped and deployed (single Investigator, trade mode). **Phase C is complete** — the Investigator is split into a Supervisor + specialists (Settlement · Risk/Client · Knowledge), each structurally scoped by tool set and policy allowlist (`ai-platform/agent_core/agents/`, `agent_core/supervisor.py`). Settlement structurally cannot propose `update_ssi`; the Supervisor decomposes → dispatches in parallel → correlates by shared cause → one client-level case. Client Scenario 11 exercises the fan-out. Knowledge specialist dispatch is registered but not yet wired (see `docs/backlog.md`). **Next mainline phase is D — event-driven investigations** — read the "Phase D" section of `docs/phase-breakdown.md` before starting it; don't build ahead. Still out of scope until their phase: Developer Agent, prime-finance. Wires (B) is an optional module. **No eval sweeps for C or later phases during the build** (owner decision, 2026-09) — the `SCORECARD.md` on record is the Phase A 8/9; see `docs/backlog.md`.
 
 ## Roadmap (all phases, for orientation only)
 
@@ -63,10 +63,12 @@ make eval          # full scenario suite against real model calls → evals/SCOR
 scripts/verify.sh  # lint + type + test; run before declaring any task done
 ```
 
-`make eval` costs real money (~$2–3/run). **It is not a per-PR gate during the build** —
-the CI `eval` workflow is manual-dispatch only. Run `make eval SCENARIO=<n>` locally, or
-dispatch the workflow, when you want an agent-behaviour change validated; do a full sweep
-before declaring a phase or the project done.
+`make eval` costs real money (~$2–3/run). **It is not a per-PR gate, and full sweeps are
+paused for Phase C and later phases during the build** (owner decision, 2026-09 — see
+`docs/backlog.md`). The CI `eval` workflow is manual-dispatch only. Run `make eval
+SCENARIO=<n>` locally, or dispatch the workflow, if you want to spot-check a specific
+agent-behaviour change; a full sweep + refreshed `SCORECARD.md` is deferred to the end of
+the project. The `SCORECARD.md` on record is the Phase A result (8/9).
 
 ## Definition of done for a task
 

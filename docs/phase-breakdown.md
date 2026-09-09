@@ -75,7 +75,7 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 | **Simulated data** | Sc. 11 (wire-free): HF101 with 3–4 settlement fails — two sharing one counterparty cause, one distinct (e.g. a short position) |
 | **Portal** | Client-level investigation view; grouped actions; delegation shown in trace |
 | **Governance** | Allowlists per agent in `allowlists.yaml`; Settlement Agent cannot propose `update_ssi` (policy rejection in trace) |
-| **Scenarios** | 11 multi-issue client; regression sweep of the Phase A scenarios after the split (manual `workflow_dispatch` eval) |
+| **Scenarios** | 11 multi-issue client (built; scorer `groups` branch). Regression on the Phase A scenarios is deferred to the end-of-project eval sweep — no per-phase sweep during the build (`docs/backlog.md`). |
 | **Demo** | "Investigate all problems affecting HF101 today" → fan-out → two root causes → several trades under one action, the distinct fail separate → any `INSUFFICIENT_EVIDENCE` surfaced verbatim |
 | **Effort** | 1–2 weekends · delivered as two PRs (specialist runner; Supervisor + Sc. 11) |
 
