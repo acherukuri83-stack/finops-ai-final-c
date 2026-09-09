@@ -460,6 +460,45 @@
         }
       }
     },
+    "/author-scenario": {
+      "post": {
+        "summary": "Post Author Scenario",
+        "description": "Developer Agent \u2014 eval-authoring mode. Draft an eval scenario (planted-chain YAML +\n`expect:` block + baseline) for a failure code, labelled `authored_by: agent`. A human\nreviews and raises the PR \u2014 PR-review mode blocks an agent-authored scenario from\nmerging without a human sign-off.",
+        "operationId": "post_author_scenario_author_scenario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorScenarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthoredScenario"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/verify": {
       "post": {
         "summary": "Post Verify",
@@ -854,6 +893,84 @@
   },
   "components": {
     "schemas": {
+      "AuthorScenarioRequest": {
+        "properties": {
+          "failure_code": {
+            "type": "string",
+            "title": "Failure Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "failure_code"
+        ],
+        "title": "AuthorScenarioRequest"
+      },
+      "AuthoredScenario": {
+        "properties": {
+          "failure_code": {
+            "type": "string",
+            "title": "Failure Code"
+          },
+          "scenario_id": {
+            "type": "integer",
+            "title": "Scenario Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "authored_by": {
+            "type": "string",
+            "title": "Authored By",
+            "default": "agent"
+          },
+          "sop_section": {
+            "type": "string",
+            "title": "Sop Section"
+          },
+          "scenario_yaml": {
+            "type": "string",
+            "title": "Scenario Yaml"
+          },
+          "eval_expect": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Eval Expect"
+          },
+          "corpus_fixtures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Corpus Fixtures"
+          },
+          "baseline": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Baseline"
+          },
+          "pr_title": {
+            "type": "string",
+            "title": "Pr Title",
+            "default": ""
+          },
+          "pr_body": {
+            "type": "string",
+            "title": "Pr Body",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "failure_code",
+          "scenario_id",
+          "name",
+          "sop_section",
+          "scenario_yaml"
+        ],
+        "title": "AuthoredScenario"
+      },
       "ConnectionsResponse": {
         "properties": {
           "enterprise_base_url": {

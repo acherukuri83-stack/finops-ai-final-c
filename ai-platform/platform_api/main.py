@@ -19,9 +19,11 @@ from pydantic import BaseModel
 from agent_core.cash import investigate_cash_break
 from agent_core.corpactions import investigate_ca_event
 from agent_core.developer import investigate_incident, verify_change
+from agent_core.eval_authoring import author_scenario
 from agent_core.loop import investigate
 from agent_core.margin import investigate_margin_call
 from agent_core.review import review_pr
+from agent_core.schemas.authored import AuthoredScenario
 from agent_core.schemas.finding import Finding
 from agent_core.schemas.review import Review
 from agent_core.stockloan import investigate_loan
@@ -164,6 +166,19 @@ async def post_review_pr(req: ReviewRequest) -> Review:
     agent-authored scenario → needs a human), and return a structured `Review`. It posts
     comments only — there is no approve/merge tool."""
     return await review_pr(req.pr_id)
+
+
+class AuthorScenarioRequest(BaseModel):
+    failure_code: str
+
+
+@app.post("/author-scenario")
+async def post_author_scenario(req: AuthorScenarioRequest) -> AuthoredScenario:
+    """Developer Agent — eval-authoring mode. Draft an eval scenario (planted-chain YAML +
+    `expect:` block + baseline) for a failure code, labelled `authored_by: agent`. A human
+    reviews and raises the PR — PR-review mode blocks an agent-authored scenario from
+    merging without a human sign-off."""
+    return await author_scenario(req.failure_code)
 
 
 @app.post("/verify")

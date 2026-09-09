@@ -216,6 +216,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/author-scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Author Scenario
+         * @description Developer Agent — eval-authoring mode. Draft an eval scenario (planted-chain YAML +
+         *     `expect:` block + baseline) for a failure code, labelled `authored_by: agent`. A human
+         *     reviews and raises the PR — PR-review mode blocks an agent-authored scenario from
+         *     merging without a human sign-off.
+         */
+        post: operations["post_author_scenario_author_scenario_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/verify": {
         parameters: {
             query?: never;
@@ -377,6 +400,49 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AuthorScenarioRequest */
+        AuthorScenarioRequest: {
+            /** Failure Code */
+            failure_code: string;
+        };
+        /** AuthoredScenario */
+        AuthoredScenario: {
+            /** Failure Code */
+            failure_code: string;
+            /** Scenario Id */
+            scenario_id: number;
+            /** Name */
+            name: string;
+            /**
+             * Authored By
+             * @default agent
+             */
+            authored_by: string;
+            /** Sop Section */
+            sop_section: string;
+            /** Scenario Yaml */
+            scenario_yaml: string;
+            /** Eval Expect */
+            eval_expect?: {
+                [key: string]: unknown;
+            };
+            /** Corpus Fixtures */
+            corpus_fixtures?: string[];
+            /** Baseline */
+            baseline?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Pr Title
+             * @default
+             */
+            pr_title: string;
+            /**
+             * Pr Body
+             * @default
+             */
+            pr_body: string;
+        };
         /** ConnectionsResponse */
         ConnectionsResponse: {
             /** Enterprise Base Url */
@@ -1358,6 +1424,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Review"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_author_scenario_author_scenario_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorScenarioRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthoredScenario"];
                 };
             };
             /** @description Validation Error */
