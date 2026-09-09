@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
+from agent_core.corpactions import investigate_ca_event
 from agent_core.developer import investigate_incident, verify_change
 from agent_core.loop import investigate
 from agent_core.margin import investigate_margin_call
@@ -124,6 +125,18 @@ class DiagnoseRequest(BaseModel):
 
 class VerifyRequest(BaseModel):
     ticket_id: str  # an applied change ticket (CHG-xxxx)
+
+
+class CorpActionRequest(BaseModel):
+    event_id: str
+    account_id: str
+
+
+@app.post("/corpaction")
+async def post_corpaction(req: CorpActionRequest) -> Finding:
+    """CorpActions specialist — an account's entitlement for a corporate-action event,
+    the held/lent split over the record date, and whether an election is still open."""
+    return await investigate_ca_event(req.event_id, req.account_id)
 
 
 @app.post("/diagnose")

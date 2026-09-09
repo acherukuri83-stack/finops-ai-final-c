@@ -46,6 +46,14 @@ margin:
   - escalate_margin
   - escalate
 
+# Phase F - the CorpActions specialist. Proposals only, approval-gated. A dividend on a
+# lent-out position is claimed from the borrower, never booked directly - code rule.
+corpactions:
+  - submit_election
+  - raise_claim
+  - escalate_ca
+  - escalate
+
 # Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
 # as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:

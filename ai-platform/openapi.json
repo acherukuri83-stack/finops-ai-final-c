@@ -343,6 +343,45 @@
         }
       }
     },
+    "/corpaction": {
+      "post": {
+        "summary": "Post Corpaction",
+        "description": "CorpActions specialist \u2014 an account's entitlement for a corporate-action event,\nthe held/lent split over the record date, and whether an election is still open.",
+        "operationId": "post_corpaction_corpaction_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorpActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/diagnose": {
       "post": {
         "summary": "Post Diagnose",
@@ -840,6 +879,24 @@
           "servers"
         ],
         "title": "ConnectionsResponse"
+      },
+      "CorpActionRequest": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "account_id": {
+            "type": "string",
+            "title": "Account Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "account_id"
+        ],
+        "title": "CorpActionRequest"
       },
       "DecideRequest": {
         "properties": {

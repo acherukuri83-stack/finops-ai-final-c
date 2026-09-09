@@ -149,6 +149,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corpaction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Corpaction
+         * @description CorpActions specialist — an account's entitlement for a corporate-action event,
+         *     the held/lent split over the record date, and whether an election is still open.
+         */
+        post: operations["post_corpaction_corpaction_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/diagnose": {
         parameters: {
             query?: never;
@@ -364,6 +385,13 @@ export interface components {
             healthy: boolean;
             /** Servers */
             servers: components["schemas"]["ServerInfo"][];
+        };
+        /** CorpActionRequest */
+        CorpActionRequest: {
+            /** Event Id */
+            event_id: string;
+            /** Account Id */
+            account_id: string;
         };
         /** DecideRequest */
         DecideRequest: {
@@ -1219,6 +1247,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["InvestigateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finding"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_corpaction_corpaction_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorpActionRequest"];
             };
         };
         responses: {
