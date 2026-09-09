@@ -5,12 +5,13 @@ import ClientView from "./ClientView";
 import ConnectionsView from "./ConnectionsView";
 import EngineeringView from "./EngineeringView";
 import KnowledgeView from "./KnowledgeView";
+import PrimeFinanceView from "./PrimeFinanceView";
 import TracesView from "./TracesView";
 import TradesView from "./TradesView";
 
-const TABS = ["Cases", "Trades", "Client", "Engineering", "Settlements", "Knowledge", "Connections", "Traces", "Audit"] as const;
+const TABS = ["Cases", "Trades", "Client", "Prime Finance", "Engineering", "Settlements", "Knowledge", "Connections", "Traces", "Audit"] as const;
 type Tab = (typeof TABS)[number];
-const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Cases", "Trades", "Client", "Engineering", "Knowledge", "Connections", "Traces"]);
+const LIVE: ReadonlySet<Tab> = new Set<Tab>(["Cases", "Trades", "Client", "Prime Finance", "Engineering", "Knowledge", "Connections", "Traces"]);
 
 export type OpenTrace = (traceId: string, spanId?: string) => void;
 
@@ -59,6 +60,7 @@ export default function App() {
       {tab === "Cases" && <CasesView openTrace={openTrace} />}
       {tab === "Trades" && <TradesView openTrace={openTrace} />}
       {tab === "Client" && <ClientView openTrace={openTrace} />}
+      {tab === "Prime Finance" && <PrimeFinanceView openTrace={openTrace} />}
       {tab === "Engineering" && <EngineeringView openTrace={openTrace} />}
       {tab === "Knowledge" && <KnowledgeView />}
       {tab === "Connections" && <ConnectionsView />}
