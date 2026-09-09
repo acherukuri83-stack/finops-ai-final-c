@@ -1,7 +1,7 @@
 # Autonomous run — status
 
-2026-09-09. **Mainline A–G complete; the deferred-depth backlog is closed.** `main` @
-`fdceb50`. No blockers.
+2026-09-09. **Mainline A–G complete; the deferred-depth backlog is closed; the optional
+Wires module has a core slice.** No blockers.
 
 Local gate at the last merge: ai-platform `pytest -m "not eval and not contract"` = **136
 passed**; `ruff` / `mypy` clean (ai-platform + simulator); simulator scenario tests pass.
@@ -34,14 +34,17 @@ agent work. #32 was the first Knowledge PR, re-opened as #33 after a rebase.)
 ## Backlog state
 
 `docs/backlog.md` opens with a **Status** line. Every deferred-depth item is shipped or
-**closed-as-accepted** (search `Closed (2026-09-09)` for each rationale). What remains,
-both by explicit owner decision and neither a gap:
+**closed-as-accepted** (search `Closed (2026-09-09)` for each rationale). The optional
+**Wires** module now has a merged core slice (PR #38): `mcp_servers/wire/` + the Wire
+specialist + the four maker/checker/cutoff/screening hard rules + `POST /investigate
+{wire_id}` + `tests/test_wire.py` (Sc. 7 / 13–16); deferred parts (seeded wire table +
+planter, wire corpus, portal `WIRE_REVIEWER` release flow, `_held_wires` discovery) are in
+`docs/backlog.md`. What remains, by explicit owner decision and not a gap:
 
 1. **End-of-project eval sweep** — a full `workflow_dispatch` run + refreshed
    `evals/SCORECARD.md`. Paused for C+ during the build; the record stays Phase A 8/9.
-   Known items for that sweep: Sc. 11 / Sc. 30 `groups` scoring, Sc. 8 evidence-citation.
-2. **Wires (Phase B)** — the optional module. Roadmap says it may be skipped; depends only
-   on A. Build only if requested.
+   Known items for that sweep: Sc. 11 / Sc. 30 `groups` scoring, Sc. 8 evidence-citation,
+   the wire scenarios once a `wire` table is seeded.
 
 ## Notes / deviations
 

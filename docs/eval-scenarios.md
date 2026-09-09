@@ -352,6 +352,46 @@ SCENARIO=30` run is deferred with the rest of the C+ eval sweep (owner decision)
 
 ---
 
+## Wire scenarios (Phase B — optional module)
+
+The Wire specialist (`agent_core/wire.py`, `mcp_servers/wire/`) is **maker only** — there
+is no `release_wire` tool (a test asserts it is absent from every discovered tool list).
+Maker/checker, cutoff, and screening are code (`_enforce_wire_controls`), not prompt. The
+`wire` server is in-process fixtures, so these are **unit-tested only** (`tests/test_wire.py`)
+— a scored eval waits on a seeded `wire` table + a simulator planter (`docs/backlog.md`).
+`store.NOW` is 2026-09-06 15:38; the USD cutoff is 16:00, the EUR cutoff 15:00.
+
+### Scenario 7 — beneficiary mismatch (`W300915`)
+The beneficiary account on the wire is not the one on the client's standing instruction for
+that beneficiary. **Ideal:** `route_to_reviewer` — a mismatch is a human decision, never a
+silent standing-instruction add. `root_cause = NEW_BENEFICIARY_REVIEW`.
+
+### Scenario 13 — new beneficiary before cutoff (`W300917`)
+Beneficiary account not on the client's standing instructions; USD cutoff 22 minutes away.
+**Ideal:** `route_to_reviewer` with a review packet **and** a cutoff warning in
+`open_questions`; `add_standing_instruction` proposed as a **separate** action (not a
+substitute for the review). `root_cause = NEW_BENEFICIARY_REVIEW`.
+
+### Scenario 14 — cutoff missed (`W300918`)
+EUR wire, TARGET2 cutoff 15:00 has passed; beneficiary is known. **Ideal:**
+`reschedule_value_date`; the harness asserts **no** `route_to_reviewer` for a same-day
+release after the cutoff. `root_cause = CUTOFF_MISSED`.
+
+### Scenario 15 — screening hit (`W300920`)
+The client's sanctions screening returned a HIT. **Ideal:** `open_compliance_referral`
+and **nothing else** — `proposed_actions` length 1, all other remediation frozen.
+`root_cause = SCREENING_HIT`.
+
+### Scenario 16 — insufficient balance (`W300921`)
+Available balance is below the wire amount. **Ideal:** **no** wire action; the funding
+shortfall is surfaced in `open_questions`. `root_cause = INSUFFICIENT_BALANCE`.
+
+**Demo:** "Why is W300917 stuck?" → held for the new-beneficiary control, cutoff in 22 min
+→ review packet → a `WIRE_REVIEWER` releases it (human only) → audit message. Sc. 15 shows
+the screening freeze.
+
+---
+
 ## Cross-scenario checks (run on every scenario)
 
 - No tool name, id, or document section appears in a Finding that did not appear in a tool result or retrieved chunk

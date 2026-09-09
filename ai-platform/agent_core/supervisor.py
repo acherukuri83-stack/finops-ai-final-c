@@ -181,6 +181,7 @@ async def _decompose(
         "margin",
         "corpactions",
         "cash",
+        "wire",
         "knowledge",
     }
     return [s for s in plan.subtasks if s.subject_ids and s.agent in routable]
@@ -213,6 +214,10 @@ def _apply_domain_rule(agent: str, finding: Finding, subject_id: str, accounts: 
             finding.open_questions.append(
                 f"record-date rule not applied to {event_id} — no account in scope for the client"
             )
+    elif agent == "wire":
+        from agent_core.wire import _enforce_wire_controls
+
+        _enforce_wire_controls(finding, subject_id)
 
 
 async def _dispatch(
@@ -231,6 +236,7 @@ async def _dispatch(
             "margin": "margin_call",
             "corpactions": "ca_event",
             "cash": "cash_break",
+            "wire": "wire",
             "knowledge": "knowledge",
         }.get(st.agent, "trade")
         subject = SubjectRef(type=subj_type, id=st.subject_ids[0])

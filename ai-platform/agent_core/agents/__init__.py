@@ -16,6 +16,7 @@ from agent_core.agents.registry import (
     RISK_CLIENT,
     SETTLEMENT,
     STOCKLOAN,
+    WIRE,
     spec_for,
 )
 
@@ -31,5 +32,6 @@ __all__ = [
     "MARGIN",
     "CORPACTIONS",
     "CASH",
+    "WIRE",
     "spec_for",
 ]

@@ -5,7 +5,7 @@ import { api, type Finding } from "./api";
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 const box: React.CSSProperties = { marginTop: 12, padding: 12, background: "#f7f7f7", borderRadius: 6 };
 
-type Domain = "loan" | "margin" | "cash" | "corpaction";
+type Domain = "loan" | "margin" | "cash" | "corpaction" | "wire";
 
 const DOMAINS: { key: Domain; label: string; hint: string; sample: string }[] = [
   { key: "loan", label: "Stock Loan", hint: "a loan id — recall window vs buy-in", sample: "LN-5001" },
@@ -16,6 +16,12 @@ const DOMAINS: { key: Domain; label: string; hint: string; sample: string }[] = 
     label: "Corp Actions",
     hint: "an event id + account id — held/lent split over the record date",
     sample: "CA-7001",
+  },
+  {
+    key: "wire",
+    label: "Wire",
+    hint: "a held wire id — route to reviewer / reschedule / refer (maker only)",
+    sample: "W300917",
   },
 ];
 
@@ -58,10 +64,11 @@ export default function PrimeFinanceView({ openTrace }: { openTrace: OpenTrace }
   return (
     <div style={{ fontSize: 13, maxWidth: 720 }}>
       <p style={{ color: "#666", fontSize: 12, marginTop: 0 }}>
-        Prime-finance specialists — Stock Loan, Margin, Cash, and Corp Actions. Each runs the same
-        plan → tool loop → synthesise → policy pipeline as Settlement, with its own tool set, its own
-        hard rule (recall window, call window, funding cutoff, record date), and its own allowlist.
-        They propose; a human approves.
+        Non-trade specialists — Stock Loan, Margin, Cash, Corp Actions, and Wire (the optional
+        module). Each runs the same plan → tool loop → synthesise → policy pipeline as Settlement,
+        with its own tool set, its own hard rule (recall window, call window, funding cutoff, record
+        date, wire maker/checker + cutoff + screening), and its own allowlist. They propose; a human
+        approves — and for a wire, only a human releases.
       </p>
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>

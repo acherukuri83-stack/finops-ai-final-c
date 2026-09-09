@@ -46,6 +46,8 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 
 > **Optional module — off the critical path.** Build whenever a second write-heavy vertical (maker–checker, cutoffs, screening) is wanted. It depends only on Phase A; nothing in C–G depends on it. Deferring it defers the pure maker–checker / human-only-release demo.
 
+> **Core slice built (2026-09-09).** `mcp_servers/wire/` (in-process fixture server: wires, holds, standing instructions, reviewer queue, cutoffs, one screening hit, balances — **no `release_wire` tool**), `WIRE` spec + `agent_core/wire.py::investigate_wire` over the shared runner, `planner/wire.md` + `synthesis/wire.md`, **four hard rules in code** (`_enforce_wire_controls`: screening HIT → referral only; balance < amount → no wire action; cutoff passed → `route_to_reviewer` → `reschedule_value_date`; new beneficiary → `route_to_reviewer`), `wire` allowlist, `POST /investigate {wire_id}`, Supervisor `wire` sub-task + `_apply_domain_rule` branch, Prime Finance portal tab Wire option. Sc. 7 / 13–16 as `tests/test_wire.py` (9). **Deferred** (`docs/backlog.md`): seeded Postgres + a planter for the wire scenarios (scored eval); a wire corpus; the portal `WIRE_REVIEWER` release flow + reviewer queue + exception report; a `_held_wires` Supervisor discovery step.
+
 **Proves:** the substrate supports a second vertical with different controls — maker–checker, standing instructions, cutoffs, screening — without touching Phase A code.
 
 | | |

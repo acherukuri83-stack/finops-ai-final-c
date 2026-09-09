@@ -7,7 +7,7 @@ trades (trade id, security, side, quantity, `failure_code`, counterparty, accoun
 Produce a `DecomposePlan` — a list of `SubTask`:
 
 - `agent`: one of `settlement`, `risk_client`, `stockloan`, `margin`, `corpactions`,
-  `cash`, `knowledge`.
+  `cash`, `wire`, `knowledge`.
   - **`settlement`** — a settlement-desk investigation of one or more failed trades:
     the failure code, the affirmation timeline, positions, resubmission. It reads client
     SSI to establish "our instruction is current" but **cannot** propose `update_ssi`.
@@ -30,6 +30,10 @@ Produce a `DecomposePlan` — a list of `SubTask`:
   - **`cash`** — a projected cash break in a currency: fund it from a facility or
     escalate, keyed on that currency's `funding_cutoff`. Raise it with the **cash-break
     id(s)** as `subject_ids` when the ask names a funding shortfall or a nostro break.
+  - **`wire`** — a held outgoing wire: route to a reviewer, move its value date, or refer
+    it to compliance (maker only — it never releases). Raise it with the **wire id(s)** as
+    `subject_ids` when the ask names a held wire or a beneficiary / cutoff / screening
+    problem on a payment.
   - **`knowledge`** — retrieval only. It proposes nothing; it returns the SOP sections
     and past incidents relevant to the client's situation, so the other specialists'
     findings can be read against the written procedure. Raise **at most one** `knowledge`

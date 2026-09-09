@@ -109,6 +109,19 @@ CASH = SpecialistSpec(
     required_tools=frozenset({("cash", "get_cash_break")}),
 )
 
+# Phase B (optional module) — the Wire specialist. Scope: its own book + `ops`. The
+# maker/checker, cutoff, and screening rules are code, in `agent_core/wire.py`. It is the
+# maker, never the checker — no `release_wire` tool exists.
+WIRE = SpecialistSpec(
+    name="wire",
+    planner_prompt="planner/wire",
+    synthesis_prompt="synthesis/wire",
+    tool_servers=frozenset({"wire", "ops"}),
+    allowlist_key="wire",
+    subject_type="wire",
+    required_tools=frozenset({("wire", "get_wire")}),
+)
+
 _BY_NAME = {
     s.name: s
     for s in (
@@ -120,6 +133,7 @@ _BY_NAME = {
         MARGIN,
         CORPACTIONS,
         CASH,
+        WIRE,
     )
 }
 
