@@ -28,6 +28,7 @@ from agent_core.schemas.finding import Finding
 from agent_core.schemas.review import Review
 from agent_core.stockloan import investigate_loan
 from agent_core.supervisor import investigate_client
+from agent_core.wire import investigate_wire
 from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
@@ -83,6 +84,7 @@ class InvestigateRequest(BaseModel):
     loan_id: str | None = None  # Phase F: a stock-loan question -> the StockLoan specialist
     margin_call_id: str | None = None  # Phase F: a margin call -> the Margin specialist
     cash_break_id: str | None = None  # Phase F: a projected cash break -> the Cash specialist
+    wire_id: str | None = None  # Phase B: a held wire -> the Wire specialist (optional module)
 
 
 class DecideRequest(BaseModel):
@@ -117,11 +119,13 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
         return await investigate_margin_call(req.margin_call_id)
     if req.cash_break_id:
         return await investigate_cash_break(req.cash_break_id)
+    if req.wire_id:
+        return await investigate_wire(req.wire_id)
     if req.trade_id:
         return await investigate(req.trade_id)
     raise HTTPException(
         status_code=422,
-        detail="provide trade_id, client_id, loan_id, margin_call_id, or cash_break_id",
+        detail="provide trade_id, client_id, loan_id, margin_call_id, cash_break_id, or wire_id",
     )
 
 

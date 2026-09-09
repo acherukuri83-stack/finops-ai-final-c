@@ -2,9 +2,9 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: mainline A–G complete; deferred-depth backlog closed
+## Current phase: mainline A–G complete + the optional Wires module (core slice)
 
-Every mainline phase A–G has a merged core slice **and** its deferred depth — shipped, or closed-as-accepted with a rationale in `docs/backlog.md` (search `Closed (2026-09-09)`). Two things remain, both by explicit owner decision and neither a gap: the end-of-project `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`, and the optional **Wires** module. New work starts from a fresh product ask, not the backlog.
+Every mainline phase A–G has a merged core slice **and** its deferred depth — shipped, or closed-as-accepted with a rationale in `docs/backlog.md` (search `Closed (2026-09-09)`). The optional **Wires** module now has a merged core slice too (Wire specialist + `wire` MCP server + maker/checker/cutoff/screening hard rules; Sc. 7 / 13–16 unit-tested). One thing remains, by explicit owner decision and not a gap: the end-of-project `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`. New work starts from a fresh product ask.
 
 **Depth landed in this pass:**
 - **E verification mode** — `developer.verify_change(ticket_id)`: apply → re-check job/lag → residual trade to Settlement (`sub_finding`) → write retrievable `INC-3xxx`; a failed fix reports FAILED, proposes nothing. `POST /verify`, `platform.get_incident`.
@@ -20,14 +20,10 @@ Every mainline phase A–G has a merged core slice **and** its deferred depth �
 - **C Knowledge specialist wired** — `agents/base.py::run_knowledge` (degenerate: fixed retrieval, no planner, no model call, proposes nothing) → cited `evidence` + relevance notes in `checked`, `subject.type = "knowledge"`. Supervisor `_decompose` / `_dispatch` route it; `_business()` keeps it out of outcome reconciliation and the incident recommendation. `decompose.md` rewritten to cover all seven agents (also fixed the `margin` / `corpactions` / `cash` prompt gap).
 - **F prime-finance data seeded** — the four domain stores (`mcp_servers/{stockloan,margin,corpactions,cash}/store.py`) moved onto `mcp_servers/_finance_store.py`: a MEM mode (old fixtures verbatim, unit suite) + a SQL mode over seeded Postgres (14 platform-tier tables, `CREATE TABLE IF NOT EXISTS`, mirrored in `simulator/simulator/finance_tables.py` + `finance_baseline.py`, `make seed`). Planter keys `loans` / `lending` / `margin_calls` / `ca_events` / `ca_entitlements` / `cash_breaks`. `supervisor._open_loans` discovers a client's open loans → `_decompose`. `simulator/scenarios/030_mixed_domain_client.yaml` seeded (scored run deferred with the C+ sweep).
 - **F fan-out hard rules** — `supervisor._apply_domain_rule` runs the per-domain `_enforce_*` (`_enforce_recall_window` / `_enforce_call_window` / `_enforce_funding_cutoff` / `_enforce_record_date`) on each sub-finding after `run_specialist`, so the Supervisor path no longer bypasses the code rules that `investigate_*` apply (rule 4).
+- **B Wires module (core slice)** — `mcp_servers/wire/` (in-process fixture server: wires, holds, standing instructions, reviewer queue, cutoffs, one screening hit, balances; **no `release_wire` tool**), `WIRE` spec + `agent_core/wire.py::investigate_wire`, `planner/wire.md` + `synthesis/wire.md`, **four hard rules in code** (`_enforce_wire_controls`: screening HIT → referral only; balance < amount → no wire action; cutoff passed → `route_to_reviewer` → `reschedule_value_date`; new beneficiary → `route_to_reviewer`). `POST /investigate {wire_id}`; Supervisor `wire` sub-task + `_apply_domain_rule` branch; Prime Finance portal tab gains a Wire option. `tests/test_wire.py` (9). Deferred: seeded Postgres + a planter for the wire scenarios; a wire corpus; the `WIRE_REVIEWER` release flow + exception report in the portal.
 
-**Still deferred (`docs/backlog.md`, any order):**
-The deferred-depth backlog is now **closed** — see `docs/backlog.md` for each item's
-disposition (shipped, or closed-as-accepted with a rationale). The two things that
-remain, both by explicit owner decision and neither a gap:
-
+**Still deferred (`docs/backlog.md`):**
 - **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`, deferred to the **end of the project** (paused for C+ during the build; the record stays the Phase A 8/9). This is the final validation gate, not deferred depth.
-- **B (Wires)** — the optional module (roadmap says it may be skipped; depends only on A). Build only if requested.
 
 **Before picking up either:** read its section in `docs/phase-breakdown.md`, follow the existing patterns (seeded stores via `_finance_store` / `platform_api.store`, hard rules in code, per-agent allowlists, `run_specialist` / `run_knowledge`). **No eval sweeps for C+ during the build** (owner decision).
 

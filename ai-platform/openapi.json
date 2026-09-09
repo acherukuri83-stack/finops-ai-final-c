@@ -1324,6 +1324,17 @@
               }
             ],
             "title": "Cash Break Id"
+          },
+          "wire_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Id"
           }
         },
         "type": "object",

@@ -73,8 +73,15 @@ export const api = {
   diagnose: (subjectId: string) => postJSON<Finding>("/diagnose", { subject_id: subjectId }),
   verify: (ticketId: string) => postJSON<Finding>("/verify", { ticket_id: ticketId }),
   review: (prId: string) => postJSON<Review>("/review", { pr_id: prId }),
-  primeFinance: (kind: "loan" | "margin" | "cash", id: string) => {
-    const key = kind === "loan" ? "loan_id" : kind === "margin" ? "margin_call_id" : "cash_break_id";
+  primeFinance: (kind: "loan" | "margin" | "cash" | "wire", id: string) => {
+    const key =
+      kind === "loan"
+        ? "loan_id"
+        : kind === "margin"
+          ? "margin_call_id"
+          : kind === "wire"
+            ? "wire_id"
+            : "cash_break_id";
     return postJSON<Finding>("/investigate", { [key]: id });
   },
   corpaction: (eventId: string, accountId: string) =>

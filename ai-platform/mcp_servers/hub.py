@@ -126,6 +126,20 @@ from mcp_servers.trade.tools import (
     get_trade,
     resubmit_settlement,
 )
+from mcp_servers.wire.server import mcp as wire_mcp
+from mcp_servers.wire.tools import (
+    add_standing_instruction,
+    get_approval_queue,
+    get_available_balance,
+    get_cutoff,
+    get_standing_instructions,
+    get_wire,
+    get_wire_audit_trail,
+    get_wire_screening,
+    open_compliance_referral,
+    reschedule_value_date,
+    route_to_reviewer,
+)
 from platform_api.settings import settings
 
 _ToolFn = Callable[..., Awaitable[Any]]
@@ -154,6 +168,10 @@ WRITE_TOOLS = frozenset(
         "escalate_cash",
         "open_pull_request",
         "post_review",
+        "route_to_reviewer",
+        "add_standing_instruction",
+        "reschedule_value_date",
+        "open_compliance_referral",
     }
 )
 GOV_TOOLS = frozenset({"create_case", "update_case", "propose_action", "log_audit"})
@@ -288,6 +306,24 @@ SERVERS: dict[str, ServerSpec] = {
             "read+write",
         ),
         ServerSpec(
+            "wire",
+            wire_mcp,
+            [
+                get_wire,
+                get_wire_audit_trail,
+                get_standing_instructions,
+                get_approval_queue,
+                get_cutoff,
+                get_wire_screening,
+                get_available_balance,
+                route_to_reviewer,
+                add_standing_instruction,
+                reschedule_value_date,
+                open_compliance_referral,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -324,6 +360,9 @@ LIST_TOOLS = frozenset(
         "list_ca_events",
         "list_cash_breaks",
         "get_funding_ladder",
+        "get_wire_audit_trail",
+        "get_standing_instructions",
+        "get_approval_queue",
     }
 )
 

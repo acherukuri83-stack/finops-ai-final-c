@@ -2,13 +2,25 @@
 
 Ideas that are out of the current phase's scope. Append; don't build.
 
-**Status (2026-09-09): the deferred-depth backlog is closed.** Every mainline A–G phase
-has a merged core slice plus its deferred depth, either shipped or closed-as-accepted with
-a rationale inline below (search `Closed (2026-09-09)`). Two things remain by explicit
-owner decision, neither a gap: the end-of-project `workflow_dispatch` eval sweep +
-refreshed `evals/SCORECARD.md` (paused for C+ during the build; the record stays Phase A
-8/9), and the optional **Wires** module (roadmap says it may be skipped). Older
-`revisit-if-a-scenario-needs-it` notes below stay as-is — they're pointers, not open work.
+**Status (2026-09-09): the deferred-depth backlog is closed; the optional Wires module has
+a core slice.** Every mainline A–G phase has a merged core slice plus its deferred depth,
+either shipped or closed-as-accepted with a rationale inline below (search
+`Closed (2026-09-09)`). The optional **Wires** module now has a merged core slice —
+`mcp_servers/wire/`, `agent_core/wire.py`, the four maker/checker/cutoff/screening hard
+rules, `POST /investigate {wire_id}`, `tests/test_wire.py` (Sc. 7 / 13–16 unit-tested).
+One thing remains by explicit owner decision, not a gap: the end-of-project
+`workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` (paused for C+ during the
+build; the record stays Phase A 8/9). Older `revisit-if-a-scenario-needs-it` notes below
+stay as-is — they're pointers, not open work.
+
+- Phase B (Wires) core slice (2026-09-09): shipped the Wire specialist + `wire` server as
+  **in-process Python fixtures**, unit-tested (`tests/test_wire.py`), **no scored eval**.
+  Deferred: seeded Postgres + a `simulator` planter for the wire scenarios (Sc. 7 /
+  13–16 are documented in `docs/eval-scenarios.md`, exercised only as unit tests); a wire
+  corpus (`Wire Processing Guide` §5.2 / §9.1, sanctions procedure, `INC-2001…2005`); the
+  portal `WIRE_REVIEWER` release flow, reviewer queue view, and daily wire exception
+  report; a `_held_wires` Supervisor discovery step (today a `wire` sub-task only arises
+  if the decompose model names a wire id — there is no client→held-wires lookup).
 
 - `docs/tool-contracts.md`'s `Account` shape lists `risk_flags[]`, and `Client`/`Counterparty`
   mention `restrictions[]`/`contacts[]` — the Phase A schema (`V2__phase_a_schema.sql`) has no

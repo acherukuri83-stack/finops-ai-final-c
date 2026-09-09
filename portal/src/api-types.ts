@@ -596,6 +596,8 @@ export interface components {
             margin_call_id?: string | null;
             /** Cash Break Id */
             cash_break_id?: string | null;
+            /** Wire Id */
+            wire_id?: string | null;
         };
         /** KnowledgeHit */
         KnowledgeHit: {
