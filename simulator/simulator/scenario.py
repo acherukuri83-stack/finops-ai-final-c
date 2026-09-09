@@ -23,6 +23,10 @@ PLANT_KEYS = {
     "securities",
     "loans",  # Phase F — an open stock loan (mixed-domain client, Sc. 30)
     "lending",  # Phase F — street lending availability for a security
+    "margin_calls",  # Phase F — a margin call
+    "ca_events",  # Phase F — a corporate-action event
+    "ca_entitlements",  # Phase F — an account's held/lent split over the record date
+    "cash_breaks",  # Phase F — a projected cash break
     "logs",
     "incidents",
     "corpus_fixtures",

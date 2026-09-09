@@ -80,7 +80,9 @@ async def investigate_client(
             _persist_trace(finding, trace_id, ask, client_id, scenario_id, case_id="")
             return finding
 
-        sub_findings = await _dispatch(client, subtasks, scenario_id)
+        accounts = {str(t.get("account_id")) for t in failed if t.get("account_id")}
+        accounts |= {str(ln.get("account_id")) for ln in loans if ln.get("account_id")}
+        sub_findings = await _dispatch(client, subtasks, scenario_id, accounts)
         finding = await _synthesize(client, ask, client_id, subtasks, sub_findings)
         finding.trace_id = trace_id
         finding.sub_findings = sub_findings
@@ -184,9 +186,43 @@ async def _decompose(
     return [s for s in plan.subtasks if s.subject_ids and s.agent in routable]
 
 
+def _apply_domain_rule(agent: str, finding: Finding, subject_id: str, accounts: set[str]) -> None:
+    """Run the domain's hard rule on a sub-finding — the Supervisor calls `run_specialist`
+    directly, so the `_enforce_*` that the per-domain `investigate_*` entry points apply
+    would otherwise be skipped (hard rules are code, not prompt — CLAUDE.md rule 4)."""
+    if agent == "stockloan":
+        from agent_core.stockloan import _enforce_recall_window
+
+        _enforce_recall_window(finding, subject_id)
+    elif agent == "margin":
+        from agent_core.margin import _enforce_call_window
+
+        _enforce_call_window(finding, subject_id)
+    elif agent == "cash":
+        from agent_core.cash import _enforce_funding_cutoff
+
+        _enforce_funding_cutoff(finding, subject_id)
+    elif agent == "corpactions":
+        from agent_core.corpactions import _enforce_record_date
+
+        event_id, _, acct = subject_id.partition("@")
+        acct = acct or (next(iter(sorted(accounts)), ""))
+        if acct:
+            _enforce_record_date(finding, event_id, acct)
+        else:
+            finding.open_questions.append(
+                f"record-date rule not applied to {event_id} — no account in scope for the client"
+            )
+
+
 async def _dispatch(
-    client: ModelClient, subtasks: list[SubTask], scenario_id: str | None
+    client: ModelClient,
+    subtasks: list[SubTask],
+    scenario_id: str | None,
+    accounts: set[str] | None = None,
 ) -> list[Finding]:
+    accts = accounts or set()
+
     async def one(st: SubTask) -> Finding:
         spec = spec_for(st.agent)
         subj_type = {
@@ -215,7 +251,7 @@ async def _dispatch(
                 return await run_knowledge(
                     spec, subject=subject, request=scoped, scenario_id=scenario_id
                 )
-            return await run_specialist(
+            finding = await run_specialist(
                 spec,
                 subject=subject,
                 request=scoped,
@@ -223,6 +259,8 @@ async def _dispatch(
                 scenario_id=scenario_id,
                 open_case=False,
             )
+            _apply_domain_rule(st.agent, finding, st.subject_ids[0], accts)
+            return finding
 
     return list(await asyncio.gather(*(one(st) for st in subtasks)))
 

@@ -2,11 +2,11 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: filling in deferred phase depth, item by item
+## Current phase: mainline A–G complete; deferred-depth backlog closed
 
-Every mainline phase A–G has a merged core slice; deferred depth is being picked up one PR at a time (each: read `docs/backlog.md` + `docs/phase-breakdown.md`, follow the established patterns — in-process fixture MCP servers, hard rules in code, per-agent allowlists, `run_specialist`).
+Every mainline phase A–G has a merged core slice **and** its deferred depth — shipped, or closed-as-accepted with a rationale in `docs/backlog.md` (search `Closed (2026-09-09)`). Two things remain, both by explicit owner decision and neither a gap: the end-of-project `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`, and the optional **Wires** module. New work starts from a fresh product ask, not the backlog.
 
-**Landed so far in this pass:**
+**Depth landed in this pass:**
 - **E verification mode** — `developer.verify_change(ticket_id)`: apply → re-check job/lag → residual trade to Settlement (`sub_finding`) → write retrievable `INC-3xxx`; a failed fix reports FAILED, proposes nothing. `POST /verify`, `platform.get_incident`.
 - **E PR-review mode** — `repo` + `ci` fixture servers, `Review` schema, `agent_core/review.py` (surface classification + deterministic checks + platform hard rules as code: write tool w/o `approval_id` → BLOCKER `security.md §4.1`; new `action_type` off every allowlist → MAJOR §5; PII into a model call → BLOCKER §7; `authored_by: agent` scenario → needs a human). `POST /review`. No `approve_pr` / `merge_pr` tool.
 - **E eval-authoring mode** — `agent_core/eval_authoring.py::author_scenario(failure_code)`: a template per known failure code → a planted-chain YAML + `expect:` block + baseline, labelled `authored_by: agent` (which review mode blocks from merge without a human). `POST /author-scenario`. Deterministic; the model-driven "from any SOP section" version is a follow-up.
@@ -18,16 +18,18 @@ Every mainline phase A–G has a merged core slice; deferred depth is being pick
 - **F Prime Finance portal tab** — `portal/src/PrimeFinanceView.tsx`: one tab, a domain selector (Stock Loan / Margin / Cash / Corp Actions) → the right endpoint → the shared `Finding` renderer. `api.primeFinance` / `api.corpaction`.
 - **E bounded Supervisor→Developer hand-off** — `supervisor._recommend_incident_review`: all sub-findings `INSUFFICIENT_EVIDENCE` → an `open_questions` note recommending `POST /diagnose`. Recommendation only, never auto-dispatch.
 - **C Knowledge specialist wired** — `agents/base.py::run_knowledge` (degenerate: fixed retrieval, no planner, no model call, proposes nothing) → cited `evidence` + relevance notes in `checked`, `subject.type = "knowledge"`. Supervisor `_decompose` / `_dispatch` route it; `_business()` keeps it out of outcome reconciliation and the incident recommendation. `decompose.md` rewritten to cover all seven agents (also fixed the `margin` / `corpactions` / `cash` prompt gap).
-- **F prime-finance data seeded** — the four domain stores (`mcp_servers/{stockloan,margin,corpactions,cash}/store.py`) moved onto `mcp_servers/_finance_store.py`: a MEM mode (old fixtures verbatim, unit suite) + a SQL mode over seeded Postgres (14 platform-tier tables, `CREATE TABLE IF NOT EXISTS`, mirrored in `simulator/simulator/finance_tables.py` + `finance_baseline.py`, `make seed`). New `loans` / `lending` planter keys. `supervisor._open_loans` discovers a client's open loans → `_decompose`. `simulator/scenarios/030_mixed_domain_client.yaml` seeded (scored run deferred with the C+ sweep).
+- **F prime-finance data seeded** — the four domain stores (`mcp_servers/{stockloan,margin,corpactions,cash}/store.py`) moved onto `mcp_servers/_finance_store.py`: a MEM mode (old fixtures verbatim, unit suite) + a SQL mode over seeded Postgres (14 platform-tier tables, `CREATE TABLE IF NOT EXISTS`, mirrored in `simulator/simulator/finance_tables.py` + `finance_baseline.py`, `make seed`). Planter keys `loans` / `lending` / `margin_calls` / `ca_events` / `ca_entitlements` / `cash_breaks`. `supervisor._open_loans` discovers a client's open loans → `_decompose`. `simulator/scenarios/030_mixed_domain_client.yaml` seeded (scored run deferred with the C+ sweep).
+- **F fan-out hard rules** — `supervisor._apply_domain_rule` runs the per-domain `_enforce_*` (`_enforce_recall_window` / `_enforce_call_window` / `_enforce_funding_cutoff` / `_enforce_record_date`) on each sub-finding after `run_specialist`, so the Supervisor path no longer bypasses the code rules that `investigate_*` apply (rule 4).
 
 **Still deferred (`docs/backlog.md`, any order):**
-- **E** — *auto-dispatch* of the Developer Agent on all-`INSUFFICIENT_EVIDENCE` (the bounded recommendation is shipped; auto-dispatch is still blocked on naming the incident subject with no safe default); standards corpus in pgvector; eval-authoring's model-driven "from any SOP section" mode (the template version is shipped).
-- **F** — `planter.py` handlers for `margin` / `corpactions` / `cash` (land with a scenario that plants them); the Supervisor fan-out bypasses the per-domain hard rules (`_enforce_recall_window` etc. run only in the `investigate_*` entry points).
-- **G** — trace replay/diff polish; Bedrock swap; memory loop.
-- **B (Wires)** — the optional module (unbuilt; depends only on A).
-- **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` (paused for C+ during the build by owner decision; the record stays the Phase A 8/9).
+The deferred-depth backlog is now **closed** — see `docs/backlog.md` for each item's
+disposition (shipped, or closed-as-accepted with a rationale). The two things that
+remain, both by explicit owner decision and neither a gap:
 
-**Before starting any of the above:** read its section in `docs/phase-breakdown.md` and the relevant nested `CLAUDE.md` (`agent_core/agents/`, `platform_api/events/`, `mcp_servers/platform/`, `mcp_servers/stockloan/`), bump this line to name the active phase, and follow the existing patterns (in-process fixture servers, hard rules in code, per-agent allowlists, `run_specialist`). **No eval sweeps for C+ during the build** (owner decision).
+- **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md`, deferred to the **end of the project** (paused for C+ during the build; the record stays the Phase A 8/9). This is the final validation gate, not deferred depth.
+- **B (Wires)** — the optional module (roadmap says it may be skipped; depends only on A). Build only if requested.
+
+**Before picking up either:** read its section in `docs/phase-breakdown.md`, follow the existing patterns (seeded stores via `_finance_store` / `platform_api.store`, hard rules in code, per-agent allowlists, `run_specialist` / `run_knowledge`). **No eval sweeps for C+ during the build** (owner decision).
 
 ## Roadmap (all phases, for orientation only)
 

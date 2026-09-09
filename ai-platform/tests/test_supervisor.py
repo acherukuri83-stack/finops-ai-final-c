@@ -109,7 +109,7 @@ def _stub_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _install_dispatch(monkeypatch: pytest.MonkeyPatch, findings: list[Finding]) -> None:
-    async def _dispatch(_client: Any, _subtasks: Any, _scenario_id: Any) -> list[Finding]:
+    async def _dispatch(*_a: Any, **_k: Any) -> list[Finding]:
         return findings
 
     monkeypatch.setattr(supervisor, "_dispatch", _dispatch)
@@ -135,6 +135,22 @@ async def test_open_loans_discovered_from_a_failed_trades_account(
 
 async def test_open_loans_empty_when_no_failed_trade_names_an_account() -> None:
     assert await supervisor._open_loans([{"trade_id": "T1"}]) == []
+
+
+def test_fan_out_applies_the_domain_hard_rule_to_a_sub_finding() -> None:
+    """The Supervisor calls `run_specialist` directly, so `_apply_domain_rule` must run the
+    per-domain `_enforce_*` that the `investigate_*` entry points apply. LN-5002's recall
+    notice window has passed in the seeded store — `initiate_recall` -> `book_buy_in`."""
+    sub = _stockloan_sub(loan_id="LN-5002", action="initiate_recall")
+    supervisor._apply_domain_rule("stockloan", sub, "LN-5002", set())
+    assert [a.action_type for a in sub.proposed_actions] == ["book_buy_in"]
+    assert sub.root_cause == "RECALL_WINDOW_MISSED"
+
+
+def test_fan_out_corpactions_rule_notes_a_missing_account() -> None:
+    sub = _stockloan_sub(loan_id="CA-7002", action="submit_election")
+    supervisor._apply_domain_rule("corpactions", sub, "CA-7002", set())
+    assert any("no account in scope" in q for q in sub.open_questions)
 
 
 async def test_decompose_input_carries_open_loans(monkeypatch: pytest.MonkeyPatch) -> None:
