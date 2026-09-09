@@ -123,10 +123,16 @@ Ideas that are out of the current phase's scope. Append; don't build.
     **Deferred:** the model-driven "from any SOP section" version (this slice is a fixed
     3-code template map); it does not open the draft PR itself (`open_pull_request` is
     approval-gated — a human raises it from the artifact).
-  - **Supervisor hand-off** — `agent_core/supervisor.py` should route to
-    `developer.investigate_incident` when every business sub-finding is
-    `INSUFFICIENT_EVIDENCE`. Today `investigate_incident` is only reachable via
-    `POST /diagnose`.
+  - ~~Supervisor hand-off~~ **BOUNDED VERSION DONE (2026-09-09)** —
+    `supervisor._recommend_incident_review`: when *every* dispatched sub-finding is
+    `INSUFFICIENT_EVIDENCE`, the client `Finding` gets an `open_questions` note
+    recommending `POST /diagnose` with the suspected job / service.
+    `tests/test_supervisor.py` (+2). **Still deferred — auto-dispatch:** the Supervisor
+    does not itself call `developer.investigate_incident`, because "which platform
+    subject" (which job id / which service) has no safe default to synthesise — a human
+    picks it from the recommendation. Resolving that (e.g. the Supervisor inspecting
+    recent failed job runs / degraded `/connections` health to name a subject) is the
+    open product question.
   - **standards corpus** — `docs/standards/` indexed for review-mode retrieval.
   - `platform` server data is Python fixtures in `mcp_servers/platform/store.py` (not the
     simulator / Postgres) — fine for the slice; a fuller Phase E may move it to a seeded
@@ -159,7 +165,11 @@ Ideas that are out of the current phase's scope. Append; don't build.
     drop test). A **scored** Sc. 30 YAML still waits on stock-loan data being seeded so
     `investigate_client` can *discover* the loan the way it discovers failed trades (today
     `supervisor._failed_trades` only queries `find_trades`). Wires are out (optional module).
-  - **Portal affordance** — `investigate_loan` is reachable only via
-    `POST /investigate {loan_id}`; no Stock Loan tab.
+  - ~~Portal affordance~~ **DONE (2026-09-09)** — `portal/src/PrimeFinanceView.tsx`, a
+    single **Prime Finance** tab with a domain selector (Stock Loan / Margin / Cash /
+    Corp Actions) → the right endpoint (`POST /investigate {loan_id|margin_call_id|
+    cash_break_id}` or `POST /corpaction {event_id, account_id}`) → the shared `Finding`
+    renderer (outcome / root cause / proposed / rejected / open questions / trace link).
+    `api.primeFinance(kind, id)` + `api.corpaction(eventId, accountId)` in `api.ts`.
   - `market` / `position` are on the `stockloan` spec's scope but the slice's fixtures /
     tests don't exercise a price move or a real position lookup.

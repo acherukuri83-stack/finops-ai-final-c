@@ -85,6 +85,7 @@ async def investigate_client(
         finding.sub_findings = sub_findings
         _reconcile_outcome(finding, sub_findings)
         _carry_open_questions(finding, sub_findings)
+        _recommend_incident_review(finding, sub_findings)
         _enforce_known_actions(finding, sub_findings)
         _repolicy_grouped_actions(finding, sub_findings)
         case_id = _open_case(finding, client_id)
@@ -253,6 +254,29 @@ def _carry_open_questions(finding: Finding, sub_findings: list[Finding]) -> None
             if tagged not in have:
                 finding.open_questions.append(tagged)
                 have.add(tagged)
+
+
+def _recommend_incident_review(finding: Finding, sub_findings: list[Finding]) -> None:
+    """Bounded Supervisor -> Developer Agent hand-off.
+
+    When *every* dispatched specialist came back with `INSUFFICIENT_EVIDENCE`, the client's
+    trades share no domain cause the specialists can see — a platform fault (a bad job run,
+    a degraded enterprise API) is a live hypothesis. Surface that as a recommendation only:
+    the Supervisor does not auto-dispatch the Developer Agent, because "what platform
+    subject" (which job / which service) is an unresolved product question. A human runs
+    `POST /diagnose` with the subject they suspect.
+    """
+    if not sub_findings:
+        return
+    if not all(f.outcome is Outcome.INSUFFICIENT_EVIDENCE for f in sub_findings):
+        return
+    note = (
+        "every specialist returned INSUFFICIENT_EVIDENCE — no shared domain cause found; "
+        "consider a platform incident review (POST /diagnose with the suspected job / "
+        "service). Not auto-dispatched: the platform subject is not known here."
+    )
+    if note not in set(finding.open_questions):
+        finding.open_questions.append(note)
 
 
 def _enforce_known_actions(finding: Finding, sub_findings: list[Finding]) -> None:

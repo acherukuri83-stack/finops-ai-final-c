@@ -15,10 +15,12 @@ Every mainline phase A–G has a merged core slice; deferred depth is being pick
 - **F Cash domain** — `cash` server + `CASH` spec + `agent_core/cash.py::investigate_cash_break`; **fund-vs-escalate hard rule in code** (`_enforce_funding_cutoff` on the currency `funding_cutoff`). `POST /investigate {cash_break_id}`; Supervisor `cash` sub-task. **All four prime-finance domains now shipped** (stockloan, margin, corpactions, cash).
 - **G obs** — `schema_validation` guardrail span (from `complete_structured_traced`) + `finops.tool.retries` (from `_enterprise.last_retries()`).
 - **Sc. 30 mechanism** — Supervisor correlates `settlement` + `stockloan` sub-findings into one mixed-domain client answer (unit-tested).
+- **F Prime Finance portal tab** — `portal/src/PrimeFinanceView.tsx`: one tab, a domain selector (Stock Loan / Margin / Cash / Corp Actions) → the right endpoint → the shared `Finding` renderer. `api.primeFinance` / `api.corpaction`.
+- **E bounded Supervisor→Developer hand-off** — `supervisor._recommend_incident_review`: all sub-findings `INSUFFICIENT_EVIDENCE` → an `open_questions` note recommending `POST /diagnose`. Recommendation only, never auto-dispatch.
 
 **Still deferred (`docs/backlog.md`, any order):**
-- **E** — Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE` (product-design open item — no clean incident-subject); standards corpus in pgvector; eval-authoring's model-driven "from any SOP section" mode (the template version is shipped).
-- **F** — seeded table + `simulator` planter for the prime-finance domains (unlocks a scored Sc. 30); one shared portal "Prime Finance" tab (loan / margin / corpactions / cash).
+- **E** — *auto-dispatch* of the Developer Agent on all-`INSUFFICIENT_EVIDENCE` (the bounded recommendation is shipped; auto-dispatch is still blocked on naming the incident subject with no safe default); standards corpus in pgvector; eval-authoring's model-driven "from any SOP section" mode (the template version is shipped).
+- **F** — seeded table + `simulator` planter for the prime-finance domains (unlocks a scored Sc. 30).
 - **G** — trace replay/diff polish; Bedrock swap; memory loop.
 - **B (Wires)** — optional module, unbuilt.
 - **Project-wide** — full `workflow_dispatch` eval sweep + refreshed `SCORECARD.md` (paused for C+ by owner decision; record stays Phase A 8/9).

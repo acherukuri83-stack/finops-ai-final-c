@@ -188,6 +188,80 @@ async def test_insufficient_sub_finding_is_surfaced_verbatim(
     assert finding.outcome is Outcome.INSUFFICIENT_EVIDENCE
 
 
+async def test_all_insufficient_recommends_a_platform_incident_review(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Bounded Supervisor -> Developer hand-off: when *every* specialist returns
+    INSUFFICIENT_EVIDENCE, the client Finding carries a recommendation to run a platform
+    incident review — a recommendation only, never an auto-dispatch."""
+    subs = [
+        Finding(
+            subject=SubjectRef(type="trade", id="T1"),
+            outcome=Outcome.INSUFFICIENT_EVIDENCE,
+            confidence_basis="no failure_code",
+        ),
+        Finding(
+            subject=SubjectRef(type="trade", id="T4"),
+            outcome=Outcome.INSUFFICIENT_EVIDENCE,
+            confidence_basis="nothing anomalous",
+        ),
+    ]
+    _install_dispatch(monkeypatch, subs)
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose({"agent": "settlement", "subject_ids": ["T1"], "question": "q"})
+            ),
+            ModelResponse(text=_client_finding(outcome="INSUFFICIENT_EVIDENCE")),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    rec = [q for q in finding.open_questions if "POST /diagnose" in q]
+    assert rec, finding.open_questions
+    assert "Not auto-dispatched" in rec[0]
+    # it is a note, not an action
+    assert not any(a.action_type == "diagnose" for a in finding.proposed_actions)
+
+
+async def test_mixed_outcomes_do_not_trigger_the_incident_recommendation(
+    _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    subs = [
+        _settlement_sub(subjects=["T1"], root_cause="COUNTERPARTY_INSTRUCTION_STALE"),
+        Finding(
+            subject=SubjectRef(type="trade", id="T4"),
+            outcome=Outcome.INSUFFICIENT_EVIDENCE,
+            confidence_basis="nothing anomalous",
+        ),
+    ]
+    _install_dispatch(monkeypatch, subs)
+    fake = FakeModelClient(
+        [
+            ModelResponse(
+                text=_decompose({"agent": "settlement", "subject_ids": ["T1"], "question": "q"})
+            ),
+            ModelResponse(
+                text=_client_finding(
+                    proposed_actions=[
+                        {
+                            "action_type": "resubmit_settlement",
+                            "rationale": "cpty re-affirms",
+                            "impact": [{"type": "trade", "id": "T1"}],
+                            "proposed_by": "settlement",
+                        }
+                    ]
+                )
+            ),
+        ]
+    )
+
+    finding = await supervisor.investigate_client("HEDGE_FUND_101", client=fake)
+
+    assert not any("POST /diagnose" in q for q in finding.open_questions)
+
+
 async def test_known_actions_registry_catches_a_dropped_proposal(
     _stub_pipeline: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
