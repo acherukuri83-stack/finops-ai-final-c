@@ -115,9 +115,14 @@ Ideas that are out of the current phase's scope. Append; don't build.
     prioritisation layer over the deterministic results (the slice is fully code);
     standards retrieval is a direct `docs/standards/*.md` § cite, not pgvector;
     `repo.get_source` dropped as redundant with `platform.get_source`.
-  - **eval-authoring mode** — SOP section → scenario YAML + `expect:` + fixtures →
-    baseline `run_eval` → draft PR labelled `authored_by: agent` (blocked from merge
-    without a human reviewer).
+  - ~~eval-authoring mode~~ **DONE (2026-09-09)** — `agent_core/eval_authoring.py::author_scenario`
+    (`POST /author-scenario`): a **template per known failure code** →
+    `AuthoredScenario` (planted-chain YAML + `expect:` block + `ci.run_eval` baseline),
+    labelled `authored_by: agent` — which PR-review mode (`review._code_rules`) already
+    forces `REQUEST_CHANGES` on until a human signs off. `tests/test_eval_authoring.py` (7).
+    **Deferred:** the model-driven "from any SOP section" version (this slice is a fixed
+    3-code template map); it does not open the draft PR itself (`open_pull_request` is
+    approval-gated — a human raises it from the artifact).
   - **Supervisor hand-off** — `agent_core/supervisor.py` should route to
     `developer.investigate_incident` when every business sub-finding is
     `INSUFFICIENT_EVIDENCE`. Today `investigate_incident` is only reachable via
