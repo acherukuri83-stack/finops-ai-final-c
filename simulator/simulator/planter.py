@@ -18,6 +18,7 @@ from typing import Any
 
 from sqlalchemy import Connection, delete, text
 
+from simulator.finance_tables import lending_availability, stock_loans
 from simulator.scenario import Scenario
 from simulator.tables import (
     affirmations,
@@ -240,6 +241,45 @@ def _plant_logs(conn: Connection, rows: list[dict[str, Any]]) -> None:
     )
 
 
+def _plant_loans(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    loan_ids = {r["id"] for r in rows}
+    conn.execute(delete(stock_loans).where(stock_loans.c.loan_id.in_(loan_ids)))
+    conn.execute(
+        stock_loans.insert(),
+        [
+            {
+                "loan_id": r["id"],
+                "account_id": r["account"],
+                "security_id": r["security"],
+                "counterparty": r.get("counterparty", r.get("cpty")),
+                "qty": r["qty"],
+                "rate_bps": r.get("rate_bps", 25),
+                "trade_date": _parse_date(r["trade_date"]) if r.get("trade_date") else None,
+                "open": r.get("open", True),
+                "return_needed_by": (
+                    _parse_date(r["return_needed_by"]) if r.get("return_needed_by") else None
+                ),
+            }
+            for r in rows
+        ],
+    )
+
+
+def _plant_lending(conn: Connection, rows: list[dict[str, Any]]) -> None:
+    for r in rows:
+        conn.execute(
+            delete(lending_availability).where(lending_availability.c.security_id == r["security"])
+        )
+        conn.execute(
+            lending_availability.insert().values(
+                security_id=r["security"],
+                lendable_qty=r["lendable_qty"],
+                on_loan_qty=r["on_loan_qty"],
+                gc_rate_bps=r.get("gc_rate_bps", 25),
+            )
+        )
+
+
 def _plant_incidents(conn: Connection, ids: list[str]) -> None:
     conn.execute(delete(incidents).where(incidents.c.incident_id.in_(ids)))
     conn.execute(
@@ -266,6 +306,8 @@ HANDLERS: dict[str, Callable[[Connection, Any], None]] = {
     "borrow": _plant_borrow,
     "restrictions": _plant_restrictions,
     "securities": _plant_securities,
+    "loans": _plant_loans,
+    "lending": _plant_lending,
     "logs": _plant_logs,
     "incidents": _plant_incidents,
     "corpus_fixtures": _plant_corpus_fixtures,
@@ -289,6 +331,8 @@ def plant(conn: Connection, scenario: Scenario) -> None:
         "positions",
         "borrow",
         "restrictions",
+        "loans",
+        "lending",
         "logs",
         "incidents",
         "corpus_fixtures",

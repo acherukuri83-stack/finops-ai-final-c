@@ -67,12 +67,13 @@ async def investigate_client(
                 return finding
 
         failed = await _failed_trades(client_id)
-        subtasks = await _decompose(client, ask, client_id, failed)
+        loans = await _open_loans(failed)
+        subtasks = await _decompose(client, ask, client_id, failed, loans)
         if not subtasks:
             finding = Finding(
                 subject=SubjectRef(type="client", id=client_id),
                 outcome=Outcome.INSUFFICIENT_EVIDENCE,
-                confidence_basis=f"no FAILED trades found for {client_id}",
+                confidence_basis=f"no FAILED trades or open stock loans found for {client_id}",
                 trace_id=trace_id,
             )
             set_attrs(root, {"outcome": finding.outcome})
@@ -125,13 +126,40 @@ async def _failed_trades(client_id: str) -> list[dict[str, Any]]:
     return [r for r in rows if isinstance(r, dict)] if isinstance(rows, list) else []
 
 
+async def _open_loans(failed: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Open stock loans on any account the client's FAILED trades touch — so the
+    Supervisor can raise a `stockloan` sub-task the way it does for a settlement fail
+    (a delivery that can't settle because the shares are out on loan)."""
+    account_ids = sorted({str(t.get("account_id")) for t in failed if t.get("account_id")})
+    if not account_ids:
+        return []
+    out: list[dict[str, Any]] = []
+    with span(
+        "stockloan.list_loans",
+        "tool",
+        agent="supervisor",
+        **{"tool.server": "stockloan", "tool.name": "list_loans", "tool.access": "read"},
+    ) as current:
+        async with open_session(servers={"stockloan"}) as tools:
+            for aid in account_ids:
+                rows = await tools.call("stockloan", "list_loans", account_id=aid)
+                if isinstance(rows, list):
+                    out.extend(r for r in rows if isinstance(r, dict) and r.get("open"))
+        set_attrs(current, {"tool.ok": True, "payload.out": _clip(out)})
+    return out
+
+
 async def _decompose(
-    client: ModelClient, request: str, client_id: str, failed: list[dict[str, Any]]
+    client: ModelClient,
+    request: str,
+    client_id: str,
+    failed: list[dict[str, Any]],
+    loans: list[dict[str, Any]] | None = None,
 ) -> list[SubTask]:
     system = "\n\n".join(
         [prompts.load("system/domain_framing"), prompts.load("supervisor/decompose")]
     )
-    catalog = _format_failed(client_id, failed)
+    catalog = _format_failed(client_id, failed) + _format_loans(loans or [])
     with span("decompose", "agent", agent="supervisor", step="decompose") as current:
         plan, resp = await complete_structured_traced(
             client,
@@ -397,6 +425,19 @@ def _format_failed(client_id: str, failed: list[dict[str, Any]]) -> str:
             f"- {t.get('trade_id')}: {t.get('side')} {t.get('qty')} {t.get('security_id')} "
             f"failure_code={t.get('failure_code')} cpty={t.get('cpty_id')} "
             f"account={t.get('account_id')} settle={t.get('settle_date')}"
+        )
+    return "\n".join(lines)
+
+
+def _format_loans(loans: list[dict[str, Any]]) -> str:
+    if not loans:
+        return ""
+    lines = ["\n\nOpen stock loans on the client's accounts:"]
+    for ln in loans:
+        lines.append(
+            f"- {ln.get('loan_id')}: {ln.get('qty')} {ln.get('security_id')} out to "
+            f"{ln.get('counterparty')} account={ln.get('account_id')} "
+            f"rate_bps={ln.get('rate_bps')} return_needed_by={ln.get('return_needed_by')}"
         )
     return "\n".join(lines)
 

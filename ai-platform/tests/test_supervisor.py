@@ -115,6 +115,62 @@ def _install_dispatch(monkeypatch: pytest.MonkeyPatch, findings: list[Finding]) 
     monkeypatch.setattr(supervisor, "_dispatch", _dispatch)
 
 
+# --- discovery: open stock loans (Sc. 30) ------------------------------------
+
+
+async def test_open_loans_discovered_from_a_failed_trades_account(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`_open_loans` looks up loans on every account the client's FAILED trades touch —
+    LN-5001 is on ACC-88213 in the seeded stockloan store."""
+
+    async def _failed(_client_id: str) -> list[dict[str, Any]]:
+        return [{"trade_id": "T100245", "account_id": "ACC-88213"}]
+
+    monkeypatch.setattr(supervisor, "_failed_trades", _failed)
+    loans = await supervisor._open_loans(await supervisor._failed_trades("HEDGE_FUND_101"))
+    assert {ln["loan_id"] for ln in loans} == {"LN-5001", "LN-5002"}  # both open, on ACC-88213
+    assert all(ln["open"] for ln in loans)
+
+
+async def test_open_loans_empty_when_no_failed_trade_names_an_account() -> None:
+    assert await supervisor._open_loans([{"trade_id": "T1"}]) == []
+
+
+async def test_decompose_input_carries_open_loans(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The loan line reaches the decompose prompt so the model can raise a `stockloan`
+    sub-task for a client-level ask."""
+    seen: dict[str, str] = {}
+
+    async def _capture(client: Any, **kw: Any) -> Any:
+        seen["content"] = kw["messages"][0]["content"]
+        from agent_core.schemas.subtask import DecomposePlan
+
+        return DecomposePlan(subtasks=[]), ModelResponse(text="{}")
+
+    monkeypatch.setattr(supervisor, "complete_structured_traced", _capture)
+    await supervisor._decompose(
+        FakeModelClient([]),
+        "investigate HF101",
+        "HEDGE_FUND_101",
+        [{"trade_id": "T100245", "account_id": "ACC-88213", "failure_code": "X"}],
+        [
+            {
+                "loan_id": "LN-5001",
+                "security_id": "NVDA",
+                "qty": 30000,
+                "counterparty": "CP-020",
+                "account_id": "ACC-88213",
+                "rate_bps": 45,
+                "return_needed_by": "2026-09-10",
+                "open": True,
+            }
+        ],
+    )
+    assert "Open stock loans" in seen["content"]
+    assert "LN-5001" in seen["content"]
+
+
 # --- allowlist -------------------------------------------------------------------
 
 

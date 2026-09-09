@@ -1,8 +1,9 @@
-"""In-process fixture store for the `cash` server (Phase F).
+"""Data access for the `cash` server (Phase F).
 
-Cash & funding — balances, funding ladders, projected breaks, credit facilities. Facts
-only; the Cash Agent derives whether a projected shortfall can still be funded before the
-currency cutoff or must be escalated (hard rule §9).
+Seeded Postgres (`simulator` planter) with an in-memory mode for the unit suite — the
+split is in `mcp_servers._finance_store`. Facts only; the Cash Agent derives whether a
+projected shortfall can still be funded before the currency cutoff or must be escalated
+(hard rule §9). `NOW` backs the funding-cutoff rule in `agent_core/cash.py`.
 """
 
 from __future__ import annotations
@@ -10,105 +11,181 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from sqlalchemy import BigInteger, Column, DateTime, Integer, String, Table
+from sqlalchemy.dialects.postgresql import JSONB
+
+from mcp_servers._finance_store import FinanceStore, metadata
+
 # platform "now" for the funding-cutoff rule (deterministic; matches the fixture times).
 NOW = datetime(2026, 9, 6, 13, 30)
 
-_BREAKS: dict[str, dict[str, Any]] = {
-    "CB-8001": {
-        "break_id": "CB-8001",
-        "account_id": "ACC-88213",
-        "currency": "USD",
-        "projected_close": -6_500_000,  # a shortfall
-        "min_buffer": 1_000_000,
-        "funding_cutoff": "2026-09-06T16:00",  # still open at NOW
-        "driver": "unexpected settlement outflow",
-    },
-    "CB-8002": {
-        "break_id": "CB-8002",
-        "account_id": "ACC-88213",
-        "currency": "EUR",
-        "projected_close": -2_100_000,
-        "min_buffer": 500_000,
-        "funding_cutoff": "2026-09-06T12:00",  # already passed at NOW
-        "driver": "coupon payment",
-    },
-}
+cash_breaks = Table(
+    "cash_breaks",
+    metadata,
+    Column("break_id", String, primary_key=True),
+    Column("account_id", String),
+    Column("currency", String),
+    Column("projected_close", BigInteger),
+    Column("min_buffer", BigInteger),
+    Column("funding_cutoff", DateTime),
+    Column("driver", String),
+)
 
-_LADDER: dict[str, list[dict[str, Any]]] = {
-    "ACC-88213@USD": [
-        {"time": "2026-09-06T10:00", "flow": 3_000_000, "kind": "receipt"},
-        {"time": "2026-09-06T14:30", "flow": -9_500_000, "kind": "settlement"},
-        {"time": "2026-09-06T15:00", "flow": 0, "kind": "expected"},
-    ],
-    "ACC-88213@EUR": [
-        {"time": "2026-09-06T09:00", "flow": 400_000, "kind": "receipt"},
-        {"time": "2026-09-06T11:30", "flow": -2_500_000, "kind": "coupon"},
-    ],
-}
+funding_ladders = Table(
+    "funding_ladders",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("account_id", String),
+    Column("currency", String),
+    Column("time", DateTime),
+    Column("flow", BigInteger),
+    Column("kind", String),
+)
 
-_FACILITY: dict[str, dict[str, Any]] = {
-    "ACC-88213@USD": {
-        "account_id": "ACC-88213",
-        "currency": "USD",
-        "limit": 20_000_000,
-        "drawn": 4_000_000,
-        "headroom": 16_000_000,
-    },
-    "ACC-88213@EUR": {
-        "account_id": "ACC-88213",
-        "currency": "EUR",
-        "limit": 5_000_000,
-        "drawn": 0,
-        "headroom": 5_000_000,
-    },
-}
+credit_facilities = Table(
+    "credit_facilities",
+    metadata,
+    Column("account_id", String, primary_key=True),
+    Column("currency", String, primary_key=True),
+    Column("limit", BigInteger),
+    Column("drawn", BigInteger),
+    Column("headroom", BigInteger),
+)
 
-_ACTIONS: list[dict[str, Any]] = []
-_SEQ = 0
+cash_actions = Table(
+    "cash_actions",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("kind", String),
+    Column("subject_id", String),
+    Column("detail", JSONB),
+    Column("status", String),
+    Column("approval_id", String),
+)
+
+
+def _seed() -> dict[str, list[dict[str, Any]]]:
+    return {
+        "cash_breaks": [
+            {
+                "break_id": "CB-8001",
+                "account_id": "ACC-88213",
+                "currency": "USD",
+                "projected_close": -6_500_000,  # a shortfall
+                "min_buffer": 1_000_000,
+                "funding_cutoff": "2026-09-06T16:00",  # still open at NOW
+                "driver": "unexpected settlement outflow",
+            },
+            {
+                "break_id": "CB-8002",
+                "account_id": "ACC-88213",
+                "currency": "EUR",
+                "projected_close": -2_100_000,
+                "min_buffer": 500_000,
+                "funding_cutoff": "2026-09-06T12:00",  # already passed at NOW
+                "driver": "coupon payment",
+            },
+        ],
+        "funding_ladders": [
+            {
+                "account_id": "ACC-88213",
+                "currency": "USD",
+                "time": "2026-09-06T10:00",
+                "flow": 3_000_000,
+                "kind": "receipt",
+            },
+            {
+                "account_id": "ACC-88213",
+                "currency": "USD",
+                "time": "2026-09-06T14:30",
+                "flow": -9_500_000,
+                "kind": "settlement",
+            },
+            {
+                "account_id": "ACC-88213",
+                "currency": "USD",
+                "time": "2026-09-06T15:00",
+                "flow": 0,
+                "kind": "expected",
+            },
+            {
+                "account_id": "ACC-88213",
+                "currency": "EUR",
+                "time": "2026-09-06T09:00",
+                "flow": 400_000,
+                "kind": "receipt",
+            },
+            {
+                "account_id": "ACC-88213",
+                "currency": "EUR",
+                "time": "2026-09-06T11:30",
+                "flow": -2_500_000,
+                "kind": "coupon",
+            },
+        ],
+        "credit_facilities": [
+            {
+                "account_id": "ACC-88213",
+                "currency": "USD",
+                "limit": 20_000_000,
+                "drawn": 4_000_000,
+                "headroom": 16_000_000,
+            },
+            {
+                "account_id": "ACC-88213",
+                "currency": "EUR",
+                "limit": 5_000_000,
+                "drawn": 0,
+                "headroom": 5_000_000,
+            },
+        ],
+    }
+
+
+_S = FinanceStore(
+    name="cash",
+    read_tables=[cash_breaks, funding_ladders, credit_facilities],
+    action_table=cash_actions,
+    action_prefix="CS",
+    subject_key="break_id",
+    seed=_seed,
+)
 
 
 def reset() -> None:
-    global _SEQ
-    _ACTIONS.clear()
-    _SEQ = 0
+    _S.reset()
+
+
+def ensure_schema() -> None:
+    _S.ensure_schema()
 
 
 def get_cash_break(break_id: str) -> dict[str, Any] | None:
-    row = _BREAKS.get(break_id)
-    return dict(row) if row else None
+    return _S.get("cash_breaks", break_id=break_id)
 
 
 def list_cash_breaks(account_id: str | None) -> list[dict[str, Any]]:
-    return [
-        dict(b) for b in _BREAKS.values() if account_id is None or b["account_id"] == account_id
-    ]
+    return _S.find("cash_breaks", account_id=account_id)
 
 
 def get_funding_ladder(account_id: str, currency: str) -> list[dict[str, Any]]:
-    return [dict(x) for x in _LADDER.get(f"{account_id}@{currency}", [])]
+    rows = _S.find("funding_ladders", account_id=account_id, currency=currency)
+    for r in rows:
+        r.pop("id", None)
+        r.pop("account_id", None)
+        r.pop("currency", None)
+    return rows
 
 
 def get_facility(account_id: str, currency: str) -> dict[str, Any] | None:
-    row = _FACILITY.get(f"{account_id}@{currency}")
-    return dict(row) if row else None
+    return _S.get("credit_facilities", account_id=account_id, currency=currency)
 
 
 def record_action(
     kind: str, break_id: str, detail: dict[str, Any], approval_id: str
 ) -> dict[str, Any]:
-    global _SEQ
-    _SEQ += 1
-    row = {
-        "action_id": f"CS-{_SEQ:04d}",
-        "kind": kind,  # arrange_funding | move_cash | escalate
-        "break_id": break_id,
-        "detail": detail,
-        "status": "OPEN",
-        "approval_id": approval_id,
-    }
-    _ACTIONS.append(row)
-    return dict(row)
+    return _S.record_action(kind, break_id, detail, approval_id)
 
 
 def actions() -> list[dict[str, Any]]:
-    return [dict(a) for a in _ACTIONS]
+    return _S.actions()

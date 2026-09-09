@@ -21,6 +21,8 @@ PLANT_KEYS = {
     "borrow",
     "restrictions",
     "securities",
+    "loans",  # Phase F — an open stock loan (mixed-domain client, Sc. 30)
+    "lending",  # Phase F — street lending availability for a security
     "logs",
     "incidents",
     "corpus_fixtures",

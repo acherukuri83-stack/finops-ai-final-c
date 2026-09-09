@@ -140,8 +140,9 @@ Ideas that are out of the current phase's scope. Append; don't build.
   - `platform` server data is Python fixtures in `mcp_servers/platform/store.py` (not the
     simulator / Postgres) — fine for the slice; a fuller Phase E may move it to a seeded
     table with a `simulator` planter, like the enterprise tier.
-- Phase F core slice (2026-09-09, PR TBD): shipped **Stock Loan only** as in-process
-  Python fixtures (`mcp_servers/stockloan/store.py`), not a seeded table. Deferred:
+- Phase F core slice (2026-09-09): shipped **Stock Loan only**, originally as in-process
+  Python fixtures. All four domains later shipped, and (2026-09-09) all four stores moved
+  onto seeded Postgres — see the "Seeded data + simulator planter" entry below. Deferred:
   - ~~Margin & collateral~~ **DONE (2026-09-09)** — `mcp_servers/margin/` (in-process
     fixture server: calls / status / collateral / eligibility), `MARGIN` spec,
     `agent_core/margin.py::investigate_margin_call`, `planner/margin.md` +
@@ -160,14 +161,27 @@ Ideas that are out of the current phase's scope. Append; don't build.
     (`_enforce_funding_cutoff` on the currency `funding_cutoff`), `POST /investigate
     {cash_break_id}`, Supervisor `cash` sub-task. `tests/test_cash.py` (5). **All four
     prime-finance domains are now shipped** (stockloan / margin / corpactions / cash).
-  - **Seeded data + simulator planter** for stock loan (loans/recalls against real
-    positions), replacing the fixture store — like the enterprise tier.
-  - ~~Scenario 30~~ **mechanism DONE (2026-09-09)** — the Supervisor correlating a
-    `settlement` + `stockloan` sub-finding into one mixed-domain client answer is exercised
-    by `tests/test_supervisor.py::test_correlates_a_mixed_domain_client` (+ the re-policy
-    drop test). A **scored** Sc. 30 YAML still waits on stock-loan data being seeded so
-    `investigate_client` can *discover* the loan the way it discovers failed trades (today
-    `supervisor._failed_trades` only queries `find_trades`). Wires are out (optional module).
+  - ~~Seeded data + simulator planter for the prime-finance domains~~ **DONE (2026-09-09)**
+    — all four domain stores (`mcp_servers/{stockloan,margin,corpactions,cash}/store.py`)
+    now sit on `mcp_servers/_finance_store.py`: a MEM mode (the old fixtures, byte-for-byte,
+    for the unit suite) and a SQL mode over seeded Postgres. 14 platform-tier tables
+    (`CREATE TABLE IF NOT EXISTS`, no Flyway), mirrored in `simulator/simulator/finance_tables.py`
+    + populated by `simulator/simulator/finance_baseline.py` on `make seed`. New `loans` /
+    `lending` planter keys. `supervisor._open_loans` discovers a client's open loans from
+    the accounts its FAILED trades touch and feeds them to `_decompose`. **Still deferred:**
+    (a) `planter.py` handlers for `margin` / `corpactions` / `cash` — land with a scenario
+    that plants them (Sc. 30 only needs `loans` / `lending`); (b) the domain **hard rules**
+    (`_enforce_recall_window` etc.) run in the per-domain `investigate_*` entry points, not
+    in `run_specialist`, so the Supervisor fan-out currently bypasses them — a `stockloan`
+    sub-finding under the Supervisor is not recall-window-checked. Sc. 30 is built so the
+    un-enforced answer is already correct; fixing the fan-out to apply the rule is its own
+    change.
+  - ~~Scenario 30~~ **SEEDED (2026-09-09)** — `simulator/scenarios/030_mixed_domain_client.yaml`:
+    HF101 with one `COUNTERPARTY_SSI_MISMATCH` trade + one open loan `LN-5001`, `expect:`
+    with two `groups`. Discovery + correlation covered by `tests/test_supervisor.py` and
+    the DB-backed `simulator/tests/test_seed_integration.py`. The **scored** `make eval
+    SCENARIO=30` run is deferred with the rest of the C+ sweep (owner decision). Wires are
+    out (optional module).
   - ~~Portal affordance~~ **DONE (2026-09-09)** — `portal/src/PrimeFinanceView.tsx`, a
     single **Prime Finance** tab with a domain selector (Stock Loan / Margin / Cash /
     Corp Actions) → the right endpoint (`POST /investigate {loan_id|margin_call_id|

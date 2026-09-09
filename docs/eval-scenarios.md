@@ -339,12 +339,16 @@ correlates the two sub-findings into **one** client answer carrying both domains
 against the *proposing* specialist's allowlist. No proposal is silently dropped; any
 `INSUFFICIENT_EVIDENCE` sub-outcome is surfaced verbatim.
 
-**Status:** the correlation mechanism is exercised now as a Supervisor unit test
-(`tests/test_supervisor.py::test_correlates_a_mixed_domain_client` +
-`::test_mixed_client_drops_a_stockloan_action_settlement_cannot_own`). A **scored** Sc. 30
-YAML waits on stock-loan data being seeded (currently in-process fixtures) so that
-`investigate_client` can *discover* the loan the way it discovers failed trades — see
-`docs/backlog.md`.
+**Status:** **seeded** (`simulator/scenarios/030_mixed_domain_client.yaml`). Stock-loan
+data is now a real seeded table (`stock_loans` / `lending_availability`, `make seed`), and
+`supervisor._open_loans` discovers a client's open loans from the accounts its FAILED
+trades touch — so `investigate_client` raises a `stockloan` sub-task the way it raises a
+`settlement` one. The correlation mechanism is also covered by
+`tests/test_supervisor.py::test_correlates_a_mixed_domain_client` +
+`::test_mixed_client_drops_a_stockloan_action_settlement_cannot_own`, and the discovery by
+`::test_open_loans_discovered_from_a_failed_trades_account`. The **scored** `make eval
+SCENARIO=30` run is deferred with the rest of the C+ eval sweep (owner decision) — the
+`expect:` block (two `groups`) is in place for it.
 
 ---
 

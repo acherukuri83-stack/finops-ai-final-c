@@ -116,6 +116,10 @@ def ensure_schema() -> None:
             "alter table cases add column if not exists dedup_key varchar",
         ):
             conn.execute(text(ddl))
+    from mcp_servers import _finance_store
+
+    _finance_store.ensure_all_schemas()  # stockloan / margin / corpactions / cash tables
+
     from platform_api import trace_store
 
     trace_store.ensure_schema()
