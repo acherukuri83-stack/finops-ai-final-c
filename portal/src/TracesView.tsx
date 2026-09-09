@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api, type SpanRow, type TraceDetail, type TraceDiff, type TraceSummary } from "./api";
+import {
+  api,
+  type SpanRow,
+  type TraceDetail,
+  type TraceDiff,
+  type TraceSummary,
+} from "./api";
 
-const cell: React.CSSProperties = { padding: "6px 10px", borderBottom: "1px solid #eee", textAlign: "left" };
+const cell: React.CSSProperties = {
+  padding: "6px 10px",
+  borderBottom: "1px solid #eee",
+  textAlign: "left",
+};
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, monospace" };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -62,14 +72,16 @@ function SpanNode({
   const attrs = (span.attributes ?? {}) as Record<string, unknown>;
   const retrieval = attrs["finops.retrieval.results"];
   const rejected =
-    span.step === "synthesize" && span.payload_out && typeof span.payload_out === "object"
+    span.step === "synthesize" &&
+    span.payload_out &&
+    typeof span.payload_out === "object"
       ? ((span.payload_out as Record<string, unknown>).rejected_alternatives as
-          | { action_type: string; reason: string }[]
-          | undefined)
+          { action_type: string; reason: string }[] | undefined)
       : undefined;
 
   return (
     <div
+      className="trace-node"
       id={`span-${span.span_id}`}
       style={{
         marginLeft: depth * 16,
@@ -78,16 +90,38 @@ function SpanNode({
         background: focus ? "#fffbe6" : undefined,
       }}
     >
-      <div style={{ cursor: "pointer", display: "flex", gap: 8 }} onClick={() => setOpen(!open)}>
-        <span style={{ color: TYPE_COLOR[span.span_type] ?? "#666", fontWeight: 600, fontSize: 11 }}>
+      <div
+        className="trace-node-heading"
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(!open);
+          }
+        }}
+        style={{ cursor: "pointer", display: "flex", gap: 8 }}
+        onClick={() => setOpen(!open)}
+      >
+        <span
+          style={{
+            color: TYPE_COLOR[span.span_type] ?? "#666",
+            fontWeight: 600,
+            fontSize: 11,
+          }}
+        >
           {span.span_type || "span"}
         </span>
         <span style={mono}>{span.name}</span>
-        <span style={{ color: "#999", marginLeft: "auto" }}>{ms(span.duration_ms)}</span>
+        <span style={{ color: "#999", marginLeft: "auto" }}>
+          {ms(span.duration_ms)}
+        </span>
         {attrs["finops.model"] ? (
           <span style={{ color: "#999" }}>
             {String(attrs["finops.model"]).replace("claude-", "")} ·{" "}
-            {String(attrs["finops.tokens.in"] ?? "?")}/{String(attrs["finops.tokens.out"] ?? "?")} tok
+            {String(attrs["finops.tokens.in"] ?? "?")}/
+            {String(attrs["finops.tokens.out"] ?? "?")} tok
           </span>
         ) : null}
         {span.status && span.status !== "OK" && span.status !== "UNSET" ? (
@@ -102,7 +136,8 @@ function SpanNode({
               <b>retrieved</b>
               {(retrieval as Record<string, unknown>[]).map((r, i) => (
                 <div key={i} style={mono}>
-                  {String(r.score ?? r.similarity ?? "")} {String(r.doc ?? r.incident_id ?? "")}{" "}
+                  {String(r.score ?? r.similarity ?? "")}{" "}
+                  {String(r.doc ?? r.incident_id ?? "")}{" "}
                   {String(r.section ?? "")}
                 </div>
               ))}
@@ -128,11 +163,21 @@ function SpanNode({
                 whiteSpace: "pre-wrap",
               }}
             >
-              {JSON.stringify({ in: span.payload_in, out: span.payload_out }, null, 2)}
+              {JSON.stringify(
+                { in: span.payload_in, out: span.payload_out },
+                null,
+                2,
+              )}
             </pre>
           )}
           {Object.keys(attrs).length > 0 && (
-            <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 12px" }}>
+            <dl
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr",
+                gap: "2px 12px",
+              }}
+            >
               {Object.entries(attrs)
                 .filter(([k]) => k !== "finops.retrieval.results")
                 .map(([k, v]) => (
@@ -157,7 +202,8 @@ function DiffView({ diff }: { diff: TraceDiff }) {
   return (
     <div style={{ fontSize: 13 }}>
       <h4>
-        diff <span style={mono}>{short(diff.a)}</span> vs <span style={mono}>{short(diff.b)}</span>
+        diff <span style={mono}>{short(diff.a)}</span> vs{" "}
+        <span style={mono}>{short(diff.b)}</span>
         {diff.same_scenario ? "" : " (different scenarios)"}
       </h4>
       <table style={{ borderCollapse: "collapse" }}>
@@ -166,7 +212,11 @@ function DiffView({ diff }: { diff: TraceDiff }) {
           {row("outcome", diff.outcome.a, diff.outcome.b)}
           {row("proposed", diff.proposed_actions.a, diff.proposed_actions.b)}
           {row("tools added (b)", "", (diff.tool_calls_added ?? []).join(", "))}
-          {row("tools removed (b)", (diff.tool_calls_removed ?? []).join(", "), "")}
+          {row(
+            "tools removed (b)",
+            (diff.tool_calls_removed ?? []).join(", "),
+            "",
+          )}
           {row("reordered", "", String(diff.tool_calls_reordered))}
           {row("tokens Δ", "", diff.tokens_delta)}
           {row("duration Δ", "", ms(diff.duration_ms_delta))}
@@ -178,8 +228,8 @@ function DiffView({ diff }: { diff: TraceDiff }) {
           <b>retrieval delta</b>
           {(diff.retrieval_delta as Record<string, unknown>[]).map((r, i) => (
             <div key={i} style={mono}>
-              {String(r.only_in)}: {String(r.doc ?? r.incident_id ?? "")} {String(r.section ?? "")}{" "}
-              {String(r.score ?? "")}
+              {String(r.only_in)}: {String(r.doc ?? r.incident_id ?? "")}{" "}
+              {String(r.section ?? "")} {String(r.score ?? "")}
             </div>
           ))}
         </div>
@@ -196,7 +246,9 @@ export default function TracesView({
   focusSpanId?: string;
 }) {
   const [list, setList] = useState<TraceSummary[] | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(initialTraceId ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialTraceId ?? null,
+  );
   const [detail, setDetail] = useState<TraceDetail | null>(null);
   const [diff, setDiff] = useState<TraceDiff | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -204,7 +256,10 @@ export default function TracesView({
   const [focusSpan, setFocusSpan] = useState<string | undefined>(focusSpanId);
 
   const refreshList = useCallback(() => {
-    api.traces().then(setList).catch((e: Error) => setError(e.message));
+    api
+      .traces()
+      .then(setList)
+      .catch((e: Error) => setError(e.message));
   }, []);
   useEffect(refreshList, [refreshList]);
   useEffect(() => {
@@ -215,22 +270,34 @@ export default function TracesView({
     if (!selectedId) return;
     setDetail(null);
     setDiff(null);
-    api.trace(selectedId).then(setDetail).catch((e: Error) => setError(e.message));
+    api
+      .trace(selectedId)
+      .then(setDetail)
+      .catch((e: Error) => setError(e.message));
   }, [selectedId]);
 
   useEffect(() => {
     if (detail && focusSpan) {
-      document.getElementById(`span-${focusSpan}`)?.scrollIntoView({ block: "center" });
+      document
+        .getElementById(`span-${focusSpan}`)
+        ?.scrollIntoView({ block: "center" });
     }
   }, [detail, focusSpan]);
 
   useEffect(() => setFocusSpan(focusSpanId), [focusSpanId]);
 
-  const depths = useMemo(() => (detail ? depthOf(detail.spans) : new Map()), [detail]);
+  const depths = useMemo(
+    () => (detail ? depthOf(detail.spans) : new Map()),
+    [detail],
+  );
   const sameScenario = useMemo(
     () =>
       detail?.scenario_id
-        ? (list ?? []).filter((t) => t.scenario_id === detail.scenario_id && t.trace_id !== detail.trace_id)
+        ? (list ?? []).filter(
+            (t) =>
+              t.scenario_id === detail.scenario_id &&
+              t.trace_id !== detail.trace_id,
+          )
         : [],
     [list, detail],
   );
@@ -266,36 +333,59 @@ export default function TracesView({
   if (!list) return <p style={{ color: "#888" }}>Loading traces…</p>;
 
   return (
-    <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-      <table style={{ borderCollapse: "collapse", fontSize: 12, flexShrink: 0 }}>
-        <thead>
-          <tr>
-            {["Trace", "Subject", "Outcome", "Dur", "$"].map((h) => (
-              <th key={h} style={{ ...cell, color: "#888" }}>
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((t) => (
-            <tr
-              key={t.trace_id}
-              onClick={() => setSelectedId(t.trace_id)}
-              style={{ cursor: "pointer", background: selectedId === t.trace_id ? "#eef4ff" : undefined }}
-            >
-              <td style={{ ...cell, ...mono }}>{short(t.trace_id)}</td>
-              <td style={cell}>{t.subject_id}</td>
-              <td style={cell}>{t.root_cause || t.outcome}</td>
-              <td style={{ ...cell, ...mono }}>{ms(t.duration_ms)}</td>
-              <td style={{ ...cell, ...mono }}>{(t.cost_usd ?? 0).toFixed(3)}</td>
+    <div className="module-workspace split-workspace traces-workspace">
+      <div className="workspace-table">
+        <h3>
+          Investigation traces{" "}
+          <span className="count-label">{list.length}</span>
+        </h3>
+        <table
+          style={{ borderCollapse: "collapse", fontSize: 12, flexShrink: 0 }}
+        >
+          <thead>
+            <tr>
+              {["Trace", "Subject", "Outcome", "Dur", "$"].map((h) => (
+                <th key={h} style={{ ...cell, color: "#888" }}>
+                  {h}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {list.map((t) => (
+              <tr
+                key={t.trace_id}
+                onClick={() => setSelectedId(t.trace_id)}
+                style={{
+                  cursor: "pointer",
+                  background: selectedId === t.trace_id ? "#eef4ff" : undefined,
+                }}
+              >
+                <td style={{ ...cell, ...mono }}>
+                  <button
+                    className="record-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedId(t.trace_id);
+                    }}
+                  >
+                    {short(t.trace_id)}
+                  </button>
+                </td>
+                <td style={cell}>{t.subject_id}</td>
+                <td style={cell}>{t.root_cause || t.outcome}</td>
+                <td style={{ ...cell, ...mono }}>{ms(t.duration_ms)}</td>
+                <td style={{ ...cell, ...mono }}>
+                  {(t.cost_usd ?? 0).toFixed(3)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {selectedId && (
-        <div style={{ fontSize: 13, minWidth: 420, flex: 1 }}>
+        <div className="workspace-detail">
           {!detail ? (
             <p style={{ color: "#888" }}>Loading {short(selectedId)}…</p>
           ) : (
@@ -310,13 +400,18 @@ export default function TracesView({
                 ) : null}
               </div>
               <div style={{ color: "#555", margin: "4px 0 10px" }}>
-                {detail.status} · {ms(detail.duration_ms)} · {detail.tool_calls} tools ·{" "}
-                {detail.retrievals} retrievals · {detail.model_calls} model calls ·{" "}
-                {detail.tokens_in + detail.tokens_out} tokens · ${(detail.cost_usd ?? 0).toFixed(4)}
+                {detail.status} · {ms(detail.duration_ms)} · {detail.tool_calls}{" "}
+                tools · {detail.retrievals} retrievals · {detail.model_calls}{" "}
+                model calls · {detail.tokens_in + detail.tokens_out} tokens · $
+                {(detail.cost_usd ?? 0).toFixed(4)}
               </div>
 
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                <a href={api.traceExportUrl(detail.trace_id)} target="_blank" rel="noreferrer">
+                <a
+                  href={api.traceExportUrl(detail.trace_id)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   <button>Export JSON</button>
                 </a>
                 <button disabled={busy === "replay"} onClick={replay}>
@@ -339,7 +434,14 @@ export default function TracesView({
               </div>
 
               {diff && (
-                <div style={{ border: "1px solid #eee", borderRadius: 6, padding: 10, marginBottom: 12 }}>
+                <div
+                  style={{
+                    border: "1px solid #eee",
+                    borderRadius: 6,
+                    padding: 10,
+                    marginBottom: 12,
+                  }}
+                >
                   <DiffView diff={diff} />
                 </div>
               )}
