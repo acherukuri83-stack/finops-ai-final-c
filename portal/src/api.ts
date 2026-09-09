@@ -38,6 +38,28 @@ export type Approval = {
   created_at: string;
 };
 export type AuditEvent = { case_id: string; event: string; at: string };
+
+// `/wire/*` return plain dicts from `mcp_servers.wire.store` — named here, mirrors that file.
+export type WireRow = {
+  wire_id: string;
+  client_id: string;
+  account_id: string;
+  direction: string;
+  currency: string;
+  amount: number;
+  beneficiary: string;
+  beneficiary_account: string;
+  value_date: string;
+  status: string;
+  hold_reason: string;
+};
+export type WireQueueItem = {
+  wire_id: string;
+  action_id: string;
+  reviewer: string;
+  reason: string;
+  packet: string;
+};
 export type CaseDetail = CaseRow & { trace_id?: string; approvals: Approval[]; audit: AuditEvent[] };
 
 export type TraceSummary = components["schemas"]["TraceSummary"];
@@ -86,6 +108,14 @@ export const api = {
   },
   corpaction: (eventId: string, accountId: string) =>
     postJSON<Finding>("/corpaction", { event_id: eventId, account_id: accountId }),
+  wireQueue: () => getJSON<WireQueueItem[]>("/wire/queue"),
+  wireExceptions: () => getJSON<WireRow[]>("/wire/exceptions"),
+  wireRelease: (wireId: string, releasedBy: string) =>
+    postJSON<WireRow>("/wire/release", {
+      wire_id: wireId,
+      released_by: releasedBy,
+      role: "WIRE_REVIEWER",
+    }),
   knowledge: (q: string) => getJSON<KnowledgeHit[]>(`/knowledge?q=${encodeURIComponent(q)}`),
   cases: () => getJSON<CaseRow[]>("/cases"),
   case: (id: string) => getJSON<CaseDetail>(`/cases/${encodeURIComponent(id)}`),

@@ -9,6 +9,7 @@ import KnowledgeView from "./KnowledgeView";
 import PrimeFinanceView from "./PrimeFinanceView";
 import TracesView from "./TracesView";
 import TradesView from "./TradesView";
+import WireReviewView from "./WireReviewView";
 import "./styles.css";
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
   "Trades",
   "Client",
   "Prime Finance",
+  "Wire Review",
   "Engineering",
   "Settlements",
   "Knowledge",
@@ -30,6 +32,7 @@ const LIVE: ReadonlySet<Tab> = new Set<Tab>([
   "Trades",
   "Client",
   "Prime Finance",
+  "Wire Review",
   "Engineering",
   "Knowledge",
   "Connections",
@@ -58,6 +61,10 @@ const DETAILS: Record<Tab, [string, string]> = {
     "Prime finance",
     "Investigate stock lending, margin, corporate actions and cash with specialist agents.",
   ],
+  "Wire Review": [
+    "Wire review",
+    "Work the reviewer queue and the exception report. Release is a human-only action.",
+  ],
   Engineering: [
     "Engineering",
     "Diagnose incidents, verify changes, review PRs and draft evaluations.",
@@ -84,6 +91,7 @@ const ICONS: Record<Tab, string> = {
   Client:
     "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M17 4a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-4",
   "Prime Finance": "M3 21h18M5 21V10h4v11M10 21V4h4v17M15 21v-7h4v7",
+  "Wire Review": "M4 12h16M4 12l4-4M4 12l4 4M20 6v12",
   Engineering: "M8 5L2 12l6 7M16 5l6 7-6 7M14 3l-4 18",
   Knowledge:
     "M12 5v16M12 5C8 2 4 3 2 4v15c4-1 7-1 10 2 3-3 6-3 10-2V4c-2-1-6-2-10 1",
@@ -195,6 +203,7 @@ export default function App() {
             {tab === "Prime Finance" && (
               <PrimeFinanceView openTrace={openTrace} />
             )}
+            {tab === "Wire Review" && <WireReviewView />}
             {tab === "Engineering" && <EngineeringView openTrace={openTrace} />}
             {tab === "Knowledge" && <KnowledgeView />}
             {tab === "Connections" && <ConnectionsView />}

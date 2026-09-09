@@ -81,7 +81,7 @@ class FinanceStore:
     ) -> None:
         self.name = name
         self._read_tables = read_tables
-        self._by_name = {t.name: t for t in read_tables}
+        self._by_name = {t.name: t for t in [*read_tables, action_table]}
         self._action_table = action_table
         self._action_prefix = action_prefix
         self._subject_key = subject_key
@@ -135,6 +135,36 @@ class FinanceStore:
             stmt = stmt.where(t.c[k] == v)
         with _engine().connect() as conn:
             return [_jsonable(row) for row in conn.execute(stmt).mappings()]
+
+    def update(self, table: str, keys: dict[str, Any], values: dict[str, Any]) -> int:
+        """Update the rows in `table` matching `keys`. Returns the count changed. Used by
+        human-initiated mutations (e.g. a WIRE_REVIEWER releasing a wire), not by agents."""
+        if _USE_MEMORY:
+            if not self._mem_loaded:
+                self._load_mem()
+            if table == self._action_table.name:
+                # MEM action rows key the subject as `self._subject_key`, not `subject_id`.
+                mem_keys = {
+                    (self._subject_key if k == "subject_id" else k): v for k, v in keys.items()
+                }
+                rows = [
+                    r for r in self._mem_actions if all(r.get(k) == v for k, v in mem_keys.items())
+                ]
+            else:
+                rows = [
+                    r
+                    for r in self._mem.get(table, [])
+                    if all(r.get(k) == v for k, v in keys.items())
+                ]
+            for r in rows:
+                r.update(deepcopy(values))
+            return len(rows)
+        t = self._by_name[table]
+        stmt = t.update()
+        for k, v in keys.items():
+            stmt = stmt.where(t.c[k] == v)
+        with _engine().begin() as conn:
+            return int(conn.execute(stmt.values(**values)).rowcount)
 
     # --- action write --------------------------------------------------
 
