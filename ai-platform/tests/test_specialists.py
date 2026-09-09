@@ -18,7 +18,14 @@ from typing import Any
 import pytest
 
 from agent_core import policy
-from agent_core.agents import KNOWLEDGE, RISK_CLIENT, SETTLEMENT, run_specialist, spec_for
+from agent_core.agents import (
+    KNOWLEDGE,
+    RISK_CLIENT,
+    SETTLEMENT,
+    run_knowledge,
+    run_specialist,
+    spec_for,
+)
 from agent_core.reasoning.model_client import FakeModelClient, ModelResponse
 from agent_core.schemas.finding import Finding, Outcome, ProposedAction, SubjectRef
 from mcp_servers._fake_enterprise import FakeEnterpriseClient
@@ -200,3 +207,68 @@ def test_risk_client_keeps_the_ssi_write_settlement_lost() -> None:
     out = policy.apply(finding, RISK_CLIENT.allowlist_key)
     assert [a.action_type for a in out.proposed_actions] == ["update_ssi"]
     assert out.open_questions == []
+
+
+# --- run_knowledge (the degenerate retrieval runner) --------------------------
+
+
+@pytest.fixture
+def _fake_corpus(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _docs(query: str, k: int = 5) -> list[dict[str, Any]]:
+        return [
+            {
+                "doc": "Settlement Handbook",
+                "section": "8.4",
+                "title": "Counterparty SSI mismatch",
+                "text": "When our SSI is current, do not overwrite it; re-affirm with the cpty.",
+                "score": 0.91,
+            }
+        ]
+
+    def _incidents(query: str, k: int = 3) -> list[dict[str, Any]]:
+        return [
+            {
+                "incident_id": "INC-2007",
+                "summary": "CP-017 stale standing instruction caused a batch of fails",
+                "root_cause": "COUNTERPARTY_INSTRUCTION_STALE",
+                "resolution": "cpty re-published; trades resubmitted",
+                "similarity": 0.87,
+            }
+        ]
+
+    monkeypatch.setattr("knowledge.retrieval.search_knowledge", _docs)
+    monkeypatch.setattr("knowledge.retrieval.find_incidents", _incidents)
+
+
+async def test_run_knowledge_returns_cited_evidence_and_no_actions(
+    fake_enterprise: FakeEnterpriseClient, _fake_corpus: None
+) -> None:
+    finding = await run_knowledge(
+        KNOWLEDGE,
+        subject=SubjectRef(type="knowledge", id="T100245"),
+        request="counterparty SSI mismatch against CP-017",
+    )
+
+    assert finding.outcome is Outcome.RESOLVED_CAUSE
+    assert finding.proposed_actions == []  # retrieval-only: it proposes nothing
+    kinds = {e.kind for e in finding.evidence}
+    assert kinds == {"knowledge", "incident"}
+    assert any(e.ref == "Settlement Handbook §8.4" for e in finding.evidence)
+    assert any("INC-2007" in note for note in finding.checked)  # one relevance note per chunk
+    assert "1 SOP section(s), 1 past incident(s)" in finding.confidence_basis
+    assert finding.trace_id
+
+
+async def test_run_knowledge_reports_an_empty_corpus_as_insufficient(
+    fake_enterprise: FakeEnterpriseClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("knowledge.retrieval.search_knowledge", lambda q, k=5: [])
+    monkeypatch.setattr("knowledge.retrieval.find_incidents", lambda q, k=3: [])
+
+    finding = await run_knowledge(
+        KNOWLEDGE, subject=SubjectRef(type="knowledge", id="T1"), request="nothing matches this"
+    )
+
+    assert finding.outcome is Outcome.INSUFFICIENT_EVIDENCE
+    assert finding.evidence == []
+    assert "nothing in the corpus matched" in finding.confidence_basis

@@ -17,13 +17,12 @@ Every mainline phase A–G has a merged core slice; deferred depth is being pick
 - **Sc. 30 mechanism** — Supervisor correlates `settlement` + `stockloan` sub-findings into one mixed-domain client answer (unit-tested).
 - **F Prime Finance portal tab** — `portal/src/PrimeFinanceView.tsx`: one tab, a domain selector (Stock Loan / Margin / Cash / Corp Actions) → the right endpoint → the shared `Finding` renderer. `api.primeFinance` / `api.corpaction`.
 - **E bounded Supervisor→Developer hand-off** — `supervisor._recommend_incident_review`: all sub-findings `INSUFFICIENT_EVIDENCE` → an `open_questions` note recommending `POST /diagnose`. Recommendation only, never auto-dispatch.
+- **C Knowledge specialist wired** — `agents/base.py::run_knowledge` (degenerate: fixed retrieval, no planner, no model call, proposes nothing) → cited `evidence` + relevance notes in `checked`, `subject.type = "knowledge"`. Supervisor `_decompose` / `_dispatch` route it; `_business()` keeps it out of outcome reconciliation and the incident recommendation. `decompose.md` rewritten to cover all seven agents (also fixed the `margin` / `corpactions` / `cash` prompt gap).
 
 **Still deferred (`docs/backlog.md`, any order):**
 - **E** — *auto-dispatch* of the Developer Agent on all-`INSUFFICIENT_EVIDENCE` (the bounded recommendation is shipped; auto-dispatch is still blocked on naming the incident subject with no safe default); standards corpus in pgvector; eval-authoring's model-driven "from any SOP section" mode (the template version is shipped).
 - **F** — seeded table + `simulator` planter for the prime-finance domains (unlocks a scored Sc. 30).
 - **G** — trace replay/diff polish; Bedrock swap; memory loop.
-- **B (Wires)** — optional module, unbuilt.
-- **Project-wide** — full `workflow_dispatch` eval sweep + refreshed `SCORECARD.md` (paused for C+ by owner decision; record stays Phase A 8/9).
 - **B (Wires)** — the optional module (unbuilt; depends only on A).
 - **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` (paused for C+ during the build by owner decision; the record stays the Phase A 8/9).
 
