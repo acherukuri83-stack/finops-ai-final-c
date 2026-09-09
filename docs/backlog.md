@@ -134,9 +134,14 @@ Ideas that are out of the current phase's scope. Append; don't build.
     `synthesis/margin.md`, **meet-vs-close-out hard rule in code**
     (`_enforce_call_window` on `due_by`), `POST /investigate {margin_call_id}`, Supervisor
     `margin` sub-task. `tests/test_margin.py` (5).
-  - **corporate actions**, **cash** domains — each its own MCP server + specialist +
-    allowlist + prompts + hard rules (record-date logic, funding ladders), one at a time
-    (`docs/agent-plan.md` Phase 13).
+  - ~~corporate actions~~ **DONE (2026-09-09)** — `mcp_servers/corpactions/` (events /
+    entitlements / elections), `CORPACTIONS` spec, `agent_core/corpactions.py::investigate_ca_event`,
+    `planner/corpactions.md` + `synthesis/corpactions.md`, **record-date hard rules in
+    code** (`_enforce_record_date`: cash dividend on a lent slice → `raise_claim` on the
+    borrower; elective event past its deadline → `escalate_ca`), `POST /corpaction`,
+    Supervisor `corpactions` sub-task. `tests/test_corpactions.py` (5).
+  - **cash** domain — its own MCP server + specialist + allowlist + prompts + hard rules
+    (funding ladders, intraday projections), same shape (`docs/agent-plan.md` Phase 13).
   - **Seeded data + simulator planter** for stock loan (loans/recalls against real
     positions), replacing the fixture store — like the enterprise tier.
   - ~~Scenario 30~~ **mechanism DONE (2026-09-09)** — the Supervisor correlating a

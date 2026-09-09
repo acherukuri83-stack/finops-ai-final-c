@@ -84,7 +84,23 @@ MARGIN = SpecialistSpec(
     required_tools=frozenset({("margin", "get_margin_call")}),
 )
 
-_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN, MARGIN)}
+# Phase F — the CorpActions specialist. Scope: its own book + read-only `stockloan` (to
+# see the lent slice) + `position` + `ops`. The record-date / election-deadline rule is
+# code, in `agent_core/corpactions.py`.
+CORPACTIONS = SpecialistSpec(
+    name="corpactions",
+    planner_prompt="planner/corpactions",
+    synthesis_prompt="synthesis/corpactions",
+    tool_servers=frozenset({"corpactions", "stockloan", "position", "ops"}),
+    allowlist_key="corpactions",
+    subject_type="ca_event",
+    required_tools=frozenset({("corpactions", "get_ca_event")}),
+)
+
+_BY_NAME = {
+    s.name: s
+    for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN, MARGIN, CORPACTIONS)
+}
 
 
 def spec_for(name: str) -> SpecialistSpec:

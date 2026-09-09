@@ -40,6 +40,16 @@ from mcp_servers.client.tools import (
 )
 from mcp_servers.compliance.server import mcp as compliance_mcp
 from mcp_servers.compliance.tools import get_restrictions, get_screening_result
+from mcp_servers.corpactions.server import mcp as corpactions_mcp
+from mcp_servers.corpactions.tools import (
+    escalate_ca,
+    get_ca_event,
+    get_election,
+    get_entitlement,
+    list_ca_events,
+    raise_claim,
+    submit_election,
+)
 from mcp_servers.counterparty.server import mcp as counterparty_mcp
 from mcp_servers.counterparty.tools import (
     get_affirmation,
@@ -126,6 +136,9 @@ WRITE_TOOLS = frozenset(
         "post_collateral",
         "substitute_collateral",
         "escalate_margin",
+        "submit_election",
+        "raise_claim",
+        "escalate_ca",
         "open_pull_request",
         "post_review",
     }
@@ -234,6 +247,20 @@ SERVERS: dict[str, ServerSpec] = {
             "read+write",
         ),
         ServerSpec(
+            "corpactions",
+            corpactions_mcp,
+            [
+                get_ca_event,
+                list_ca_events,
+                get_entitlement,
+                get_election,
+                submit_election,
+                raise_claim,
+                escalate_ca,
+            ],
+            "read+write",
+        ),
+        ServerSpec(
             "case",
             case_mcp,
             [create_case, update_case, propose_action, get_approval, log_audit],
@@ -267,6 +294,7 @@ LIST_TOOLS = frozenset(
         "get_rerate_history",
         "list_margin_calls",
         "get_collateral",
+        "list_ca_events",
     }
 )
 

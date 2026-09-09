@@ -10,12 +10,13 @@ Every mainline phase A–G has a merged core slice; deferred depth is being pick
 - **E verification mode** — `developer.verify_change(ticket_id)`: apply → re-check job/lag → residual trade to Settlement (`sub_finding`) → write retrievable `INC-3xxx`; a failed fix reports FAILED, proposes nothing. `POST /verify`, `platform.get_incident`.
 - **E PR-review mode** — `repo` + `ci` fixture servers, `Review` schema, `agent_core/review.py` (surface classification + deterministic checks + platform hard rules as code: write tool w/o `approval_id` → BLOCKER `security.md §4.1`; new `action_type` off every allowlist → MAJOR §5; PII into a model call → BLOCKER §7; `authored_by: agent` scenario → needs a human). `POST /review`. No `approve_pr` / `merge_pr` tool.
 - **F Margin domain** — `margin` server + `MARGIN` spec + `agent_core/margin.py::investigate_margin_call`; **meet-vs-close-out hard rule in code** (`_enforce_call_window` on `due_by`). `POST /investigate {margin_call_id}`; Supervisor `margin` sub-task.
+- **F CorpActions domain** — `corpactions` server + `CORPACTIONS` spec + `agent_core/corpactions.py::investigate_ca_event`; **record-date hard rules in code** (`_enforce_record_date`): a cash dividend on a lent-out slice → `raise_claim` on the borrower; an elective event past its deadline → `escalate_ca`. `POST /corpaction {event_id, account_id}`; Supervisor `corpactions` sub-task.
 - **G obs** — `schema_validation` guardrail span (from `complete_structured_traced`) + `finops.tool.retries` (from `_enterprise.last_retries()`).
 - **Sc. 30 mechanism** — Supervisor correlates `settlement` + `stockloan` sub-findings into one mixed-domain client answer (unit-tested).
 
 **Still deferred (`docs/backlog.md`, any order):**
 - **E** — eval-authoring mode; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE` (product-design open item — no clean incident-subject); standards corpus in pgvector.
-- **F** — CorpActions / Cash domains; seeded table + `simulator` planter for stock loan (unlocks a scored Sc. 30); one shared portal "Prime Finance" tab (loan / margin / corpactions / cash).
+- **F** — Cash domain; seeded table + `simulator` planter for stock loan (unlocks a scored Sc. 30); one shared portal "Prime Finance" tab (loan / margin / corpactions / cash).
 - **G** — trace replay/diff polish; Bedrock swap; memory loop.
 - **B (Wires)** — optional module, unbuilt.
 - **Project-wide** — full `workflow_dispatch` eval sweep + refreshed `SCORECARD.md` (paused for C+ by owner decision; record stays Phase A 8/9).
