@@ -2,9 +2,16 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: G — hardening (in progress)
+## Current phase: mainline A→G core slices shipped — no active phase
 
-Phases A + C + D complete; **E** (Developer Agent incident mode) and **F** (StockLoan specialist) core slices merged — each with per-phase scope deferred to `docs/backlog.md`. **Phase G is in progress** — "as needed" hardening, one self-contained item at a time. Done in this pass: **trace PII scrub** — `platform_api/trace_store.redact()` / `scrub()` is now a real recursive scrubber (emails, 9+-digit runs, person-name keys like `updated_by`/`set_by`/`decided_by`); `record_span` stamps `finops.pii.redactions` (count only, values never stored) — the observability standard's `pii_scrub` guardrail, realised as a span attribute rather than a separate span to avoid recursing the `PostgresSpanProcessor`. Still open in `docs/backlog.md`: `finops.tool.retries` emission, the `schema_validation` guardrail span, trace replay/diff polish, Bedrock swap, memory loop. **No eval sweeps** (owner decision). This is the last mainline phase; when its items are addressed enough for the demo, bump to "G — complete · project mainline done".
+Every mainline phase has a merged core slice (A + C full; D full; **E / F / G as reviewable slices**). Nothing is in progress. The remaining depth per phase is enumerated in `docs/backlog.md` and can be picked up in any order:
+- **E** — Developer Agent verification / PR-review / eval-authoring modes; `repo` + `ci` MCP servers; Supervisor→Developer hand-off; standards corpus.
+- **F** — Margin / CorpActions / Cash domains; a seeded table + `simulator` planter for stock loan; mixed-client Scenario 30; portal Stock Loan tab.
+- **G** — `schema_validation` guardrail span; `finops.tool.retries` emission; trace replay/diff polish; Bedrock swap; memory loop.
+- **B (Wires)** — the optional module (unbuilt; depends only on A).
+- **Project-wide** — a full `workflow_dispatch` eval sweep + refreshed `evals/SCORECARD.md` (paused for C+ during the build by owner decision; the record stays the Phase A 8/9).
+
+**Before starting any of the above:** read its section in `docs/phase-breakdown.md` and the relevant nested `CLAUDE.md` (`agent_core/agents/`, `platform_api/events/`, `mcp_servers/platform/`, `mcp_servers/stockloan/`), bump this line to name the active phase, and follow the existing patterns (in-process fixture servers, hard rules in code, per-agent allowlists, `run_specialist`). **No eval sweeps for C+ during the build** (owner decision).
 
 ## Roadmap (all phases, for orientation only)
 

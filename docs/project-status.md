@@ -336,11 +336,11 @@ Developer Agent core slice~~ (#19 — incident mode: `platform` server,
 `investigate_incident`, revert/fix-forward hard rule, `/diagnose`, Engineering tab) →
 ~~F prime-finance / Stock Loan core slice~~ (#20 — `stockloan` server,
 `investigate_loan`, recall-vs-buy-in hard rule, `/investigate {loan_id}`, Supervisor
-`stockloan` sub-task) → **G hardening** (in progress — trace PII scrub is real
-(`trace_store.scrub`) with `finops.pii.redactions` on the span; `schema_validation` span
-and `finops.tool.retries` still open). Each phase's verification / review / other-domain
-scope is deferred to `docs/backlog.md`. **Wires (B)** is an optional module. See
-[`phase-breakdown.md`](phase-breakdown.md).
+`stockloan` sub-task) → ~~G hardening~~ (#21 — real `trace_store.scrub()` +
+`finops.pii.redactions`). **Every mainline phase now has a merged core slice** (A + C + D
+full; E / F / G as slices). No active phase. Per-phase remaining depth + the deferred
+project-wide eval sweep are enumerated in `docs/backlog.md` and the root `CLAUDE.md`.
+**Wires (B)** is an optional module. See [`phase-breakdown.md`](phase-breakdown.md).
 
 ---
 
