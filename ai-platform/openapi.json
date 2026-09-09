@@ -343,6 +343,49 @@
         }
       }
     },
+    "/events": {
+      "post": {
+        "summary": "Publish Event",
+        "description": "Publish an estate event onto the bus (demo / portal convenience \u2014 the simulator is\nthe usual publisher). The in-process consumer picks it up and opens a case.",
+        "operationId": "publish_event_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Event"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Publish Event Events Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/trades": {
       "get": {
         "summary": "List Trades",
@@ -703,6 +746,50 @@
           "decided_by"
         ],
         "title": "DecideRequest"
+      },
+      "Event": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "default": ""
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "default": "settlement.events"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "subject_type": {
+            "type": "string",
+            "title": "Subject Type",
+            "default": "trade"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "subject_id"
+        ],
+        "title": "Event",
+        "description": "A thing that happened in the estate. `id` is set by the bus on publish."
       },
       "EvidenceLink": {
         "properties": {

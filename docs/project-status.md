@@ -233,9 +233,14 @@ enterprise client, `models.py` holds response shapes).
   Without `ANTHROPIC_API_KEY` it fails loudly (never silent-green).
 - **`SCORECARD.md`** — committed; latest CI run **8/9** (see §5).
 
-### 3.8 `ai-platform/events/` — `bus.py`
+### 3.8 `ai-platform/platform_api/events/` — the event bus + consumer (Phase D)
 
-`EventBus` protocol + `NoopEventBus` only. Event-driven auto-casing is Phase D.
+`Event` + `EventBus` protocol; `PostgresOutboxBus` (real — `outbox_events` table, no
+broker) and a lazy `KafkaEventBus` adapter. `consumer.py` runs in the app lifespan
+(`EVENTS_ENABLED=1`): a FAILED settlement event → `investigate(trade_id)` under an `event`
+root span → one case stamped `source=event` (+ `priority=HIGH` if a payload `deadline` is
+inside 60 min). Dedup on `{subject}:{failure_code}` — a repeat folds onto the open case.
+Simulator publishes via `make emit TRADE=…`.
 
 ### 3.9 `portal/` — ops UI (React 18 + TS strict + Vite)
 
@@ -328,7 +333,8 @@ needs process-global fault injection):
 
 **Mainline after A:** ~~C supervisor + specialist agents~~ (done 2026-09-09, PRs #14/#16 —
 Supervisor + Settlement/Risk-Client/Knowledge specialists, per-agent allowlists, client
-Scenario 11) → **D event-driven auto-casing** (next) → E Developer Agent → F prime-finance
+Scenario 11) → ~~D event-driven auto-casing~~ (in progress — outbox bus + in-process
+consumer + dedup + urgency; `make emit`) → **E Developer Agent** → F prime-finance
 domains → G hardening. **Wires (B) is an optional module** — depends only on A, nothing in
 C–G depends on it. See [`phase-breakdown.md`](phase-breakdown.md).
 

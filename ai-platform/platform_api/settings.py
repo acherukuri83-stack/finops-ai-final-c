@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     service_name: str = "ai-platform"
     traces_enabled: bool = True  # persist spans to Postgres for the Trace screen
 
+    # Phase D — event-driven investigations
+    events_enabled: bool = False  # run the in-process outbox consumer in the app lifespan
+    event_bus: str = "outbox"  # outbox | kafka | none
+    event_poll_seconds: float = 3.0  # outbox poll interval
+    event_batch: int = 20  # rows drained per poll
+    kafka_bootstrap: str = ""  # host:port — only for event_bus=kafka
+
     @field_validator("database_url")
     @classmethod
     def _require_psycopg_driver(cls, v: str) -> str:

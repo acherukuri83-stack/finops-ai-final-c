@@ -54,6 +54,7 @@ Deploy it first — Flyway creates every table on boot.
 | `ENTERPRISE_BASE_URL` | `http://${{enterprise.RAILWAY_PRIVATE_DOMAIN}}:${{enterprise.PORT}}` |
 | `ANTHROPIC_API_KEY` | *(paste your key)* |
 | `TRACES_ENABLED` | `1` |
+| `EVENTS_ENABLED` | `1` (Phase D — runs the in-process outbox consumer; `EVENT_BUS` defaults to `outbox`, no broker needed) |
 | `CORS_ALLOW_ORIGINS` | the portal's public URL once you have it (step 3), or `*` for the demo |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | leave default — there is no Jaeger in prod; the Postgres span store still runs |
 
@@ -123,11 +124,16 @@ Open the portal URL:
    carries the rejected `update_ssi` with *Settlement Handbook §8.4 ¶3*.
 4. Evidence rows in **Trades** and the audit log in **Cases** deep-link back into the
    trace.
+5. **Phase D:** from a machine with the repo + `DATABASE_PUBLIC_URL` (TCP proxy, step 4):
+   `make emit TRADE=T100245` — within a few seconds a **Cases** row appears with source
+   `event`, no user prompt, its own investigation trace (root span `event:failed`). Run it
+   again → the same case gets a "repeat FAILED event" audit line, no second case. Or
+   `POST /events` with an `Event` body against the public API.
 
-That is the Weekend-4 exit criteria met on a public URL.
+That is the Weekend-4 + Phase-D exit criteria met on a public URL.
 
 ## Redeploys
 
 `main` is connected to each service, so a merge auto-deploys. Order still matters on a
-schema change: enterprise (Flyway) before ai-platform. `EventBus` stays a no-op — no
-Kafka anywhere.
+schema change: enterprise (Flyway) before ai-platform. The Phase-D consumer runs in-process
+on ai-platform when `EVENTS_ENABLED=1` (Postgres-outbox; no Kafka anywhere).

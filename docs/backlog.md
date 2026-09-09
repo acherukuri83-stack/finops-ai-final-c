@@ -76,3 +76,14 @@ Ideas that are out of the current phase's scope. Append; don't build.
   scenarios 1–6, 8–10, 12 (specialists must reproduce the Investigator's Phase A results
   — every Phase A scenario is still a single-specialist Settlement run) plus the new
   client-subject Sc. 11 (`groups` scoring).
+- Phase D (events): the **Kafka bus** (`platform_api/events/kafka.py`) is a lazy-import
+  adapter — `aiokafka` is not a dependency and there is no broker in CI, so it is
+  unexercised. The Postgres-outbox bus is the real, tested path. To use Kafka locally:
+  `pip install aiokafka`, run Redpanda (Compose), set `EVENT_BUS=kafka` + `KAFKA_BOOTSTRAP`.
+- Phase D: the consumer only routes **trade-subject FAILED settlement events**. Wire/HELD
+  events and client-subject events are `OUT_OF_SCOPE` in the consumer — they land with the
+  Wires module / a later phase. The `deadline` → HIGH-priority mechanism is built and
+  tested; the wire-cutoff scenario that exercises it end-to-end ships with Wires.
+- Phase D: `outbox_events` DDL is defined in **two** places — `platform_api/store.py`
+  (authoritative) and `simulator/simulator/events.py` (`ensure_outbox`, idempotent). Keep
+  the column list in sync by hand, same as `simulator/tables.py` mirrors the Flyway schema.

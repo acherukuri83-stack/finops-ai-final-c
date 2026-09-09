@@ -17,6 +17,9 @@ export type CaseRow = {
   subject_id: string;
   summary: string;
   status: string;
+  source: "user" | "event";
+  priority: "NORMAL" | "HIGH";
+  dedup_key: string | null;
   created_at: string;
 };
 export type Approval = {
