@@ -12,7 +12,9 @@ def test_all_scenarios_validate_and_have_no_leaks() -> None:
         sc = Scenario.load(f)
         assert not sc.unknown_plant_keys(), f"{f.name}: {sc.unknown_plant_keys()}"
         assert not sc.leaks(), f"{f.name}: leaks {sc.leaks()}"
-        assert "root_cause" in sc.expect or "outcome" in sc.expect, f"{f.name}: expect missing"
+        assert "root_cause" in sc.expect or "outcome" in sc.expect or "groups" in sc.expect, (
+            f"{f.name}: expect missing"
+        )
 
 
 def test_scenario_1_shape() -> None:

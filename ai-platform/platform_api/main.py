@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
+from agent_core.supervisor import investigate_client
 from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
@@ -44,7 +45,8 @@ app.include_router(traces_router)
 
 
 class InvestigateRequest(BaseModel):
-    trade_id: str
+    trade_id: str | None = None
+    client_id: str | None = None  # Phase C: a client-level ask fans out via the Supervisor
 
 
 class DecideRequest(BaseModel):
@@ -66,8 +68,16 @@ async def connections() -> ConnectionsResponse:
 
 @app.post("/investigate")
 async def post_investigate(req: InvestigateRequest) -> Finding:
-    """Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id."""
-    return await investigate(req.trade_id)
+    """Investigate a trade (Settlement specialist) or a whole client (Supervisor fan-out).
+
+    `{"trade_id": ...}` runs the single-trade path; `{"client_id": ...}` decomposes across
+    specialists, correlates, and returns one client-level Finding with `sub_findings`.
+    """
+    if req.client_id:
+        return await investigate_client(req.client_id)
+    if req.trade_id:
+        return await investigate(req.trade_id)
+    raise HTTPException(status_code=422, detail="provide trade_id or client_id")
 
 
 @app.get("/trades")

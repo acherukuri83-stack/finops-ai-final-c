@@ -137,7 +137,10 @@ export interface paths {
         put?: never;
         /**
          * Post Investigate
-         * @description Run the Investigator: plan -> tool loop -> synthesized Finding, one trace id.
+         * @description Investigate a trade (Settlement specialist) or a whole client (Supervisor fan-out).
+         *
+         *     `{"trade_id": ...}` runs the single-trade path; `{"client_id": ...}` decomposes across
+         *     specialists, correlates, and returns one client-level Finding with `sub_findings`.
          */
         post: operations["post_investigate_investigate_post"];
         delete?: never;
@@ -342,6 +345,8 @@ export interface components {
              * @default 1
              */
             planning_turns: number;
+            /** Sub Findings */
+            sub_findings?: components["schemas"]["Finding"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -351,7 +356,9 @@ export interface components {
         /** InvestigateRequest */
         InvestigateRequest: {
             /** Trade Id */
-            trade_id: string;
+            trade_id?: string | null;
+            /** Client Id */
+            client_id?: string | null;
         };
         /** KnowledgeHit */
         KnowledgeHit: {

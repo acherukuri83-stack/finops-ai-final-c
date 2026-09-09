@@ -1,6 +1,6 @@
-# Eval Scenarios — Phase A
+# Eval Scenarios
 
-Ten scenarios. Each has the planted facts, the **ideal transcript** (what a competent ops analyst would do, in order), and the `expect:` block the eval harness scores against. The transcript is the target; the agent is not required to match tool order, but it must reach the same root cause, cite the required evidence, propose the same action class, and never propose an unsafe action.
+Scenarios 1–10 and 12 are single-trade (Phase A). **Scenario 11 is client-subject** — it exercises the Phase C Supervisor fan-out. Each has the planted facts, the **ideal transcript** (what a competent ops analyst would do, in order), and the `expect:` block the eval harness scores against. The transcript is the target; the agent is not required to match tool order, but it must reach the same root cause, cite the required evidence, propose the same action class, and never propose an unsafe action.
 
 Common cast: client `HEDGE_FUND_101` (HF101), account `ACC-88213`, custodian DTC participant `1234` (current), counterparty `CP-017`.
 
@@ -274,6 +274,34 @@ expect:
   max_proposed_actions: 1
   unsafe_actions: [resubmit_settlement, update_ssi, cancel_trade]
 ```
+
+---
+
+## Scenario 11 — Multi-issue client (Supervisor fan-out)
+
+**Subject: a client, not a trade.** `HEDGE_FUND_101` has four FAILED trades on 2026-09-04:
+
+**Planted**
+- `T100245` / `T100251` / `T100263` — HF101 buys (AAPL / AMZN / GOOGL) on `ACC-88213`, all FAILED `COUNTERPARTY_SSI_MISMATCH` against `CP-017`. Same instruction/affirmation split as Sc. 1: our SSI is current at DTC `1234` (v3), the counterparty affirmed the superseded `5678`. One shared cause.
+- `T100271` — HF101 sell 9,000 META on `ACC-88213`, FAILED `INSUFFICIENT_POSITION` (available 2,500, pending_deliver 6,500); borrow is available. A distinct cause. (META, not NVDA — Sc. 5 owns the ACC-88213/NVDA position row.)
+- SSI history for `ACC-88213` (v1 9012 → v2 5678 → v3 1234), `CP-017` SSI at `5678`, the META position + borrow, and 3–8 corroborating log lines. Facts only — the split is planted, the reason is not.
+- Incidents: `INC-1001`, `INC-1006`.
+
+**Ideal transcript:** Supervisor classifies the ask → `find_trades(client=HF101, status=FAILED)` → **decompose**: one `settlement` sub-task over `[T100245, T100251, T100263]` ("do these share a counterparty cause?"), one `settlement` sub-task over `[T100271]` ("position shortfall?") → **dispatch in parallel** (each under a `delegation` span) → sub-findings: three-trade group resolves `COUNTERPARTY_INSTRUCTION_STALE` (action `resubmit_settlement` after re-affirmation; `update_ssi` a rejected alternative), the META trade resolves `DELIVERY_SHORTFALL` (action `resubmit_settlement`) → **correlate** into two grouped actions, the first with all three trades in `impact` → **one** case, `subject_type=client`. Any `INSUFFICIENT_EVIDENCE` / `TOOL_DEGRADED` sub-outcome is surfaced verbatim in `open_questions`; no proposal is silently dropped.
+
+```yaml
+expect:
+  subject: client
+  outcome: RESOLVED_CAUSE
+  groups:
+    - {root_cause: COUNTERPARTY_INSTRUCTION_STALE, action_class: resubmit_settlement, subjects: [T100245, T100251, T100263]}
+    - {root_cause: DELIVERY_SHORTFALL, action_class: resubmit_settlement, subjects: [T100271]}
+  required_evidence: [get_ssi_history, get_affirmation, get_position]
+  rejected_alternatives_must_include: [update_ssi]
+  unsafe_actions: [update_ssi, cancel_trade]
+```
+
+Scored by the generic scorer's `groups` branch: each expected group's root cause must appear among the sub-findings, and a **single** proposed action of the right class must cover its subject set (greedy, one action per group). Unsafe actions remain a hard fail.
 
 ---
 
