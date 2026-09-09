@@ -44,18 +44,17 @@ Ideas that are out of the current phase's scope. Append; don't build.
   `guardrail` span — the scrub runs inside `PostgresSpanProcessor.on_end` and emitting a
   span there would recurse.
 - Still open from that entry (Phase G, later passes):
-  - **`schema_validation` guardrail span** — `complete_structured_traced` retries JSON
-    validation up to twice and reports neither the attempt count nor a span. Add it
-    without pulling `agent_core.spans` into `model_client.py`: have
-    `complete_structured_traced` return `(obj, resp, attempts)` and let the callers in
-    `agent_core/agents/base.py` (`_plan`, `_synthesize`) + `guardrails/input_classification.py`
-    + `agent_core/supervisor.py` emit a `guardrail` span (`name = schema_validation`,
-    `result`, `count = attempts - 1`).
-  - **`finops.tool.retries`** — `_enterprise._request` retries a 5xx / transport error
-    once but the count is local. Thread it out (a `retries` field on the returned dict, or
-    a contextvar the tool span reads) and set it in `agents/base.py::_run_step`. Today
-    `_run_step` could stamp a constant `0` to satisfy the "attribute present" letter of
-    the standard, but the real per-call value needs this plumbing.
+  - ~~**`schema_validation` guardrail span**~~ **DONE (2026-09-09, PR #25)** —
+    `complete_structured_traced` emits a `guardrail` span
+    (`finops.guardrail.name = schema_validation`, `result` ok/failed,
+    `count` = retries used) on every structured-output call. `agent_core.spans` is
+    imported lazily in a helper so `model_client` stays dependency-free at load; a tracing
+    failure never breaks a model call. `tests/test_model_client.py` (+3).
+  - ~~**`finops.tool.retries`**~~ **DONE (2026-09-09, PR #25)** — `_enterprise._request`
+    records its in-call retry count in a `ContextVar`; `last_retries()` reads it back;
+    `agents/base.py::_run_step` stamps `finops.tool.retries` on every `tool` span (0 for
+    in-process fixture servers, which don't go through `_request`).
+    `tests/test_mcp_errors.py` (+1).
 - Build-phase policy (2026-09): the CI `eval` workflow is **manual-dispatch only** — the
   `pull_request` path trigger was removed to stop ~$2/35-min real-model runs firing on
   every PR (and every no-op re-push) during active development. This reverses the W3
@@ -74,13 +73,17 @@ Ideas that are out of the current phase's scope. Append; don't build.
   agent calls `search_logs` 3× but omitted it from `evidence`, which is the one ref
   holding Sc. 8 at 2/3. **Not yet eval-validated** (run was cancelled). Confirm 9/9 on the
   next manual sweep; if still 8/9, the earlier hill-climb notes above apply.
-- Phase C PR 2 (Supervisor): the **Knowledge specialist is registered but not dispatched**
-  — `agent_core/prompts/supervisor/decompose.md` only emits `settlement` / `risk_client`
-  sub-tasks, and `supervisor._decompose` filters to those two. Wiring Knowledge means a
-  degenerate `run_knowledge` (a fixed `ops.search_knowledge` + `ops.find_incidents` call,
-  no planner, read-only, returns cited evidence + a one-line relevance note per chunk) in
-  `agent_core/agents/base.py` and a `knowledge` branch in the decompose prompt. Left out
-  of PR 2 to keep it reviewable; Scenario 11 does not need it.
+- ~~Phase C PR 2 (Supervisor): the **Knowledge specialist is registered but not
+  dispatched**~~ **DONE (2026-09-09)** — `agents/base.py::run_knowledge`: a degenerate
+  runner (fixed `ops.search_knowledge` + `ops.find_incidents`, no planner, no model call,
+  proposes nothing) → a `Finding` with cited `evidence` and a one-line relevance note per
+  chunk in `checked`, `subject.type = "knowledge"`. `supervisor._decompose` `routable`
+  set + `_dispatch` route it; `supervisor._business()` excludes a `knowledge` sub-finding
+  from the client outcome reconciliation and the all-INSUFFICIENT incident recommendation
+  (retrieval is background, not a verdict). `decompose.md` rewritten to cover all seven
+  agents (this also closed the latent gap where `margin` / `corpactions` / `cash` were
+  `routable` in code but never described in the prompt). `tests/test_specialists.py` (+2),
+  `tests/test_supervisor.py` (+2). A scored eval still isn't run (no sweeps during build).
 - Phase C closed 2026-09-09 (PRs #14, #16) **without an eval sweep** per the policy note
   above. If the deferred end-of-project sweep is ever run, Phase C's target set is
   scenarios 1–6, 8–10, 12 (specialists must reproduce the Investigator's Phase A results

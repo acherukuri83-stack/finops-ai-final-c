@@ -17,7 +17,7 @@ import json
 from typing import Any
 
 from agent_core import policy, prompts
-from agent_core.agents import run_specialist, spec_for
+from agent_core.agents import run_knowledge, run_specialist, spec_for
 from agent_core.agents.base import _clip, _record_usage
 from agent_core.guardrails.input_classification import classify_request
 from agent_core.reasoning.model_client import ModelClient, complete_structured_traced
@@ -144,7 +144,15 @@ async def _decompose(
         _record_usage(current, resp)
         set_attrs(current, {"payload.out": _clip([s.model_dump() for s in plan.subtasks])})
     # keep only sub-tasks we can actually route
-    routable = {"settlement", "risk_client", "stockloan", "margin", "corpactions", "cash"}
+    routable = {
+        "settlement",
+        "risk_client",
+        "stockloan",
+        "margin",
+        "corpactions",
+        "cash",
+        "knowledge",
+    }
     return [s for s in plan.subtasks if s.subject_ids and s.agent in routable]
 
 
@@ -159,6 +167,7 @@ async def _dispatch(
             "margin": "margin_call",
             "corpactions": "ca_event",
             "cash": "cash_break",
+            "knowledge": "knowledge",
         }.get(st.agent, "trade")
         subject = SubjectRef(type=subj_type, id=st.subject_ids[0])
         scoped = st.question
@@ -174,6 +183,10 @@ async def _dispatch(
                 "subtask.budget": st.budget,
             },
         ):
+            if st.agent == "knowledge":
+                return await run_knowledge(
+                    spec, subject=subject, request=scoped, scenario_id=scenario_id
+                )
             return await run_specialist(
                 spec,
                 subject=subject,
@@ -228,9 +241,15 @@ async def _synthesize(
 # --- correlation / guards (code, not prompt) ----------------------------------
 
 
+def _business(sub_findings: list[Finding]) -> list[Finding]:
+    """Sub-findings that carry a domain outcome — Knowledge is background retrieval, not a
+    verdict, so it never drives the client outcome or the incident-review recommendation."""
+    return [f for f in sub_findings if f.subject.type != "knowledge"]
+
+
 def _reconcile_outcome(finding: Finding, sub_findings: list[Finding]) -> None:
     """RESOLVED only if a sub-finding resolved; otherwise the weakest sub-outcome."""
-    outs = [f.outcome for f in sub_findings]
+    outs = [f.outcome for f in _business(sub_findings)]
     if Outcome.RESOLVED_CAUSE in outs:
         if finding.outcome not in (Outcome.RESOLVED_CAUSE, Outcome.TOOL_DEGRADED):
             finding.outcome = Outcome.RESOLVED_CAUSE
@@ -266,9 +285,10 @@ def _recommend_incident_review(finding: Finding, sub_findings: list[Finding]) ->
     subject" (which job / which service) is an unresolved product question. A human runs
     `POST /diagnose` with the subject they suspect.
     """
-    if not sub_findings:
+    business = _business(sub_findings)
+    if not business:
         return
-    if not all(f.outcome is Outcome.INSUFFICIENT_EVIDENCE for f in sub_findings):
+    if not all(f.outcome is Outcome.INSUFFICIENT_EVIDENCE for f in business):
         return
     note = (
         "every specialist returned INSUFFICIENT_EVIDENCE — no shared domain cause found; "
