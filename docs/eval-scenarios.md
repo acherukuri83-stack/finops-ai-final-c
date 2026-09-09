@@ -283,11 +283,11 @@ expect:
 
 **Planted**
 - `T100245` / `T100251` / `T100263` — HF101 buys (AAPL / AMZN / GOOGL) on `ACC-88213`, all FAILED `COUNTERPARTY_SSI_MISMATCH` against `CP-017`. Same instruction/affirmation split as Sc. 1: our SSI is current at DTC `1234` (v3), the counterparty affirmed the superseded `5678`. One shared cause.
-- `T100271` — HF101 sell 40,000 NVDA on `ACC-88213`, FAILED `INSUFFICIENT_POSITION` (available 12,000, pending_deliver 28,000); borrow is available. A distinct cause.
-- SSI history for `ACC-88213` (v1 9012 → v2 5678 → v3 1234), `CP-017` SSI at `5678`, the NVDA position + borrow, and 3–8 corroborating log lines. Facts only — the split is planted, the reason is not.
+- `T100271` — HF101 sell 9,000 META on `ACC-88213`, FAILED `INSUFFICIENT_POSITION` (available 2,500, pending_deliver 6,500); borrow is available. A distinct cause. (META, not NVDA — Sc. 5 owns the ACC-88213/NVDA position row.)
+- SSI history for `ACC-88213` (v1 9012 → v2 5678 → v3 1234), `CP-017` SSI at `5678`, the META position + borrow, and 3–8 corroborating log lines. Facts only — the split is planted, the reason is not.
 - Incidents: `INC-1001`, `INC-1006`.
 
-**Ideal transcript:** Supervisor classifies the ask → `find_trades(client=HF101, status=FAILED)` → **decompose**: one `settlement` sub-task over `[T100245, T100251, T100263]` ("do these share a counterparty cause?"), one `settlement` sub-task over `[T100271]` ("position shortfall?") → **dispatch in parallel** (each under a `delegation` span) → sub-findings: three-trade group resolves `COUNTERPARTY_INSTRUCTION_STALE` (action `resubmit_settlement` after re-affirmation; `update_ssi` a rejected alternative), the NVDA trade resolves `DELIVERY_SHORTFALL` (action `resubmit_settlement`) → **correlate** into two grouped actions, the first with all three trades in `impact` → **one** case, `subject_type=client`. Any `INSUFFICIENT_EVIDENCE` / `TOOL_DEGRADED` sub-outcome is surfaced verbatim in `open_questions`; no proposal is silently dropped.
+**Ideal transcript:** Supervisor classifies the ask → `find_trades(client=HF101, status=FAILED)` → **decompose**: one `settlement` sub-task over `[T100245, T100251, T100263]` ("do these share a counterparty cause?"), one `settlement` sub-task over `[T100271]` ("position shortfall?") → **dispatch in parallel** (each under a `delegation` span) → sub-findings: three-trade group resolves `COUNTERPARTY_INSTRUCTION_STALE` (action `resubmit_settlement` after re-affirmation; `update_ssi` a rejected alternative), the META trade resolves `DELIVERY_SHORTFALL` (action `resubmit_settlement`) → **correlate** into two grouped actions, the first with all three trades in `impact` → **one** case, `subject_type=client`. Any `INSUFFICIENT_EVIDENCE` / `TOOL_DEGRADED` sub-outcome is surfaced verbatim in `open_questions`; no proposal is silently dropped.
 
 ```yaml
 expect:
