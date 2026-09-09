@@ -69,9 +69,22 @@ EXPECTED_TOOLS = {
         "run_tests",
         "run_eval",
     },
+    "margin": {
+        "get_margin_call",
+        "list_margin_calls",
+        "get_margin_status",
+        "get_collateral",
+        "get_eligibility",
+        "post_collateral",
+        "substitute_collateral",
+        "escalate_margin",
+    },
     "case": {"create_case", "update_case", "propose_action", "get_approval", "log_audit"},
 }
 EXPECTED_ACCESS = {
+    "post_collateral": "write",
+    "substitute_collateral": "write",
+    "escalate_margin": "write",
     "open_pull_request": "write",
     "post_review": "write",
     "resubmit_settlement": "write",

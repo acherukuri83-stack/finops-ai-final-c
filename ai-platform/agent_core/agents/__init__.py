@@ -10,6 +10,7 @@ from agent_core.agents.base import SpecialistSpec, run_specialist
 from agent_core.agents.registry import (
     DEVELOPER,
     KNOWLEDGE,
+    MARGIN,
     RISK_CLIENT,
     SETTLEMENT,
     STOCKLOAN,
@@ -24,5 +25,6 @@ __all__ = [
     "KNOWLEDGE",
     "DEVELOPER",
     "STOCKLOAN",
+    "MARGIN",
     "spec_for",
 ]

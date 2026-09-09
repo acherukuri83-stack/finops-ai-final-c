@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from agent_core.developer import investigate_incident, verify_change
 from agent_core.loop import investigate
+from agent_core.margin import investigate_margin_call
 from agent_core.review import review_pr
 from agent_core.schemas.finding import Finding
 from agent_core.schemas.review import Review
@@ -76,6 +77,7 @@ class InvestigateRequest(BaseModel):
     trade_id: str | None = None
     client_id: str | None = None  # Phase C: a client-level ask fans out via the Supervisor
     loan_id: str | None = None  # Phase F: a stock-loan question -> the StockLoan specialist
+    margin_call_id: str | None = None  # Phase F: a margin call -> the Margin specialist
 
 
 class DecideRequest(BaseModel):
@@ -106,9 +108,13 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
         return await investigate_client(req.client_id)
     if req.loan_id:
         return await investigate_loan(req.loan_id)
+    if req.margin_call_id:
+        return await investigate_margin_call(req.margin_call_id)
     if req.trade_id:
         return await investigate(req.trade_id)
-    raise HTTPException(status_code=422, detail="provide trade_id, client_id, or loan_id")
+    raise HTTPException(
+        status_code=422, detail="provide trade_id, client_id, loan_id, or margin_call_id"
+    )
 
 
 class DiagnoseRequest(BaseModel):

@@ -1128,6 +1128,17 @@
               }
             ],
             "title": "Loan Id"
+          },
+          "margin_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Call Id"
           }
         },
         "type": "object",

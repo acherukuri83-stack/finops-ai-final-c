@@ -128,9 +128,15 @@ Ideas that are out of the current phase's scope. Append; don't build.
     table with a `simulator` planter, like the enterprise tier.
 - Phase F core slice (2026-09-09, PR TBD): shipped **Stock Loan only** as in-process
   Python fixtures (`mcp_servers/stockloan/store.py`), not a seeded table. Deferred:
-  - **Margin & collateral**, **corporate actions**, **cash** domains — each its own MCP
-    server + specialist + allowlist + prompts + hard rules (call windows, record-date
-    logic, funding ladders), one at a time (`docs/agent-plan.md` Phase 13).
+  - ~~Margin & collateral~~ **DONE (2026-09-09)** — `mcp_servers/margin/` (in-process
+    fixture server: calls / status / collateral / eligibility), `MARGIN` spec,
+    `agent_core/margin.py::investigate_margin_call`, `planner/margin.md` +
+    `synthesis/margin.md`, **meet-vs-close-out hard rule in code**
+    (`_enforce_call_window` on `due_by`), `POST /investigate {margin_call_id}`, Supervisor
+    `margin` sub-task. `tests/test_margin.py` (5).
+  - **corporate actions**, **cash** domains — each its own MCP server + specialist +
+    allowlist + prompts + hard rules (record-date logic, funding ladders), one at a time
+    (`docs/agent-plan.md` Phase 13).
   - **Seeded data + simulator planter** for stock loan (loans/recalls against real
     positions), replacing the fixture store — like the enterprise tier.
   - ~~Scenario 30~~ **mechanism DONE (2026-09-09)** — the Supervisor correlating a

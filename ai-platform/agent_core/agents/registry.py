@@ -72,7 +72,19 @@ STOCKLOAN = SpecialistSpec(
     required_tools=frozenset({("stockloan", "get_loan")}),
 )
 
-_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN)}
+# Phase F — the Margin specialist. Scope: its own book + `market` + read-only `position`
+# + `ops`. The call-window rule (meet vs close-out) is code, in `agent_core/margin.py`.
+MARGIN = SpecialistSpec(
+    name="margin",
+    planner_prompt="planner/margin",
+    synthesis_prompt="synthesis/margin",
+    tool_servers=frozenset({"margin", "market", "position", "ops"}),
+    allowlist_key="margin",
+    subject_type="margin_call",
+    required_tools=frozenset({("margin", "get_margin_call")}),
+)
+
+_BY_NAME = {s.name: s for s in (SETTLEMENT, RISK_CLIENT, KNOWLEDGE, DEVELOPER, STOCKLOAN, MARGIN)}
 
 
 def spec_for(name: str) -> SpecialistSpec:

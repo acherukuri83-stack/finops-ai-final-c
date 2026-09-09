@@ -38,6 +38,14 @@ stockloan:
   - book_buy_in
   - escalate
 
+# Phase F - the Margin specialist. Proposals only, approval-gated; no override of a risk
+# decision. The call-window rule (meet vs close-out) is code.
+margin:
+  - post_collateral
+  - substitute_collateral
+  - escalate_margin
+  - escalate
+
 # Back-compat: the single-trade path routes through `settlement`. `investigator` is kept
 # as an alias for any caller still passing that key (== settlement + update_ssi).
 investigator:
