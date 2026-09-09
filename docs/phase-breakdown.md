@@ -90,9 +90,9 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 | | |
 |---|---|
 | **Scope in** | `EventBus` — **Postgres-outbox** (real, `platform_api/events/outbox.py`, works local + hosted) + a lazy **Kafka** adapter (`kafka.py`, untested here); simulator publishes FAILED events (`make emit`); an **in-process consumer** (app lifespan, `EVENTS_ENABLED=1`) opens a case + runs the investigation; dedup on `{subject}:{failure_code}` |
-| **Routing** | Code, not an LLM classify — a FAILED settlement event carries `trade_id` + `failure_code` → `investigate(trade_id)`. Urgency: a `deadline` inside 60 min → case `priority=HIGH`. (Wire / client event subjects are `OUT_OF_SCOPE` — they arrive with their modules.) |
+| **Routing** | Code, not an LLM classify — a FAILED settlement event carries `trade_id` + `failure_code` → `investigate(trade_id)`. Urgency: a `deadline` inside 60 min → case `priority=HIGH`. A `wire` HELD event routes to `investigate_wire` (2026-09-09); client event subjects stay `OUT_OF_SCOPE`. |
 | **Portal** | Cases show a `source` badge (`event`/`user`) + `HIGH` chip; the Cases list polls so event cases appear live |
-| **Built** | FAILED event → case; duplicate event → same case (audit note, no 2nd investigation); near-deadline event → case `HIGH`. Wire prioritisation ships with the Wires module. |
+| **Built** | FAILED event → case; duplicate event → same case (audit note, no 2nd investigation); near-deadline event → case `HIGH`. A `wire` HELD event opens a case via `investigate_wire`; a cutoff `deadline` inside 60 min marks it HIGH (`make emit WIRE=…`). |
 | **Demo** | `make emit TRADE=T100245` → case + finding + proposal appear unprompted; trace root span is the `event` |
 | **Effort** | 1 weekend |
 

@@ -168,6 +168,87 @@ async def test_no_action_finding_still_opens_a_tracking_case(
     assert cases.get_case(rows[0]["case_id"])["approvals"] == []
 
 
+def _wire_event(**payload: Any) -> Event:
+    return Event(
+        topic="wire.events", type="HELD", subject_type="wire", subject_id="W300917", payload=payload
+    )
+
+
+_WIRE_FINDING = json.dumps(
+    {
+        "subject": {"type": "wire", "id": "W300917"},
+        "outcome": "RESOLVED_CAUSE",
+        "root_cause": "NEW_BENEFICIARY_REVIEW",
+        "evidence": [{"kind": "tool", "ref": "get_wire", "cited": True}],
+        "proposed_actions": [
+            {
+                "action_type": "route_to_reviewer",
+                "params": {"wire_id": "W300917", "reason": "new beneficiary", "packet": "x"},
+                "rationale": "BEN-777 is not on file",
+                "impact": [],
+            }
+        ],
+        "rejected_alternatives": [],
+        "confidence_basis": "the wire and the standing instructions",
+    }
+)
+
+
+def _one_wire_investigation() -> list[ModelResponse]:
+    return [
+        ModelResponse(text=_plan(("wire", "get_wire", {"wire_id": "W300917"}))),
+        ModelResponse(text=_plan()),
+        ModelResponse(text=_WIRE_FINDING),
+    ]
+
+
+async def test_held_wire_event_runs_the_wire_specialist(
+    fake_enterprise: FakeEnterpriseClient,
+) -> None:
+    bus = FakeBus()
+    await bus.publish(_wire_event(hold_reason="NEW_BENEFICIARY"))
+    fake = FakeModelClient(_one_wire_investigation())
+
+    handled = await drain_once(bus, client=fake)
+
+    assert handled == 1
+    rows = cases.list_cases()
+    assert len(rows) == 1
+    assert rows[0]["subject_type"] == "wire"
+    assert rows[0]["source"] == "event"
+    assert rows[0]["dedup_key"] == "W300917:NEW_BENEFICIARY"
+    audit = cases.get_case(rows[0]["case_id"])["audit"]
+    assert any("opened from a HELD event on wire.events" in e["event"] for e in audit)
+
+
+async def test_held_wire_near_cutoff_marks_case_high(
+    fake_enterprise: FakeEnterpriseClient,
+) -> None:
+    soon = (datetime.now(UTC) + timedelta(minutes=22)).isoformat()
+    bus = FakeBus()
+    await bus.publish(_wire_event(hold_reason="NEW_BENEFICIARY", deadline=soon))
+    fake = FakeModelClient(_one_wire_investigation())
+
+    await drain_once(bus, client=fake)
+
+    assert cases.list_cases()[0]["priority"] == "HIGH"
+
+
+async def test_non_held_wire_event_is_out_of_scope(
+    fake_enterprise: FakeEnterpriseClient,
+) -> None:
+    bus = FakeBus()
+    await bus.publish(
+        Event(topic="wire.events", type="RELEASED", subject_type="wire", subject_id="W300917")
+    )
+    fake = FakeModelClient([])
+
+    handled = await drain_once(bus, client=fake)
+
+    assert handled == 1
+    assert cases.list_cases() == []
+
+
 async def test_run_poller_drains_then_stops(fake_enterprise: FakeEnterpriseClient) -> None:
     bus = FakeBus()
     await bus.publish(_event(failure_code="COUNTERPARTY_SSI_MISMATCH"))

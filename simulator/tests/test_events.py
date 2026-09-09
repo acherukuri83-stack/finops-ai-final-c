@@ -1,4 +1,4 @@
-"""DB-backed: `emit_settlement_failed` writes a well-formed outbox row.
+"""DB-backed: `emit_settlement_failed` / `emit_wire_held` write well-formed outbox rows.
 
 Skipped if no database is reachable (mirrors `test_seed_integration.py`).
 """
@@ -46,4 +46,29 @@ def test_emit_settlement_failed_writes_an_outbox_row(conn: Connection) -> None:
     assert row["dedup_key"] == key
     assert row["payload"]["failure_code"] == "COUNTERPARTY_SSI_MISMATCH"
     assert row["payload"]["deadline"] == "2026-09-04T11:00:00"
+    assert row["published_at"] is None
+
+
+def test_emit_wire_held_writes_an_outbox_row(conn: Connection) -> None:
+    events.ensure_outbox(conn)
+    conn.execute(text("delete from outbox_events where subject_id = 'W-SIM-1'"))
+
+    key = events.emit_wire_held(
+        conn, "W-SIM-1", hold_reason="NEW_BENEFICIARY", deadline="2026-09-06T16:00:00"
+    )
+    assert key == "W-SIM-1:NEW_BENEFICIARY"
+
+    row = (
+        conn.execute(
+            select(events.outbox_events).where(events.outbox_events.c.subject_id == "W-SIM-1")
+        )
+        .mappings()
+        .one()
+    )
+    assert row["topic"] == "wire.events"
+    assert row["event_type"] == "HELD"
+    assert row["subject_type"] == "wire"
+    assert row["dedup_key"] == key
+    assert row["payload"]["hold_reason"] == "NEW_BENEFICIARY"
+    assert row["payload"]["deadline"] == "2026-09-06T16:00:00"
     assert row["published_at"] is None

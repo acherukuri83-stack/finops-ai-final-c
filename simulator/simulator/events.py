@@ -82,3 +82,42 @@ def emit_settlement_failed(
         )
     )
     return dedup_key
+
+
+def emit_wire_held(
+    conn: Connection,
+    wire_id: str,
+    *,
+    hold_reason: str | None = None,
+    deadline: str | None = None,
+    occurred_at: datetime | None = None,
+) -> str:
+    """Insert a HELD wire event for `wire_id` on `wire.events`. Returns its dedup key.
+
+    `hold_reason` defaults to the wire's own; `deadline` (ISO-8601, typically the
+    currency cutoff) inside 60 min makes the consumer mark the case HIGH priority. The
+    in-process consumer runs the Wire specialist (`investigate_wire`).
+    """
+    ensure_outbox(conn)
+    if hold_reason is None:
+        row = conn.execute(
+            text("select hold_reason from wires where wire_id = :w"), {"w": wire_id}
+        ).first()
+        hold_reason = (row[0] if row and row[0] else None) or "HELD"
+
+    payload: dict[str, Any] = {"hold_reason": hold_reason}
+    if deadline:
+        payload["deadline"] = deadline
+    dedup_key = f"{wire_id}:{hold_reason}"
+    conn.execute(
+        outbox_events.insert().values(
+            topic="wire.events",
+            event_type="HELD",
+            dedup_key=dedup_key,
+            subject_type="wire",
+            subject_id=wire_id,
+            payload=payload,
+            occurred_at=occurred_at or datetime.now(UTC),
+        )
+    )
+    return dedup_key

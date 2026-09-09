@@ -40,14 +40,18 @@ the four maker/checker/cutoff/screening hard rules + `POST /investigate {wire_id
 `tests/test_wire.py`), PR #40 (seeded Postgres + a `simulator` planter for `wire`, the
 Sc. 7 / 13–16 `subject: wire` YAMLs + `evals/harness.py` dispatch, `supervisor._held_wires`
 discovery), PR #41 (the wire corpus — `Wire Processing Guide`, `Sanctions Procedure`,
-`INC-2001…2005`), and PR #44 (the portal `WIRE_REVIEWER` release flow — `GET /wire/queue` ·
+`INC-2001…2005`), PR #44 (the portal `WIRE_REVIEWER` release flow — `GET /wire/queue` ·
 `GET /wire/exceptions` · role-gated `POST /wire/release`; `WireReviewView.tsx`; still no
-`release_wire` agent tool). What remains project-wide, by owner decision and not a gap:
+`release_wire` agent tool), and PR #45 (the Phase D **wire event route** — `events/consumer.py`
+routes a `wire` HELD event → `investigate_wire`; `simulator.events.emit_wire_held` +
+`make emit WIRE=…`). What remains project-wide, by owner decision and not a gap:
 
 1. **End-of-project eval sweep** — a full `workflow_dispatch` run + refreshed
    `evals/SCORECARD.md`. Paused for C+ during the build; the record stays Phase A 8/9.
    Known items for that sweep: Sc. 11 / Sc. 30 `groups` scoring, Sc. 8 evidence-citation,
-   the wire scenarios once a `wire` table is seeded.
+   the wire scenarios (Sc. 7 / 13–16).
+2. **`docs/deploy-aws.md`** — an AWS deploy write-up (ECS Fargate / RDS / MSK). A doc,
+   not functionality; on the roadmap "because it's on the resume".
 
 ## Notes / deviations
 
