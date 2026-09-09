@@ -7,22 +7,26 @@ const box: React.CSSProperties = { marginTop: 12, padding: 12, background: "#f7f
 
 export default function EngineeringView({ openTrace }: { openTrace: OpenTrace }) {
   const [subject, setSubject] = useState("job-4471");
+  const [ticket, setTicket] = useState("");
   const [finding, setFinding] = useState<Finding | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function run() {
+  async function call(fn: () => Promise<Finding>) {
     setBusy(true);
     setError(null);
     setFinding(null);
     try {
-      setFinding(await api.diagnose(subject.trim()));
+      setFinding(await fn());
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(false);
     }
   }
+
+  const run = () => call(() => api.diagnose(subject.trim()));
+  const verify = () => call(() => api.verify(ticket.trim()));
 
   return (
     <div style={{ fontSize: 13, maxWidth: 720 }}>
@@ -40,6 +44,17 @@ export default function EngineeringView({ openTrace }: { openTrace: OpenTrace })
         />
         <button onClick={run} disabled={busy || !subject.trim()}>
           {busy ? "Diagnosing…" : "Diagnose"}
+        </button>
+      </div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+        <input
+          value={ticket}
+          placeholder="CHG-0001"
+          onChange={(e) => setTicket(e.target.value)}
+          style={{ ...mono, padding: "4px 8px", width: 220 }}
+        />
+        <button onClick={verify} disabled={busy || !ticket.trim()}>
+          {busy ? "Verifying…" : "Verify change ticket"}
         </button>
       </div>
 

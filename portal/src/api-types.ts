@@ -171,6 +171,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Verify
+         * @description Developer Agent — verification mode. Apply a change ticket, re-check the signals
+         *     the diagnosis used, hand residual trades to Settlement, and write an incident on a
+         *     clean fix. On failure it reports — it never proposes a second fix.
+         */
+        post: operations["post_verify_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -897,6 +919,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VerifyRequest */
+        VerifyRequest: {
+            /** Ticket Id */
+            ticket_id: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1151,6 +1178,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DiagnoseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finding"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_verify_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyRequest"];
             };
         };
         responses: {

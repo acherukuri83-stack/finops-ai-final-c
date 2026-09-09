@@ -2,10 +2,12 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: mainline A→G core slices shipped — no active phase
+## Current phase: filling in deferred phase depth (E verification mode just landed)
 
-Every mainline phase has a merged core slice (A + C full; D full; **E / F / G as reviewable slices**). Nothing is in progress. The remaining depth per phase is enumerated in `docs/backlog.md` and can be picked up in any order:
-- **E** — Developer Agent verification / PR-review / eval-authoring modes; `repo` + `ci` MCP servers; Supervisor→Developer hand-off; standards corpus.
+Every mainline phase has a merged core slice (A + C full; D full; **E / F / G as reviewable slices**), and deferred depth is being picked up item by item. **Just done: E verification mode** — `agent_core/developer.py::verify_change(ticket_id)` applies a change ticket (`platform` store `apply_change_ticket` simulates the effect deterministically from the ticket target), re-checks the diagnosis signals (job run, topic lag), hands residual trades to the Settlement specialist as `sub_findings`, and writes a retrievable `INC-3xxx` on a clean fix; a fix that did not work reports FAILED and says to re-enter incident mode — **never a second autonomous fix**. `POST /verify`; `platform.get_incident` read tool; Engineering tab gained a verify input.
+
+Remaining depth (`docs/backlog.md`, any order):
+- **E** — PR-review / eval-authoring modes; `repo` + `ci` MCP servers; Supervisor→Developer hand-off on all-`INSUFFICIENT_EVIDENCE`; standards corpus.
 - **F** — Margin / CorpActions / Cash domains; a seeded table + `simulator` planter for stock loan; mixed-client Scenario 30; portal Stock Loan tab.
 - **G** — `schema_validation` guardrail span; `finops.tool.retries` emission; trace replay/diff polish; Bedrock swap; memory loop.
 - **B (Wires)** — the optional module (unbuilt; depends only on A).

@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from pydantic import BaseModel
 
-from agent_core.developer import investigate_incident
+from agent_core.developer import investigate_incident, verify_change
 from agent_core.loop import investigate
 from agent_core.schemas.finding import Finding
 from agent_core.stockloan import investigate_loan
@@ -114,12 +114,24 @@ class DiagnoseRequest(BaseModel):
     request: str | None = None
 
 
+class VerifyRequest(BaseModel):
+    ticket_id: str  # an applied change ticket (CHG-xxxx)
+
+
 @app.post("/diagnose")
 async def post_diagnose(req: DiagnoseRequest) -> Finding:
     """Developer Agent — incident mode. Diagnose a platform fault (failing job / degraded
     service): find the causing change, the blast radius, and revert-vs-fix-forward, and
     propose a change ticket + rerun for a human to approve."""
     return await investigate_incident(req.subject_id, request=req.request)
+
+
+@app.post("/verify")
+async def post_verify(req: VerifyRequest) -> Finding:
+    """Developer Agent — verification mode. Apply a change ticket, re-check the signals
+    the diagnosis used, hand residual trades to Settlement, and write an incident on a
+    clean fix. On failure it reports — it never proposes a second fix."""
+    return await verify_change(req.ticket_id)
 
 
 @app.post("/events")

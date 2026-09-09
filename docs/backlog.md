@@ -99,10 +99,12 @@ Ideas that are out of the current phase's scope. Append; don't build.
   the column list in sync by hand, same as `simulator/tables.py` mirrors the Flyway schema.
 - Phase E core slice (2026-09-09, PR TBD): shipped **incident mode only**. Deferred, all
   from `docs/agent-plan.md` Phases 11–12:
-  - **verification mode** — derive `Expectation[]` from an applied change ticket, re-check
-    every diagnosis signal, compute delta, hand residual subjects to the right business
-    agent via the Supervisor, write an `INC-3xxx` back on success; on failure report and
-    re-enter incident mode with the failed hypothesis excluded (no autonomous 2nd fix).
+  - ~~verification mode~~ **DONE (2026-09-09)** — `agent_core/developer.py::verify_change`
+    (`POST /verify`): `apply_change_ticket` simulates the effect deterministically, re-checks
+    the job run + topic lag, hands residual trades to the Settlement specialist as
+    `sub_findings`, writes a retrievable `INC-3xxx` on a clean fix; a failed fix reports
+    FAILED + "re-enter incident mode excluding <hypothesis>" and proposes nothing. Residual
+    hand-off is direct to `run_specialist(SETTLEMENT)`, not yet via the Supervisor.
   - **PR-review mode** — `repo` + `ci` MCP servers (`get_pull_request` / `get_diff` /
     `get_source` / `open_pull_request` draft / `post_review`; `run_static_analysis` /
     `run_security_scan` / `get_test_coverage` / `run_tests` / `run_eval`), diff-surface
