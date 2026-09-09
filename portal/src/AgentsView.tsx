@@ -1,3 +1,4 @@
+import AgentIllustration from "./AgentIllustration";
 import { useState } from "react";
 import "./agents.css";
 
@@ -191,17 +192,20 @@ export default function AgentsView() {
             (agent) => group === "All" || group === agent.group,
           ).map((agent) => (
             <article key={agent.name} className="agent-card">
-              <span className="agent-category">{agent.group}</span>
-              <h3>{agent.name}</h3>
-              <p>{agent.role}</p>
-              <div className="agent-tools">{agent.tools}</div>
-              <a
-                href={`${SOURCE}${agent.source}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Explore implementation ↗
-              </a>
+              <AgentIllustration name={agent.name} />
+              <div className="agent-card-content">
+                <span className="agent-category">{agent.group}</span>
+                <h3>{agent.name}</h3>
+                <p>{agent.role}</p>
+                <div className="agent-tools">{agent.tools}</div>
+                <a
+                  href={`${SOURCE}${agent.source}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Explore implementation ↗
+                </a>
+              </div>
             </article>
           ))}
         </div>
