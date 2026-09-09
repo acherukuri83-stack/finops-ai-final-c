@@ -26,6 +26,8 @@ _PLANT_KEYS = {
     "borrow",
     "restrictions",
     "securities",
+    "loans",
+    "lending",
     "logs",
     "incidents",
     "corpus_fixtures",

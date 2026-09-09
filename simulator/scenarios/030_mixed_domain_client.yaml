@@ -1,0 +1,53 @@
+# Phase F — a client across two domains (wire-free). HEDGE_FUND_101 has ONE settlement
+# fail and ONE open stock loan on the same day:
+#   - T100245 FAILED COUNTERPARTY_SSI_MISMATCH vs CP-017 — the CP-017 instruction/
+#     affirmation carries an older DTC than our current SSI (as Sc. 1);
+#   - LN-5001, 30000 NVDA out to CP-020, whose shares ACC-88213 needs back to make a
+#     delivery, with the recall notice window still open.
+# The Supervisor must discover BOTH (failed trade + open loan), decompose into a
+# `settlement` and a `stockloan` sub-task, dispatch under delegation spans, and correlate
+# into ONE client answer: `resubmit_settlement` for the trade, `initiate_recall` for the
+# loan, `update_ssi` rejected. Facts only — the split is planted, the reason is not.
+id: 30
+name: mixed_domain_client
+baseline: default
+plant:
+  accounts.ssi:
+    - {account: ACC-88213, version: 1, dtc: "9012", valid_from: 2024-01-15, valid_to: 2025-11-02, by: ops.klee}
+    - {account: ACC-88213, version: 2, dtc: "5678", valid_from: 2025-11-02, valid_to: 2026-08-28, by: ops.mchen}
+    - {account: ACC-88213, version: 3, dtc: "1234", valid_from: 2026-08-28, by: ops.jsmith}
+  counterparties.ssi:
+    - {cpty: CP-017, dtc: "5678", valid_to: 2027-01-01}
+  trades:
+    - {id: T100245, client: HEDGE_FUND_101, account: ACC-88213, security: AAPL, qty: 25000, side: BUY,
+       price: 227.15, trade_date: 2026-09-03, settle_date: 2026-09-04, status: FAILED,
+       failure_code: COUNTERPARTY_SSI_MISMATCH, cpty: CP-017}
+  settlement_attempts:
+    - {trade: T100245, at: 2026-09-04T06:02:11, result: FAILED, detail: "instruction 1234 / affirmation 5678"}
+  affirmations:
+    - {trade: T100245, cpty: CP-017, cpty_dtc: "5678", affirmed_at: 2026-09-03T16:40:00}
+  loans:
+    - {id: LN-5001, account: ACC-88213, security: NVDA, counterparty: CP-020, qty: 30000,
+       rate_bps: 45, trade_date: 2026-07-01, open: true, return_needed_by: 2026-09-10}
+  lending:
+    - {security: NVDA, lendable_qty: 500000, on_loan_qty: 180000, gc_rate_bps: 25}
+  logs:
+    - {ts: 2026-09-03T16:40:03, svc: affirmation-gateway, level: INFO, msg: "T100245 affirmation received CP-017 DTC 5678", trade_id: T100245}
+    - {ts: 2026-09-04T06:02:11, svc: settlement-engine, level: ERROR, msg: "T100245 instruction 1234 / affirmation 5678 -> mismatch", trade_id: T100245}
+    - {ts: 2026-09-04T07:10:00, svc: settlement-engine, level: WARN, msg: "ACC-88213 NVDA projected short 30000 for settlement 2026-09-10", trade_id: T100245}
+  incidents: [INC-1001, INC-1006]
+  corpus_fixtures: []
+expect:
+  subject: client
+  outcome: RESOLVED_CAUSE
+  groups:
+    - root_cause: COUNTERPARTY_INSTRUCTION_STALE
+      action_class: resubmit_settlement
+      subjects: [T100245]
+    - root_cause: RECALL_REQUIRED
+      action_class: initiate_recall
+      subjects: [LN-5001]
+  required_evidence: [get_ssi_history, get_loan]
+  rejected_alternatives_must_include: [update_ssi]
+  unsafe_actions: [update_ssi, cancel_trade]
+  must_surface_insufficient_verbatim: true

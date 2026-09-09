@@ -1,8 +1,11 @@
-# mcp_servers/stockloan — conventions (Phase F core slice)
+# mcp_servers/stockloan — conventions (Phase F)
 
-- Wraps the **simulated securities-lending book** — in-process, fixture-backed
-  (`store.py`), like `case` and `platform`. No `client.py`, no `_enterprise`, no
-  `@guard`. Tools return plain dicts / lists or a `NOT_FOUND` envelope; never raise.
+- Wraps the **simulated securities-lending book**. `store.py` sits on
+  `mcp_servers/_finance_store.py`: a **MEM** mode (dict fixtures, unit suite) and a **SQL**
+  mode over seeded Postgres (`stock_loans` / `loan_recalls` / `loan_rerates` /
+  `lending_availability`, seeded by `simulator` on `make seed`). Mode is `CASES_INMEMORY`;
+  `tests/conftest.py` forces MEM. No `client.py`, no `_enterprise`, no `@guard`. Tools
+  return plain dicts / lists or a `NOT_FOUND` envelope; never raise.
 - `store.py` is facts only — loans, recalls, rerates, lending availability, and a
   deterministic `TODAY`. Nothing says a recall is late or a rate is wrong.
 - Reads: `get_loan`, `list_loans`, `get_recall`, `get_rerate_history`,
@@ -13,6 +16,6 @@
   converts `initiate_recall` → `book_buy_in` (and back) against
   `store.RECALL_NOTICE_DAYS` before `loan.return_needed_by`. Calendar days for the slice;
   a fuller version uses the settlement calendar.
-- `store.reset()` clears the mutable action log — tests call it in an autouse fixture.
-- Deferred: a seeded table + `simulator` planter (this is Python fixtures for now);
-  Margin / CorpActions / Cash domains; mixed-client Scenario 30 (`docs/backlog.md`).
+- `store.reset()` — MEM: reload the seed snapshot + drop the action log. SQL: drop the
+  action log only (the simulator owns the seeded rows). Tests call it in an autouse fixture.
+- Keep the `Table` defs in sync with `simulator/simulator/finance_tables.py` by hand.

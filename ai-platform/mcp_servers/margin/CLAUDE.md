@@ -1,8 +1,11 @@
 # mcp_servers/margin — conventions (Phase F)
 
-- Simulated margin & collateral book — in-process, fixture-backed (`store.py`), like
-  `stockloan` / `platform`. No `client.py`, no `_enterprise`. Tools return dicts / lists
-  or a `NOT_FOUND` envelope; never raise.
+- Simulated margin & collateral book. `store.py` sits on `mcp_servers/_finance_store.py`
+  — MEM mode (dict fixtures, unit suite) + SQL mode over seeded Postgres (`margin_calls` /
+  `margin_status` / `collateral` / `collateral_eligibility`, seeded by `simulator`). No
+  `client.py`, no `_enterprise`. Tools return dicts / lists or a `NOT_FOUND` envelope;
+  never raise. Keep the `Table` defs in sync with
+  `simulator/simulator/finance_tables.py`.
 - Reads: `get_margin_call`, `list_margin_calls`, `get_margin_status`, `get_collateral`,
   `get_eligibility`.
 - Writes (approval-gated via `check_approval`): `post_collateral`, `substitute_collateral`,
