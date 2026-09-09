@@ -11,6 +11,9 @@ const STATUS_COLOR: Record<string, string> = {
   REJECTED: "#b00",
   OPEN: "#1a48c4",
   CLOSED: "#666",
+  event: "#6b3fa0",
+  user: "#888",
+  HIGH: "#b00",
 };
 
 function Badge({ value }: { value: string }) {
@@ -39,7 +42,10 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
-    api.cases().then(setRows).catch((e: Error) => setError(e.message));
+    const load = () => api.cases().then(setRows).catch((e: Error) => setError(e.message));
+    load();
+    const t = setInterval(load, 5000); // event-triggered cases appear without a manual refresh
+    return () => clearInterval(t);
   }, []);
 
   const loadDetail = useCallback(async (id: string) => {
@@ -84,7 +90,7 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
       <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
           <tr>
-            {["Case", "Subject", "Summary", "Status"].map((h) => (
+            {["Case", "Subject", "Summary", "Source", "Status"].map((h) => (
               <th key={h} style={{ ...cell, color: "#888", fontWeight: 600 }}>
                 {h}
               </th>
@@ -104,6 +110,15 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
               </td>
               <td style={cell}>{c.summary}</td>
               <td style={cell}>
+                <Badge value={c.source ?? "user"} />
+                {c.priority === "HIGH" && (
+                  <>
+                    {" "}
+                    <Badge value="HIGH" />
+                  </>
+                )}
+              </td>
+              <td style={cell}>
                 <Badge value={c.status} />
               </td>
             </tr>
@@ -118,7 +133,14 @@ export default function CasesView({ openTrace }: { openTrace: OpenTrace }) {
           ) : (
             <>
               <h3 style={{ marginTop: 0 }}>
-                <span style={mono}>{detail.case_id}</span> <Badge value={detail.status} />
+                <span style={mono}>{detail.case_id}</span> <Badge value={detail.status} />{" "}
+                <Badge value={detail.source ?? "user"} />
+                {detail.priority === "HIGH" && (
+                  <>
+                    {" "}
+                    <Badge value="HIGH" />
+                  </>
+                )}
               </h3>
               <div style={{ color: "#555" }}>
                 {detail.subject_type} <span style={mono}>{detail.subject_id}</span> — {detail.summary}

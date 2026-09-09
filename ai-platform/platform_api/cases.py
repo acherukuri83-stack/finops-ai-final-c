@@ -19,9 +19,26 @@ PENDING, APPROVED, REJECTED = "PENDING", "APPROVED", "REJECTED"
 
 class Backend(Protocol):
     def create_case(
-        self, subject_type: str, subject_id: str, summary: str, trace_id: str
+        self,
+        subject_type: str,
+        subject_id: str,
+        summary: str,
+        trace_id: str,
+        *,
+        source: str = "user",
+        priority: str = "NORMAL",
+        dedup_key: str | None = None,
     ) -> dict[str, Any]: ...
     def update_case(self, case_id: str, notes: str, status: str | None) -> dict[str, Any]: ...
+    def set_meta(
+        self,
+        case_id: str,
+        *,
+        source: str | None = None,
+        priority: str | None = None,
+        dedup_key: str | None = None,
+    ) -> dict[str, Any]: ...
+    def find_open_by_dedup_key(self, dedup_key: str) -> dict[str, Any] | None: ...
     def propose_action(
         self,
         case_id: str,
@@ -49,7 +66,15 @@ class MemBackend:
         self._n = 0
 
     def create_case(
-        self, subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+        self,
+        subject_type: str,
+        subject_id: str,
+        summary: str,
+        trace_id: str = "",
+        *,
+        source: str = "user",
+        priority: str = "NORMAL",
+        dedup_key: str | None = None,
     ) -> dict[str, Any]:
         self._n += 1
         case_id = f"CS-{self._n:04d}"
@@ -60,6 +85,9 @@ class MemBackend:
             "summary": summary,
             "status": "OPEN",
             "trace_id": trace_id,
+            "source": source,
+            "priority": priority,
+            "dedup_key": dedup_key,
             "created_at": datetime.now(UTC),
         }
         self.log_audit(case_id, f"case opened for {subject_type} {subject_id}")
@@ -72,6 +100,28 @@ class MemBackend:
             self._cases[case_id]["status"] = status
         self.log_audit(case_id, notes + (f" (status -> {status})" if status else ""))
         return self.get_case(case_id)
+
+    def set_meta(
+        self,
+        case_id: str,
+        *,
+        source: str | None = None,
+        priority: str | None = None,
+        dedup_key: str | None = None,
+    ) -> dict[str, Any]:
+        if case_id not in self._cases:
+            raise KeyError(case_id)
+        row = self._cases[case_id]
+        for k, v in (("source", source), ("priority", priority), ("dedup_key", dedup_key)):
+            if v is not None:
+                row[k] = v
+        return self.get_case(case_id)
+
+    def find_open_by_dedup_key(self, dedup_key: str) -> dict[str, Any] | None:
+        for c in sorted(self._cases.values(), key=lambda c: c["created_at"], reverse=True):
+            if c.get("dedup_key") == dedup_key and c["status"] not in ("CLOSED", "RESOLVED"):
+                return self.get_case(c["case_id"])
+        return None
 
     def propose_action(
         self,
@@ -140,7 +190,15 @@ class MemBackend:
 
 class SqlBackend:
     def create_case(
-        self, subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+        self,
+        subject_type: str,
+        subject_id: str,
+        summary: str,
+        trace_id: str = "",
+        *,
+        source: str = "user",
+        priority: str = "NORMAL",
+        dedup_key: str | None = None,
     ) -> dict[str, Any]:
         from sqlalchemy import text
 
@@ -156,6 +214,9 @@ class SqlBackend:
                     subject_id=subject_id,
                     summary=summary,
                     trace_id=trace_id,
+                    source=source,
+                    priority=priority,
+                    dedup_key=dedup_key,
                 )
             )
             conn.execute(
@@ -164,6 +225,55 @@ class SqlBackend:
                 )
             )
         return self.get_case(case_id)
+
+    def set_meta(
+        self,
+        case_id: str,
+        *,
+        source: str | None = None,
+        priority: str | None = None,
+        dedup_key: str | None = None,
+    ) -> dict[str, Any]:
+        from sqlalchemy import select, update
+
+        from platform_api import store
+
+        values = {
+            k: v
+            for k, v in (("source", source), ("priority", priority), ("dedup_key", dedup_key))
+            if v is not None
+        }
+        with store.connect() as conn:
+            if (
+                conn.execute(
+                    select(store.cases.c.case_id).where(store.cases.c.case_id == case_id)
+                ).first()
+                is None
+            ):
+                raise KeyError(case_id)
+            if values:
+                conn.execute(
+                    update(store.cases).where(store.cases.c.case_id == case_id).values(**values)
+                )
+        return self.get_case(case_id)
+
+    def find_open_by_dedup_key(self, dedup_key: str) -> dict[str, Any] | None:
+        from sqlalchemy import select
+
+        from platform_api import store
+
+        with store.connect() as conn:
+            row = (
+                conn.execute(
+                    select(store.cases.c.case_id)
+                    .where(store.cases.c.dedup_key == dedup_key)
+                    .where(store.cases.c.status.notin_(["CLOSED", "RESOLVED"]))
+                    .order_by(store.cases.c.created_at.desc())
+                )
+                .scalars()
+                .first()
+            )
+        return self.get_case(row) if row else None
 
     def update_case(self, case_id: str, notes: str, status: str | None) -> dict[str, Any]:
         from sqlalchemy import select, update
@@ -345,13 +455,42 @@ def set_backend(b: Backend | None) -> None:
 
 
 def create_case(
-    subject_type: str, subject_id: str, summary: str, trace_id: str = ""
+    subject_type: str,
+    subject_id: str,
+    summary: str,
+    trace_id: str = "",
+    *,
+    source: str = "user",
+    priority: str = "NORMAL",
+    dedup_key: str | None = None,
 ) -> dict[str, Any]:
-    return backend().create_case(subject_type, subject_id, summary, trace_id)
+    return backend().create_case(
+        subject_type,
+        subject_id,
+        summary,
+        trace_id,
+        source=source,
+        priority=priority,
+        dedup_key=dedup_key,
+    )
 
 
 def update_case(case_id: str, notes: str, status: str | None = None) -> dict[str, Any]:
     return backend().update_case(case_id, notes, status)
+
+
+def set_meta(
+    case_id: str,
+    *,
+    source: str | None = None,
+    priority: str | None = None,
+    dedup_key: str | None = None,
+) -> dict[str, Any]:
+    return backend().set_meta(case_id, source=source, priority=priority, dedup_key=dedup_key)
+
+
+def find_open_by_dedup_key(dedup_key: str) -> dict[str, Any] | None:
+    return backend().find_open_by_dedup_key(dedup_key)
 
 
 def propose_action(

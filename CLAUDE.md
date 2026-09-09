@@ -2,9 +2,9 @@
 
 Agentic trade & settlement operations platform on a fully simulated broker/dealer. **No real firm's data, code, documents, or naming.** Everything is fictional.
 
-## Current phase: C — complete · next mainline phase: D
+## Current phase: D — event-driven investigations (in progress)
 
-Phase A is shipped and deployed (single Investigator, trade mode). **Phase C is complete** — the Investigator is split into a Supervisor + specialists (Settlement · Risk/Client · Knowledge), each structurally scoped by tool set and policy allowlist (`ai-platform/agent_core/agents/`, `agent_core/supervisor.py`). Settlement structurally cannot propose `update_ssi`; the Supervisor decomposes → dispatches in parallel → correlates by shared cause → one client-level case. Client Scenario 11 exercises the fan-out. Knowledge specialist dispatch is registered but not yet wired (see `docs/backlog.md`). **Next mainline phase is D — event-driven investigations** — read the "Phase D" section of `docs/phase-breakdown.md` before starting it; don't build ahead. Still out of scope until their phase: Developer Agent, prime-finance. Wires (B) is an optional module. **No eval sweeps for C or later phases during the build** (owner decision, 2026-09) — the `SCORECARD.md` on record is the Phase A 8/9; see `docs/backlog.md`.
+Phases A + C are complete. **Phase D is in progress** — the platform reacts to the estate with no user in the loop: an `EventBus` (`platform_api/events/` — Postgres-outbox real, Kafka lazy adapter), an in-process consumer started in the app lifespan (`EVENTS_ENABLED=1`), dedup so a repeat event folds onto the open case, and urgency (a `deadline` inside 60 min marks the case `HIGH`). The simulator publishes FAILED events (`make emit TRADE=…`). Cases carry `source` (`user`/`event`) + `priority`; the `event` span is the trace root. Read `ai-platform/platform_api/events/CLAUDE.md`. Still out of scope until their phase: Developer Agent, prime-finance. Wires (B) is an optional module. **No eval sweeps for C or later phases during the build** (owner decision, 2026-09) — see `docs/backlog.md`. When Phase D completes, bump this line to "D — complete · next mainline phase: E".
 
 ## Roadmap (all phases, for orientation only)
 

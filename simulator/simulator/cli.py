@@ -9,7 +9,7 @@ from pathlib import Path
 
 import typer
 
-from simulator import baseline, planter
+from simulator import baseline, events, planter
 from simulator.db import connect
 from simulator.scenario import Scenario
 
@@ -44,6 +44,20 @@ def seed(scenario: str = "all") -> None:
                 )
             planter.plant(conn, sc)
             typer.echo(f"[seed] scenario {sc.id} {sc.name}: planted")
+
+
+@app.command()
+def emit(
+    trade: str = typer.Option(..., help="trade id, e.g. T100245"),
+    code: str = typer.Option("", help="failure_code (default: the trade's own)"),
+    deadline: str = typer.Option("", help="ISO-8601; inside 60 min -> HIGH priority"),
+) -> None:
+    """Publish a FAILED settlement event for a seeded trade onto the platform outbox."""
+    with connect() as conn:
+        key = events.emit_settlement_failed(
+            conn, trade, failure_code=code or None, deadline=deadline or None
+        )
+    typer.echo(f"[emit] FAILED {trade} -> outbox (dedup {key})")
 
 
 if __name__ == "__main__":

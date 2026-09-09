@@ -39,7 +39,27 @@ cases = Table(
     Column("summary", String, nullable=False),
     Column("status", String, nullable=False, server_default="OPEN"),
     Column("trace_id", String, server_default=""),  # the investigation trace that opened it
+    Column("source", String, nullable=False, server_default="user"),  # user | event (Phase D)
+    Column("priority", String, nullable=False, server_default="NORMAL"),  # NORMAL | HIGH
+    Column("dedup_key", String),  # {subject}:{failure_code} — a repeat event reuses the case
     Column("created_at", DateTime(timezone=True), server_default=func.now()),
+)
+
+# Phase D: the outbox the simulator writes FAILED / HELD events to and the in-process
+# consumer drains. `published_at IS NULL` = not yet handled.
+outbox_events = Table(
+    "outbox_events",
+    _metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("topic", String, nullable=False),  # settlement.events | wire.events
+    Column("event_type", String, nullable=False),  # FAILED | HELD
+    Column("dedup_key", String, nullable=False),
+    Column("subject_type", String, nullable=False),
+    Column("subject_id", String, nullable=False),
+    Column("payload", JSONB, nullable=False, server_default="{}"),
+    Column("occurred_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+    Column("published_at", DateTime(timezone=True)),  # set when the consumer acks
+    Column("attempts", Integer, nullable=False, server_default="0"),
 )
 
 approvals = Table(
@@ -87,9 +107,15 @@ def connect() -> Iterator[Connection]:
 def ensure_schema() -> None:
     with engine().begin() as conn:
         conn.execute(text("create sequence if not exists case_seq"))
-        _metadata.create_all(conn.engine, tables=[cases, approvals, audit_events])
-        # additive column for a `cases` table created before W4
-        conn.execute(text("alter table cases add column if not exists trace_id varchar default ''"))
+        _metadata.create_all(conn.engine, tables=[cases, approvals, audit_events, outbox_events])
+        # additive columns for a `cases` table created before W4 / Phase D
+        for ddl in (
+            "alter table cases add column if not exists trace_id varchar default ''",
+            "alter table cases add column if not exists source varchar not null default 'user'",
+            "alter table cases add column if not exists priority varchar not null default 'NORMAL'",
+            "alter table cases add column if not exists dedup_key varchar",
+        ):
+            conn.execute(text(ddl))
     from platform_api import trace_store
 
     trace_store.ensure_schema()

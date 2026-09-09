@@ -5,7 +5,10 @@ With AI_PLATFORM_SPLIT=1 the MCP servers run as separate processes instead (see 
 
 from __future__ import annotations
 
+import asyncio
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -20,6 +23,7 @@ from knowledge import retrieval
 from mcp_servers._enterprise import EnterpriseError, get_enterprise_client
 from mcp_servers.hub import describe, mount_all
 from platform_api import cases, store, trace_store
+from platform_api.events import Event, get_bus, run_poller
 from platform_api.schemas import ConnectionsResponse, KnowledgeHit, TradeRow
 from platform_api.settings import settings
 from platform_api.telemetry import init_tracing
@@ -29,7 +33,27 @@ init_tracing()
 if os.environ.get("CASES_INMEMORY") != "1":
     store.ensure_schema()
 
-app = FastAPI(title="FinOps AI — platform API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Phase D: run the in-process event consumer while the app is up."""
+    task: asyncio.Task[None] | None = None
+    stop = asyncio.Event()
+    if settings.events_enabled and settings.event_bus != "none":
+        task = asyncio.create_task(run_poller(get_bus(), stop=stop))
+    try:
+        yield
+    finally:
+        stop.set()
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+
+
+app = FastAPI(title="FinOps AI — platform API", version="0.1.0", lifespan=lifespan)
 # The portal is a separate origin (its own Railway domain / :5173 locally).
 # CORS_ALLOW_ORIGINS is a comma-separated list; "*" for the public demo.
 _origins = [o.strip() for o in os.environ.get("CORS_ALLOW_ORIGINS", "*").split(",") if o.strip()]
@@ -78,6 +102,16 @@ async def post_investigate(req: InvestigateRequest) -> Finding:
     if req.trade_id:
         return await investigate(req.trade_id)
     raise HTTPException(status_code=422, detail="provide trade_id or client_id")
+
+
+@app.post("/events")
+async def publish_event(event: Event) -> dict[str, str]:
+    """Publish an estate event onto the bus (demo / portal convenience — the simulator is
+    the usual publisher). The in-process consumer picks it up and opens a case."""
+    if not settings.events_enabled or settings.event_bus == "none":
+        raise HTTPException(status_code=409, detail="events are disabled (set EVENTS_ENABLED=1)")
+    event_id = await get_bus().publish(event)
+    return {"event_id": event_id, "dedup_key": event.dedup_key}
 
 
 @app.get("/trades")

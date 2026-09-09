@@ -149,6 +149,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish Event
+         * @description Publish an estate event onto the bus (demo / portal convenience — the simulator is
+         *     the usual publisher). The in-process consumer picks it up and opens a case.
+         */
+        post: operations["publish_event_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trades": {
         parameters: {
             query?: never;
@@ -287,6 +308,40 @@ export interface components {
              * @default OPS_ANALYST
              */
             role: string;
+        };
+        /**
+         * Event
+         * @description A thing that happened in the estate. `id` is set by the bus on publish.
+         */
+        Event: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /**
+             * Topic
+             * @default settlement.events
+             */
+            topic: string;
+            /** Type */
+            type: string;
+            /**
+             * Subject Type
+             * @default trade
+             */
+            subject_type: string;
+            /** Subject Id */
+            subject_id: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at?: string;
         };
         /** EvidenceLink */
         EvidenceLink: {
@@ -1035,6 +1090,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Finding"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_event_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
             /** @description Validation Error */

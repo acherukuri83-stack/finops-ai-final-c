@@ -1,4 +1,4 @@
-.PHONY: up down migrate seed ingest run portal test eval verify
+.PHONY: up down migrate seed emit ingest run portal test eval verify
 
 up:
 	docker compose up -d --build
@@ -11,6 +11,9 @@ migrate:
 
 seed: migrate
 	cd simulator && uv run python -m simulator.cli seed --scenario $(or $(SCENARIO),all)
+
+emit:  # publish a FAILED settlement event: make emit TRADE=T100245 [DEADLINE=2026-09-04T11:00:00]
+	cd simulator && uv run python -m simulator.cli emit --trade $(TRADE) $(if $(CODE),--code $(CODE),) $(if $(DEADLINE),--deadline $(DEADLINE),)
 
 ingest:
 	cd ai-platform && uv run python -m knowledge.ingest $(if $(FIXTURES),--fixtures $(FIXTURES),)

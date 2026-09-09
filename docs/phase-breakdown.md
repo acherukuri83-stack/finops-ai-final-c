@@ -87,11 +87,11 @@ Every phase in the same shape: what it proves, what's in scope, which agents exi
 
 | | |
 |---|---|
-| **Scope in** | `EventBus` with Kafka (local, Redpanda) and Postgres-outbox (hosted) implementations; simulator publishes FAILED / HELD events; consumer opens a case and starts an investigation; dedup |
-| **Agent** | Supervisor gains an event entry point (classifies from payload); urgency from event (e.g. cutoff < 60 min) raises priority |
-| **Portal** | Cases show `source = event`; live case appearance |
-| **Scenarios** | FAILED event → case; duplicate event → same case; HELD wire near cutoff → prioritized |
-| **Demo** | Publish one event → case, finding, proposal appear unprompted; trace root span is the event |
+| **Scope in** | `EventBus` — **Postgres-outbox** (real, `platform_api/events/outbox.py`, works local + hosted) + a lazy **Kafka** adapter (`kafka.py`, untested here); simulator publishes FAILED events (`make emit`); an **in-process consumer** (app lifespan, `EVENTS_ENABLED=1`) opens a case + runs the investigation; dedup on `{subject}:{failure_code}` |
+| **Routing** | Code, not an LLM classify — a FAILED settlement event carries `trade_id` + `failure_code` → `investigate(trade_id)`. Urgency: a `deadline` inside 60 min → case `priority=HIGH`. (Wire / client event subjects are `OUT_OF_SCOPE` — they arrive with their modules.) |
+| **Portal** | Cases show a `source` badge (`event`/`user`) + `HIGH` chip; the Cases list polls so event cases appear live |
+| **Built** | FAILED event → case; duplicate event → same case (audit note, no 2nd investigation); near-deadline event → case `HIGH`. Wire prioritisation ships with the Wires module. |
+| **Demo** | `make emit TRADE=T100245` → case + finding + proposal appear unprompted; trace root span is the `event` |
 | **Effort** | 1 weekend |
 
 ---

@@ -11,6 +11,7 @@ Every agent run produces one trace. Spans are emitted with OpenTelemetry and exp
 | `retrieval` | `finops.retrieval.query`, `finops.retrieval.k`, `finops.retrieval.results` (json: doc, section, score, cited: bool) |
 | `policy` | `finops.agent`, `finops.action`, `finops.policy.decision` (ALLOWED/REJECTED), `finops.policy.rule` |
 | `delegation` | `finops.agent` (always `supervisor`), `finops.subtask.agent`, `finops.subtask.subjects` (json), `finops.subtask.budget` |
+| `event` | `finops.event.type` (FAILED / HELD), `finops.event.topic`, `finops.event.key` (dedup key), `finops.event.subject`, `finops.event.deadline?` — the **root** span when an investigation is event-triggered (Phase D) |
 | `guardrail` | `finops.guardrail.name` (input_classification / pii_scrub / schema_validation), `finops.guardrail.result`, `finops.guardrail.count` |
 | `approval` | `finops.approval.id`, `finops.approval.status`, `finops.approval.by`, `finops.approval.role`, `finops.approval.elapsed_ms` |
 
@@ -20,5 +21,6 @@ Common: `finops.trace.id`, `finops.case.id?`, `finops.scenario.id?` (eval runs).
 - The same trace id propagates from the React request through FastAPI, agent-core, MCP calls, and into the Spring Boot tier (W3C `traceparent`).
 - Synthesis spans carry the Finding's `rejected_alternatives` in the payload.
 - A Supervisor run (Phase C) is one trace: each specialist dispatch runs inside a `delegation` span, so every specialist's `agent` / `tool` / `policy` spans share the client trace id.
+- An event-triggered investigation (Phase D) has the `event` span as its trace root; the `investigate` / `investigate_client` span nests under it, so the trace shows the trigger.
 - No span payload contains raw PII (see security §7).
 - Traces are immutable once a case is closed.
